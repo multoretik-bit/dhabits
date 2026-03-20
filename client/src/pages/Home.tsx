@@ -213,18 +213,42 @@ export default function Home() {
     t => t.isAllDay && (t.daysOfWeek.length === 0 || t.daysOfWeek.includes(dayOfWeek))
   );
 
+  const blockColor = activeBlock?.colorIndex !== undefined 
+    ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][activeBlock.colorIndex] 
+    : null;
+
   return (
-    <div className="flex flex-col min-h-full">
+    <div 
+      className="flex flex-col min-h-full transition-all duration-700 relative overflow-hidden"
+      style={{ 
+        backgroundColor: blockColor ? `${blockColor}08` : 'transparent'
+      }}
+    >
+      {/* Background Glow */}
+      {blockColor && (
+        <div 
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-[500px] blur-[120px] opacity-20 pointer-events-none transition-all duration-1000"
+          style={{ background: `radial-gradient(circle, ${blockColor} 0%, transparent 70%)` }}
+        />
+      )}
+
       {/* Active Block Header */}
       <div className="px-5 pt-6 pb-2">
         {activeBlock ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="bg-blue-950/40 border border-blue-900/50 rounded-3xl p-5 shadow-lg relative overflow-hidden"
+            className="border rounded-3xl p-5 shadow-lg relative overflow-hidden"
+            style={{ 
+              backgroundColor: activeBlock.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][activeBlock.colorIndex] + '20' : 'rgba(30, 58, 138, 0.4)',
+              borderColor: activeBlock.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][activeBlock.colorIndex] + '40' : 'rgba(30, 58, 138, 0.5)'
+            }}
           >
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-600/20 blur-[50px] rounded-full" />
-            <h1 className="text-2xl font-extrabold text-white mb-1 tracking-tight">{activeBlock.name}</h1>
-            <div className="flex items-center gap-1.5 text-blue-300 text-sm font-medium mb-4">
+            <div 
+              className="absolute -top-10 -right-10 w-32 h-32 blur-[50px] rounded-full opacity-30" 
+              style={{ backgroundColor: activeBlock.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][activeBlock.colorIndex] : '#3b82f6' }}
+            />
+            <h1 className="text-2xl font-extrabold text-white mb-1 tracking-tight truncate">{activeBlock.name}</h1>
+            <div className="flex items-center gap-1.5 text-sm font-medium mb-4" style={{ color: activeBlock.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][activeBlock.colorIndex] : '#93c5fd' }}>
               <Clock className="w-4 h-4" />
               <span>с {formatTime(activeBlock.startTime)} до {formatTime(activeBlock.endTime)}</span>
             </div>
@@ -234,10 +258,15 @@ export default function Home() {
                   <span>Прогресс блока</span>
                   <span>{Math.round(blockProgress)}%</span>
                 </div>
-                <div className="w-full h-2 bg-slate-900/80 rounded-full overflow-hidden border border-blue-950/50 relative">
+                <div className="w-full h-2 bg-slate-900/80 rounded-full overflow-hidden border border-white/5 relative">
                   <div
-                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-600 to-cyan-400 rounded-full transition-all duration-1000"
-                    style={{ width: `${blockProgress}%` }}
+                    className="absolute top-0 left-0 h-full rounded-full transition-all duration-1000"
+                    style={{ 
+                      width: `${blockProgress}%`,
+                      background: activeBlock.colorIndex !== undefined 
+                        ? `linear-gradient(to right, ${["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][activeBlock.colorIndex]}, #fff)` 
+                        : 'linear-gradient(to right, #2563eb, #22d3ee)' 
+                    }}
                   />
                   <div
                     className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)] transition-all duration-1000"
@@ -257,21 +286,31 @@ export default function Home() {
 
       {/* Block habits & tasks in 2 columns */}
       {activeBlock && (
-        <div className="px-4 py-4 grid grid-cols-2 gap-4">
+        <div className="px-3 py-4 grid grid-cols-2 gap-2 sm:gap-4 relative z-10">
           <div className="flex flex-col">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 px-1">Привычки</h3>
+            <h3 
+              className="text-[11px] font-black uppercase tracking-[0.2em] mb-4 px-2 opacity-60"
+              style={{ color: blockColor || '#94a3b8' }}
+            >
+              Привычки
+            </h3>
             {blockHabits.length > 0 ? (
               blockHabits.map(h => <HabitRow key={h.id} habit={h} dateStr={dateStr} />)
             ) : (
-              <div className="text-xs text-slate-600 text-center py-4 bg-slate-900/30 rounded-2xl border border-slate-800/50">Пусто</div>
+              <div className="text-xs text-slate-600 text-center py-6 bg-slate-900/20 rounded-3xl border border-slate-800/40 italic">Пусто</div>
             )}
           </div>
           <div className="flex flex-col">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 px-1">Задачи</h3>
+            <h3 
+              className="text-[11px] font-black uppercase tracking-[0.2em] mb-4 px-2 opacity-60"
+              style={{ color: blockColor || '#94a3b8' }}
+            >
+              Задачи
+            </h3>
             {blockTasks.length > 0 ? (
               blockTasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} />)
             ) : (
-              <div className="text-xs text-slate-600 text-center py-4 bg-slate-900/30 rounded-2xl border border-slate-800/50">Без задач</div>
+              <div className="text-xs text-slate-600 text-center py-6 bg-slate-900/20 rounded-3xl border border-slate-800/40 italic">Без задач</div>
             )}
           </div>
         </div>
@@ -279,15 +318,19 @@ export default function Home() {
 
       {/* All-day divider */}
       {(allDayHabits.length > 0 || allDayTasks.length > 0) && (
-        <div className="mt-2 mb-2 px-6">
-          <div className="w-full h-[1px] bg-slate-800/60" />
+        <div className="mt-4 mb-4 px-6 relative z-10">
+          <div className="w-full h-px" style={{ backgroundColor: blockColor ? `${blockColor}20` : 'rgba(30, 41, 59, 0.5)' }} />
         </div>
       )}
 
       {/* All-day items */}
-      <div className="px-5 pb-8 space-y-1">
+      <div className="px-5 pb-10 space-y-1 relative z-10">
         {(allDayHabits.length > 0 || allDayTasks.length > 0) && (
-          <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 mt-2 px-1">На весь день</h3>
+          <h3 
+            className="text-[11px] font-black uppercase tracking-[0.2em] mb-5 mt-2 px-2 opacity-60 text-slate-400"
+          >
+            На весь день
+          </h3>
         )}
         {allDayHabits.map(h => <HabitRow key={h.id} habit={h} dateStr={dateStr} />)}
         {allDayTasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} />)}

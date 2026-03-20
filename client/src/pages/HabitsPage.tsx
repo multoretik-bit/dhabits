@@ -68,16 +68,17 @@ function HabitsTab() {
   const [unitsTracking, setUnitsTracking] = useState(false);
   const [progressUnit, setProgressUnit] = useState("units");
   const [coinsPerUnit, setCoinsPerUnit] = useState("1");
+  const [isOneTime, setIsOneTime] = useState(false);
 
   // Folder form
   const [folderName, setFolderName] = useState("");
   const [folderColor, setFolderColor] = useState("#6366f1");
   const [folderEmoji, setFolderEmoji] = useState("📁");
-
   const resetForm = () => {
     setName(""); setEmoji("🎯"); setColor("#6366f1"); setFolder("general");
     setBlockId(""); setDays([1, 2, 3, 4, 5]); setCoins("5");
     setUnitsTracking(false); setProgressUnit("units"); setCoinsPerUnit("1");
+    setIsOneTime(false);
   };
 
   const handleCreate = (e: React.FormEvent) => {
@@ -89,7 +90,7 @@ function HabitsTab() {
       coinsPerComplete: parseFloat(coins) || 5,
       completedDates: {}, units: 0,
       coinsPerUnit: parseFloat(coinsPerUnit) || 1,
-      progressUnit, unitsTracking,
+      progressUnit, unitsTracking, isOneTime,
     });
     resetForm(); setShowCreate(false);
   };
@@ -99,6 +100,7 @@ function HabitsTab() {
     setFolder(h.folder); setBlockId(h.blockId || ""); setDays(h.daysOfWeek);
     setCoins(String(h.coinsPerComplete)); setUnitsTracking(h.unitsTracking);
     setProgressUnit(h.progressUnit || "units"); setCoinsPerUnit(String(h.coinsPerUnit || 1));
+    setIsOneTime(!!h.isOneTime);
     setShowEdit(true);
   };
 
@@ -109,6 +111,7 @@ function HabitsTab() {
       name, emoji, color, folder, blockId, daysOfWeek: days,
       coinsPerComplete: parseFloat(coins) || 5,
       unitsTracking, progressUnit, coinsPerUnit: parseFloat(coinsPerUnit) || 1,
+      isOneTime,
     });
     setShowEdit(false); resetForm();
   };
@@ -148,6 +151,9 @@ function HabitsTab() {
           <FormInput label="Монет за единицу" value={coinsPerUnit} onChange={setCoinsPerUnit} type="number" placeholder="1" />
         </>
       )}
+      <div className="pt-2 border-t border-border mt-2">
+        <FormCheckbox label="Одноразовая (исчезнет после выполнения)" checked={isOneTime} onChange={setIsOneTime} />
+      </div>
     </>
   );
 
@@ -363,25 +369,27 @@ function BlocksTab() {
   const [name, setName] = useState("");
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("10:00");
+  const [colorIndex, setColorIndex] = useState(0);
 
-  const resetForm = () => { setName(""); setStartTime("09:00"); setEndTime("10:00"); };
+  const resetForm = () => { setName(""); setStartTime("09:00"); setEndTime("10:00"); setColorIndex(0); };
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    addBlock({ id: nanoid(), name, habits: [], collapsed: false, startTime, endTime });
+    addBlock({ id: nanoid(), name, habits: [], collapsed: false, startTime, endTime, colorIndex });
     resetForm(); setShowCreate(false);
   };
 
   const handleOpenEdit = (b: typeof blocks[0]) => {
     setEditingId(b.id); setName(b.name); setStartTime(b.startTime || "09:00"); setEndTime(b.endTime || "10:00");
+    setColorIndex(b.colorIndex || 0);
     setShowEdit(true);
   };
 
   const handleEdit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingId || !name.trim()) return;
-    updateBlock(editingId, { name, startTime, endTime });
+    updateBlock(editingId, { name, startTime, endTime, colorIndex });
     setShowEdit(false); resetForm();
   };
 
@@ -398,6 +406,20 @@ function BlocksTab() {
           <label className="text-sm font-medium text-foreground">Конец</label>
           <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)}
             className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-accent" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Цвет блока</label>
+        <div className="flex flex-wrap gap-2">
+          {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setColorIndex(i)}
+              className={`w-8 h-8 rounded-full border-2 transition-all ${colorIndex === i ? "scale-110 border-white" : "border-transparent opacity-60 hover:opacity-100"}`}
+              style={{ backgroundColor: ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][i] }}
+            />
+          ))}
         </div>
       </div>
     </>
@@ -420,8 +442,11 @@ function BlocksTab() {
           </div>
         ) : blocks.map((b) => (
           <div key={b.id} className="flex items-center gap-3 px-4 py-3 bg-card rounded-xl border border-border">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: b.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][b.colorIndex] + '25' : 'rgba(148, 163, 184, 0.1)' }}>
+               <Layers className="w-4 h-4" style={{ color: b.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][b.colorIndex] : "#94a3b8" }} />
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm text-foreground">{b.name}</p>
+              <p className="font-medium text-sm text-foreground truncate">{b.name}</p>
               {b.startTime && b.endTime ? (
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                   <Clock className="w-3 h-3" /> {b.startTime} — {b.endTime}

@@ -62,12 +62,14 @@ function HabitsTab() {
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]); const [coins, setCoins] = useState("5");
   const [initialStreak, setInitialStreak] = useState("0");
   const [unitsTracking, setUnitsTracking] = useState(false); const [progressUnit, setProgressUnit] = useState("units"); const [coinsPerUnit, setCoinsPerUnit] = useState("1");
+  const [isOneTime, setIsOneTime] = useState(false);
   const [folderName, setFolderName] = useState(""); const [folderColor, setFolderColor] = useState("#3b82f6"); const [folderEmoji, setFolderEmoji] = useState("📁");
 
   const resetForm = () => { 
     setName(""); setEmoji("🎯"); setColor("#3b82f6"); setFolder("general"); 
     setBlockId(""); setDays([1, 2, 3, 4, 5]); setCoins("5"); setInitialStreak("0");
     setUnitsTracking(false); setProgressUnit("units"); setCoinsPerUnit("1"); 
+    setIsOneTime(false);
   };
 
   const habitFormContent = (
@@ -100,6 +102,9 @@ function HabitsTab() {
           <FormInput label="Монет за единицу" value={coinsPerUnit} onChange={setCoinsPerUnit} type="number" placeholder="1" />
         </>
       )}
+      <div className="pt-2 border-t border-slate-800/50">
+        <FormCheckbox label="Одноразовая (исчезнет после выполнения)" checked={isOneTime} onChange={setIsOneTime} />
+      </div>
     </>
   );
 
@@ -169,10 +174,11 @@ function HabitsTab() {
                       </div>
                       <Button size="icon" variant="ghost" onClick={() => { 
                         setEditingId(h.id); setName(h.name); setEmoji(h.emoji); setColor(h.color); 
-                        setFolder(h.folder); setBlockId(h.blockId || ""); setDays(h.daysOfWeek); 
+                        setFolder(h.folder); setBlockId(h.blockId || ""); setDays(h.daysOfWeek || []); 
                         setCoins(String(h.coinsPerComplete)); setInitialStreak(String(h.streak));
                         setUnitsTracking(h.unitsTracking); setProgressUnit(h.progressUnit || "units");
                         setCoinsPerUnit(String(h.coinsPerUnit || 1));
+                        setIsOneTime(!!h.isOneTime);
                         setShowEdit(true); 
                       }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteHabit(h.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
@@ -185,8 +191,8 @@ function HabitsTab() {
         })}
       </div>
 
-      <FormModal title="Новая привычка" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addHabit({ id: nanoid(), name, emoji, color, folder, blockId, daysOfWeek: days, streak: Number(initialStreak) || 0, coinsPerComplete: Number(coins), completedDates: {}, units: 0, unitsTracking, progressUnit, coinsPerUnit: Number(coinsPerUnit) }); setShowCreate(false); resetForm(); } }} submitText="Создать">{habitFormContent}</FormModal>
-      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateHabit(editingId, { name, emoji, color, folder, blockId, daysOfWeek: days, coinsPerComplete: Number(coins), streak: Number(initialStreak) || 0, unitsTracking, progressUnit, coinsPerUnit: Number(coinsPerUnit) }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{habitFormContent}</FormModal>
+      <FormModal title="Новая привычка" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addHabit({ id: nanoid(), name, emoji, color, folder, blockId, daysOfWeek: days, streak: Number(initialStreak) || 0, coinsPerComplete: Number(coins), completedDates: {}, units: 0, unitsTracking, progressUnit, coinsPerUnit: Number(coinsPerUnit), isOneTime }); setShowCreate(false); resetForm(); } }} submitText="Создать">{habitFormContent}</FormModal>
+      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateHabit(editingId, { name, emoji, color, folder, blockId, daysOfWeek: days, coinsPerComplete: Number(coins), streak: Number(initialStreak) || 0, unitsTracking, progressUnit, coinsPerUnit: Number(coinsPerUnit), isOneTime }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{habitFormContent}</FormModal>
       <FormModal title="Новая папка" isOpen={showCreateFolder} onClose={() => { setShowCreateFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (folderName) { addHabitFolder({ id: nanoid(), name: folderName, emoji: folderEmoji, color: folderColor, collapsed: false }); setShowCreateFolder(false); setFolderName(""); } }} submitText="Создать">{folderFormContent}</FormModal>
       <FormModal title="Редактировать папку" isOpen={showEditFolder} onClose={() => { setShowEditFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (editingFolderId && folderName) { updateHabitFolder(editingFolderId, { name: folderName, color: folderColor, emoji: folderEmoji }); setShowEditFolder(false); } }} submitText="Сохранить">{folderFormContent}</FormModal>
     </div>
@@ -369,8 +375,9 @@ function BlocksTab() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [name, setName] = useState(""); const [startTime, setStartTime] = useState("09:00"); const [endTime, setEndTime] = useState("10:00");
+  const [colorIndex, setColorIndex] = useState(0);
 
-  const resetForm = () => { setName(""); setStartTime("09:00"); setEndTime("10:00"); };
+  const resetForm = () => { setName(""); setStartTime("09:00"); setEndTime("10:00"); setColorIndex(0); };
 
   const blockFormContent = (
     <>
@@ -385,21 +392,35 @@ function BlocksTab() {
           <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-blue-500" />
         </div>
       </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-300">Цвет блока</label>
+        <div className="flex flex-wrap gap-2">
+          {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setColorIndex(i)}
+              className={`w-8 h-8 rounded-full border-2 transition-all ${colorIndex === i ? "scale-110 border-white shadow-lg" : "border-transparent opacity-60 hover:opacity-100"}`}
+              style={{ backgroundColor: i < 8 ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][i] : "#fff" }}
+            />
+          ))}
+        </div>
+      </div>
     </>
   );
 
   return (
     <div className="space-y-4 pb-20">
       <div className="flex justify-end mb-4">
-        <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold font-bold font-bold">
+        <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">
           <Plus className="w-4 h-4 mr-2" /> Блок
         </Button>
       </div>
       <div className="space-y-3">
         {blocks.map(b => (
           <div key={b.id} className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-2xl border border-slate-800/80">
-            <div className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl bg-slate-800/50">
-              <Layers className="w-5 h-5 text-slate-400" />
+            <div className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: b.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][b.colorIndex] + '25' : 'rgba(148, 163, 184, 0.1)' }}>
+              <Layers className="w-5 h-5" style={{ color: b.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][b.colorIndex] : "#94a3b8" }} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-sm text-slate-200 truncate">{b.name}</p>
@@ -410,15 +431,15 @@ function BlocksTab() {
                 <Button size="icon" variant="ghost" onClick={() => moveBlockUp(b.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowUp className="w-3 h-3" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => moveBlockDown(b.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowDown className="w-3 h-3" /></Button>
               </div>
-              <Button size="icon" variant="ghost" onClick={() => { setEditingId(b.id); setName(b.name); setStartTime(b.startTime||""); setEndTime(b.endTime||""); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => { setEditingId(b.id); setName(b.name); setStartTime(b.startTime||""); setEndTime(b.endTime||""); setColorIndex(b.colorIndex || 0); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
               <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteBlock(b.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
             </div>
           </div>
         ))}
         {blocks.length === 0 && <p className="text-center py-10 text-slate-600 italic">Нет блоков</p>}
       </div>
-      <FormModal title="Новый блок" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addBlock({ id: nanoid(), name, habits: [], collapsed: false, startTime, endTime }); setShowCreate(false); resetForm(); } }} submitText="Создать">{blockFormContent}</FormModal>
-      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateBlock(editingId, { name, startTime, endTime }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{blockFormContent}</FormModal>
+      <FormModal title="Новый блок" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addBlock({ id: nanoid(), name, habits: [], collapsed: false, startTime, endTime, colorIndex }); setShowCreate(false); resetForm(); } }} submitText="Создать">{blockFormContent}</FormModal>
+      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateBlock(editingId, { name, startTime, endTime, colorIndex }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{blockFormContent}</FormModal>
     </div>
   );
 }
