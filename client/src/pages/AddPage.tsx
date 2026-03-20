@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Edit2, FolderPlus, ListChecks, Target, Layers, Check } from "lucide-react";
-import { useApp, Habit, HabitFolder, Task, Goal, GoalFolder } from "@/contexts/AppContext";
+import { Plus, Trash2, Edit2, FolderPlus, ListChecks, Target, Layers, Check, ArrowUp, ArrowDown } from "lucide-react";
+import { useApp, Habit, HabitFolder, Task, Goal, GoalFolder, moveHabitUp, moveHabitDown } from "@/contexts/AppContext";
 import FormModal from "@/components/FormModal";
 import { FormInput, FormCheckbox } from "@/components/FormInputs";
 import EmojiPicker from "@/components/EmojiPicker";
@@ -48,7 +48,7 @@ function UnifiedCoinBadge({ coins, color, label }: { coins: number; color: strin
 
 // ─── HABITS ───────────────────────────────────────────────────────────────
 function HabitsTab() {
-  const { habits, habitFolders, blocks, addHabit, updateHabit, deleteHabit, addHabitFolder, updateHabitFolder, deleteHabitFolder } = useApp();
+  const { habits, habitFolders, blocks, addHabit, updateHabit, deleteHabit, addHabitFolder, updateHabitFolder, deleteHabitFolder, moveHabitUp, moveHabitDown, moveHabitFolderUp, moveHabitFolderDown } = useApp();
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -134,6 +134,8 @@ function HabitsTab() {
                 </div>
                 {f.id !== "general" && (
                   <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" onClick={() => moveHabitFolderUp(f.id)} className="w-7 h-7 text-slate-500 hover:text-blue-400"><ArrowUp className="w-3.5 h-3.5" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => moveHabitFolderDown(f.id)} className="w-7 h-7 text-slate-500 hover:text-blue-400"><ArrowDown className="w-3.5 h-3.5" /></Button>
                     <Button size="icon" variant="ghost" onClick={() => { setEditingFolderId(f.id); setFolderName(f.name); setFolderColor(f.color); setFolderEmoji(f.emoji || "📁"); setShowEditFolder(true); }} className="w-7 h-7 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-3.5 h-3.5" /></Button>
                     <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) { habits.filter((h) => h.folder === f.id).forEach((h) => updateHabit(h.id, { folder: "general" })); deleteHabitFolder(f.id); } }} className="w-7 h-7 text-red-400 hover:bg-red-400/10"><Trash2 className="w-3.5 h-3.5" /></Button>
                   </div>
@@ -161,6 +163,10 @@ function HabitsTab() {
                       </p>
                     </div>
                     <div className="flex gap-1">
+                      <div className="flex flex-col gap-0.5 mr-1">
+                        <Button size="icon" variant="ghost" onClick={() => moveHabitUp(h.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowUp className="w-3 h-3" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => moveHabitDown(h.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowDown className="w-3 h-3" /></Button>
+                      </div>
                       <Button size="icon" variant="ghost" onClick={() => { 
                         setEditingId(h.id); setName(h.name); setEmoji(h.emoji); setColor(h.color); 
                         setFolder(h.folder); setBlockId(h.blockId || ""); setDays(h.daysOfWeek); 
@@ -189,7 +195,7 @@ function HabitsTab() {
 
 // ─── TASKS ────────────────────────────────────────────────────────────────
 function TasksTab() {
-  const { tasks, blocks, addTask, updateTask, deleteTask } = useApp();
+  const { tasks, blocks, addTask, updateTask, deleteTask, moveTaskUp, moveTaskDown } = useApp();
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -243,6 +249,10 @@ function TasksTab() {
               </p>
             </div>
             <div className="flex gap-1">
+              <div className="flex flex-col gap-0.5 mr-1">
+                <Button size="icon" variant="ghost" onClick={() => moveTaskUp(t.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowUp className="w-3 h-3" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => moveTaskDown(t.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowDown className="w-3 h-3" /></Button>
+              </div>
               <Button size="icon" variant="ghost" onClick={() => { setEditingId(t.id); setTitle(t.title); setEmoji(t.emoji); setBlockId(t.blockId || ""); setDays(t.daysOfWeek); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
               <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteTask(t.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
             </div>
@@ -353,7 +363,7 @@ function GoalsTab() {
 
 // ─── BLOCKS ───────────────────────────────────────────────────────────────
 function BlocksTab() {
-  const { blocks, addBlock, updateBlock, deleteBlock } = useApp();
+  const { blocks, addBlock, updateBlock, deleteBlock, moveBlockUp, moveBlockDown } = useApp();
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -396,6 +406,10 @@ function BlocksTab() {
               <p className="text-[10px] text-slate-500 font-medium tracking-wide">{b.startTime} - {b.endTime}</p>
             </div>
             <div className="flex gap-1">
+              <div className="flex flex-col gap-0.5 mr-1">
+                <Button size="icon" variant="ghost" onClick={() => moveBlockUp(b.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowUp className="w-3 h-3" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => moveBlockDown(b.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowDown className="w-3 h-3" /></Button>
+              </div>
               <Button size="icon" variant="ghost" onClick={() => { setEditingId(b.id); setName(b.name); setStartTime(b.startTime||""); setEndTime(b.endTime||""); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
               <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteBlock(b.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
             </div>

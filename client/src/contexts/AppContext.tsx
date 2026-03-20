@@ -222,6 +222,8 @@ interface AppContextType {
   deleteTask: (id: string) => void;
   completeTask: (id: string, dateStr?: string) => void;
   isTaskCompletedToday: (task: Task) => boolean;
+  moveTaskUp: (taskId: string) => void;
+  moveTaskDown: (taskId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -651,6 +653,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, newTasks);
   };
 
+  const moveTaskUp = (taskId: string) => {
+    const idx = tasks.findIndex((t) => t.id === taskId);
+    if (idx > 0) {
+      const newTasks = [...tasks];
+      [newTasks[idx], newTasks[idx - 1]] = [newTasks[idx - 1], newTasks[idx]];
+      setTasks(newTasks);
+      saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, newTasks);
+    }
+  };
+
+  const moveTaskDown = (taskId: string) => {
+    const idx = tasks.findIndex((t) => t.id === taskId);
+    if (idx < tasks.length - 1) {
+      const newTasks = [...tasks];
+      [newTasks[idx], newTasks[idx + 1]] = [newTasks[idx + 1], newTasks[idx]];
+      setTasks(newTasks);
+      saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, newTasks);
+    }
+  };
+
   const moveHabitUp = (habitId: string) => {
     const idx = habits.findIndex((h) => h.id === habitId);
     if (idx > 0) {
@@ -815,6 +837,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         deleteTask,
         completeTask,
         isTaskCompletedToday,
+        moveTaskUp,
+        moveTaskDown,
       }}
     >
       {children}

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useApp, Habit, Task, getCurrentBlock, getTodayDateString } from "@/contexts/AppContext";
-import { Clock, Check, Plus, Minus } from "lucide-react";
+import { Clock, Check, Plus, Minus, ArrowUp, ArrowDown } from "lucide-react";
 import { motion } from "framer-motion";
 
 function formatTime(t: string | undefined) {
@@ -16,13 +16,10 @@ function timeToMinutes(t: string | undefined): number {
 // Flame streak display
 function StreakFlames({ streak }: { streak: number }) {
   if (streak === 0) return null;
-  const flames = Math.min(streak, 7);
   return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: flames }).map((_, i) => (
-        <span key={i} className="text-[10px] leading-none" style={{ opacity: 0.5 + (i / flames) * 0.5 }}>🔥</span>
-      ))}
-      {streak > 7 && <span className="text-[10px] text-orange-400 font-bold ml-0.5">×{streak}</span>}
+    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 w-fit">
+      <span className="text-[12px]">🔥</span>
+      <span className="text-[11px] font-bold text-orange-400">{streak}</span>
     </div>
   );
 }
@@ -63,7 +60,7 @@ function UnitTracker({ habit, dateStr }: { habit: Habit; dateStr: string }) {
 }
 
 function HabitRow({ habit, dateStr }: { habit: Habit; dateStr: string }) {
-  const { completeHabit } = useApp();
+  const { completeHabit, moveHabitUp, moveHabitDown } = useApp();
   const completed = !!(habit.completedDates && habit.completedDates[dateStr]);
 
   return (
@@ -113,6 +110,18 @@ function HabitRow({ habit, dateStr }: { habit: Habit; dateStr: string }) {
             </span>
           )}
         </div>
+
+        {/* Reorder controls */}
+        {!completed && (
+          <div className="flex flex-col gap-1 pr-1" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => moveHabitUp(habit.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
+              <ArrowUp className="w-3 h-3" />
+            </button>
+            <button onClick={() => moveHabitDown(habit.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
+              <ArrowDown className="w-3 h-3" />
+            </button>
+          </div>
+        )}
       </button>
 
       {/* Unit tracker (shown when not completed) */}
@@ -126,7 +135,7 @@ function HabitRow({ habit, dateStr }: { habit: Habit; dateStr: string }) {
 }
 
 function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
-  const { completeTask } = useApp();
+  const { completeTask, moveTaskUp, moveTaskDown } = useApp();
   const completed = !!(task.completedDates && task.completedDates[dateStr]);
   const taskColor = task.color || "#3b82f6";
 
@@ -149,6 +158,18 @@ function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
       <span className={`flex-1 font-bold text-sm leading-snug ${completed ? "line-through text-slate-500" : "text-slate-100"}`}>
         {task.title}
       </span>
+
+      {/* Reorder controls */}
+      {!completed && (
+        <div className="flex flex-col gap-1 pr-1" onClick={(e) => e.stopPropagation()}>
+          <button onClick={() => moveTaskUp(task.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
+            <ArrowUp className="w-3 h-3" />
+          </button>
+          <button onClick={() => moveTaskDown(task.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
+            <ArrowDown className="w-3 h-3" />
+          </button>
+        </div>
+      )}
     </button>
   );
 }

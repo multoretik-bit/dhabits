@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Target } from "lucide-react";
+import { ChevronDown, ChevronUp, Target, ArrowUp, ArrowDown } from "lucide-react";
 import { useApp, Goal } from "@/contexts/AppContext";
 import FormModal from "@/components/FormModal";
 import { FormInput } from "@/components/FormInputs";
@@ -18,7 +18,7 @@ function UnifiedCoinBadge({ coins, color, label }: { coins: number; color: strin
 }
 
 export default function GoalsPage() {
-  const { goals, goalFolders, habits, updateGoal, toggleGoalFolderCollapse, addGoalFolder } = useApp();
+  const { goals, goalFolders, habits, updateGoal, toggleGoalFolderCollapse, addGoalFolder, moveGoalUp, moveGoalDown, moveGoalFolderUp, moveGoalFolderDown } = useApp();
 
   // Progress update state
   const [showUpdateProgress, setShowUpdateProgress] = useState(false);
@@ -107,6 +107,15 @@ export default function GoalsPage() {
                     <Target className="w-5 h-5" />
                     <span className="text-[8px] font-bold uppercase">Шаг</span>
                   </Button>
+                  
+                  <div className="flex flex-col gap-1 pr-1" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={() => moveGoalUp(goal.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
+                      <ArrowUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => moveGoalDown(goal.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
+                      <ArrowDown className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Progress bar info */}
@@ -186,8 +195,12 @@ export default function GoalsPage() {
                   </h3>
                   <span className="text-[10px] font-bold text-slate-500 bg-slate-950/40 px-2 py-0.5 rounded-full border border-slate-800/60">{folderGoals.length}</span>
                 </div>
-                <div className="text-slate-500">
-                  {folder.collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <Button size="icon" variant="ghost" onClick={() => moveGoalFolderUp(folder.id)} className="w-8 h-8 text-slate-500 hover:text-blue-400"><ArrowUp className="w-4 h-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => moveGoalFolderDown(folder.id)} className="w-8 h-8 text-slate-500 hover:text-blue-400"><ArrowDown className="w-4 h-4" /></Button>
+                  <div className="text-slate-500 ml-2">
+                    {folder.collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                  </div>
                 </div>
               </div>
               {!folder.collapsed && renderGoals(folderGoals)}
