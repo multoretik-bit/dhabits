@@ -846,21 +846,59 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const resetProgressForHabit = resetUnitsForHabit;
 
   const importBackup = async (file: File): Promise<boolean> => {
+    setIsSyncing(true);
+    logSyncEvent("Импорт бэкапа...", "pending");
     const success = await storage.importBackup(file);
     if (success) {
-      const savedData = storage.getData();
-      setCoins(savedData.coins || 0);
-      const migratedHabits = (savedData.habits || []).map(migrateHabit);
-      setHabits(migratedHabits);
-      setBlocks(savedData.blocks || []);
-      setHabitFolders(savedData.habitFolders || []);
-      setGoals(savedData.goals || []);
-      setGoalFolders(savedData.goalFolders || []);
-      setShopItems(savedData.shopItems || []);
-      setShopFolders(savedData.shopFolders || []);
-      setCharacterState(savedData.characterState || {});
-      setTasks(savedData.tasks || []);
+      const savedData = storage.getData(); // Already has new timestamp from storage.saveData
+      
+      // Silence auto-sync during state update to prevent partial pushes
+      isRemoteUpdateRef.current = true;
+      
+      try {
+        setCoins(savedData.coins || 0);
+        setHabits((savedData.habits || []).map(migrateHabit));
+        setBlocks(savedData.blocks || []);
+        setHabitFolders(savedData.habitFolders || []);
+        setGoals(savedData.goals || []);
+        setGoalFolders(savedData.goalFolders || []);
+        setShopItems(savedData.shopItems || []);
+        setShopFolders(savedData.shopFolders || []);
+        setCharacterState(savedData.characterState || {});
+        setTasks(savedData.tasks || []);
+        
+        // Update local storage again to be absolutely sure timestamp is the newest
+        const finalData: StorageData = {
+          ...savedData,
+          lastUpdated: new Date().toISOString(),
+          clientId: clientIdRef.current
+        };
+        storage.saveData(finalData);
+        
+        // Explicitly push this to cloud right now
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await syncSave(session.user.id, finalData);
+          logSyncEvent("Бэкап успешно применен", "success");
+          toast.success("Бэкап импортирован и сохранен в облаке!");
+        } else {
+          logSyncEvent("Бэкап применен локально", "success");
+          toast.success("Бэкап импортирован локально");
+        }
+      } catch (err: any) {
+        logSyncEvent("Ошибка импорта: " + err.message, "error");
+        toast.error("Ошибка при импорте: " + err.message);
+      } finally {
+        // Wait a bit for React to settle before enabling auto-sync
+        setTimeout(() => {
+          isRemoteUpdateRef.current = false;
+        }, 500);
+      }
+    } else {
+      logSyncEvent("Ошибка чтения файла", "error");
+      toast.error("Не удалось прочитать файл бэкапа");
     }
+    setIsSyncing(false);
     return success;
   };
 
