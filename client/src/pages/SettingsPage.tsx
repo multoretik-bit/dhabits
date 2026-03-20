@@ -130,8 +130,8 @@ export default function SettingsPage() {
               <p className="text-[11px] text-slate-400">
                 Скопируйте этот код и вставьте его в SQL Editor вашего проекта Supabase:
               </p>
-              <pre className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-[10px] text-slate-300 overflow-x-auto font-mono whitespace-pre">
-{`-- Создание таблицы данных пользователя
+              <pre className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-[10px] text-emerald-400 overflow-x-auto font-mono whitespace-pre select-all shadow-inner">
+{`-- 1. Создание таблицы
 create table if not exists public.user_data (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users not null unique,
@@ -139,16 +139,17 @@ create table if not exists public.user_data (
   updated_at timestamp with time zone default now()
 );
 
--- Включение RLS (безопасности)
+-- 2. Включение безопасности
 alter table public.user_data enable row level security;
 
--- Политика доступа: каждый видит только свои данные
+-- 3. Настройка прав доступа (пересоздание политики)
+drop policy if exists "Users can manage their own data" on public.user_data;
 create policy "Users can manage their own data" 
   on public.user_data 
   for all 
   using (auth.uid() = user_id);
 
--- Включение Realtime (обновление в реальном времени)
+-- 4. Включение Realtime
 begin;
   drop publication if exists supabase_realtime;
   create publication supabase_realtime;
