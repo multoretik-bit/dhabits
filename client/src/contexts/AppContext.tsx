@@ -65,8 +65,10 @@ export interface Task {
   blockId?: string;
   daysOfWeek: number[]; // [] = every day
   isAllDay: boolean;
+  color: string;
   completedDates: Record<string, boolean>;
 }
+
 
 export function getCurrentBlock(blocks: HabitBlock[], now: Date): HabitBlock | null {
   const h = now.getHours();
@@ -109,6 +111,7 @@ export interface HabitFolder {
 export interface Goal {
   id: string;
   name: string;
+  emoji: string;
   description: string;
   linkedHabits: string[];
   coins: number;
@@ -124,6 +127,7 @@ export interface Goal {
 export interface GoalFolder {
   id: string;
   name: string;
+  emoji: string;
   color: string;
   collapsed: boolean;
 }
@@ -257,8 +261,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setHabits(migratedHabits);
     setBlocks(savedData.blocks || []);
     setHabitFolders(folders);
+
+    let gFolders = savedData.goalFolders || [];
+    if (!gFolders.find((f: any) => f.id === "general")) {
+      gFolders = [{ id: "general", name: "Общие", emoji: "🏆", color: "#94a3b8", collapsed: false }, ...gFolders];
+    }
     setGoals(savedData.goals || []);
-    setGoalFolders(savedData.goalFolders || []);
+    setGoalFolders(gFolders);
     const savedShopItems = savedData.shopItems;
     if (savedShopItems && savedShopItems.length > 0) {
       const savedIds = new Set(savedShopItems.map((i: ShopItem) => i.id));

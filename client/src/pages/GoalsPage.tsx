@@ -5,8 +5,20 @@ import { useApp, Goal } from "@/contexts/AppContext";
 import FormModal from "@/components/FormModal";
 import { FormInput } from "@/components/FormInputs";
 
+function UnifiedCoinBadge({ coins, color, label }: { coins: number; color: string; label?: string }) {
+  return (
+    <div
+      className="flex-shrink-0 flex flex-col items-center justify-center w-12 h-12 rounded-xl text-center shadow-sm"
+      style={{ backgroundColor: `${color}25`, border: `1px solid ${color}40` }}
+    >
+      <span className="text-[14px] leading-none">🪙</span>
+      <span className="text-[10px] font-bold text-white leading-tight mt-0.5">{coins}{label ? `/${label}` : ''}</span>
+    </div>
+  );
+}
+
 export default function GoalsPage() {
-  const { goals, goalFolders, habits, updateGoal, toggleGoalFolderCollapse } = useApp();
+  const { goals, goalFolders, habits, updateGoal, toggleGoalFolderCollapse, addGoalFolder } = useApp();
 
   // Progress update state
   const [showUpdateProgress, setShowUpdateProgress] = useState(false);
@@ -36,9 +48,9 @@ export default function GoalsPage() {
   };
 
   const renderGoals = (folderGoals: Goal[]) => (
-    <div className="divide-y divide-slate-800/60">
+    <div className="p-3 space-y-3">
       {folderGoals.length === 0 ? (
-        <div className="px-6 py-4 text-slate-500 text-sm">В этой папке нет целей</div>
+        <div className="px-6 py-6 text-slate-600 text-sm text-center italic">В этой папке пока нет целей</div>
       ) : (
         folderGoals.map((goal) => {
           const range = goal.targetValue - goal.startValue;
@@ -52,57 +64,76 @@ export default function GoalsPage() {
           return (
             <div
               key={goal.id}
-              className={`px-5 py-5 border-l-4 transition-all ${goal.completed ? "opacity-60 bg-slate-900/30" : "bg-slate-900/60 hover:bg-slate-800/40"}`}
-              style={{ borderLeftColor: goal.color }}
+              className={`relative overflow-hidden group rounded-3xl border border-slate-800/80 bg-slate-950/40 transition-all ${goal.completed ? "opacity-60" : "hover:bg-slate-900/60"}`}
+              style={{ borderLeft: `4px solid ${goal.color}` }}
             >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h4 className={`font-bold text-slate-200 ${goal.completed ? "line-through text-slate-400" : ""}`}>
-                      {goal.name}
-                    </h4>
-                    {goal.completed && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Выполнено</span>
-                    )}
-                  </div>
-                  {goal.description && (
-                    <p className="text-sm text-slate-400 mb-2">{goal.description}</p>
-                  )}
-                  <div className="flex items-center gap-3 text-xs font-medium text-slate-500 mb-4 flex-wrap">
-                    <span className="bg-slate-800/80 px-2 py-1 rounded-md">💰 {goal.coins}</span>
-                    <span className="bg-slate-800/80 px-2 py-1 rounded-md">📊 {goal.currentValue} / {goal.targetValue}</span>
-                    {linkedHabitNames.length > 0 && (
-                      <span className="bg-slate-800/80 px-2 py-1 rounded-md">🔗 {linkedHabitNames.join(", ")}</span>
-                    )}
-                  </div>
-                  {/* Progress bar */}
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-[11px] font-bold tracking-wide text-slate-400">
-                      <span>{goal.startValue}</span>
-                      <span>{Math.round(clampedProgress)}%</span>
-                      <span>{goal.targetValue}</span>
-                    </div>
-                    <div className="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-700/50">
-                      <div
-                        className="h-full rounded-full transition-all duration-500 ease-out"
-                        style={{
-                          width: `${clampedProgress}%`,
-                          backgroundColor: goal.color,
-                        }}
-                      />
+              {/* Decorative gradient background */}
+              <div 
+                className="absolute inset-0 opacity-[0.03] pointer-events-none group-hover:opacity-[0.06] transition-opacity"
+                style={{ background: `linear-gradient(90deg, ${goal.color} 0%, transparent 100%)` }}
+              />
+
+              <div className="relative z-10 p-4">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <UnifiedCoinBadge coins={goal.coins} color={goal.color} />
+                    <span 
+                      className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl text-xl"
+                      style={{ backgroundColor: `${goal.color}22` }}
+                    >
+                      {goal.emoji || "🎯"}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h4 className={`font-bold text-slate-100 truncate ${goal.completed ? "line-through text-slate-400" : ""}`}>
+                          {goal.name}
+                        </h4>
+                        {goal.completed && (
+                          <span className="text-[9px] font-bold uppercase tracking-widest bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full shrink-0">Завершено</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-500 font-medium truncate uppercase tracking-tight">
+                        {goal.description || "Нет описания"}
+                      </p>
                     </div>
                   </div>
-                </div>
-                <div className="flex flex-shrink-0">
+                  
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                     onClick={() => handleOpenUpdateProgress(goal)}
-                    className="gap-1.5 text-blue-400 border-blue-900 hover:bg-blue-600 hover:text-white rounded-xl shadow-sm"
+                    className="h-10 w-10 flex flex-col items-center justify-center gap-0.5 text-blue-400 hover:bg-blue-400/10 rounded-xl"
                   >
-                    <Target className="w-4 h-4" /> Шаг
+                    <Target className="w-5 h-5" />
+                    <span className="text-[8px] font-bold uppercase">Шаг</span>
                   </Button>
                 </div>
+
+                {/* Progress bar info */}
+                <div className="space-y-2">
+                  <div className="flex justify-between items-end text-[10px] font-bold tracking-wider uppercase">
+                    <span className="text-slate-500">{goal.currentValue} / {goal.targetValue}</span>
+                    <span style={{ color: goal.color }}>{Math.round(clampedProgress)}%</span>
+                  </div>
+                  <div className="w-full bg-slate-900/80 rounded-full h-1.5 overflow-hidden border border-slate-800/40 shadow-inner">
+                    <div
+                      className="h-full rounded-full transition-all duration-700 ease-out"
+                      style={{
+                        width: `${clampedProgress}%`,
+                        backgroundColor: goal.color,
+                        boxShadow: `0 0 8px ${goal.color}66`
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {linkedHabitNames.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-slate-800/40">
+                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                      <span className="opacity-50">🔗</span> {linkedHabitNames.join(", ")}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -115,38 +146,47 @@ export default function GoalsPage() {
   const hasGeneralGoals = generalGoals.length > 0;
 
   return (
-    <div className="px-5 pt-8 pb-4 min-h-full">
+    <div className="px-5 pt-8 pb-32 min-h-full">
       {/* Header */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-extrabold text-white tracking-tight">Цели</h2>
+      <div className="mb-8">
+        <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic flex items-center gap-3">
+          <Target className="w-8 h-8 text-blue-500" />
+          Мои Цели
+        </h2>
+        <p className="text-slate-500 text-xs font-medium mt-1 uppercase tracking-widest">Твой путь к успеху</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* General Goals */}
-        {(hasGeneralGoals || goalFolders.length === 0) && (
-          <div className="bg-slate-900/50 rounded-2xl border border-slate-800/80 overflow-hidden shadow-sm">
-            <div className="bg-slate-800/40 px-5 py-3 border-b border-slate-800/80">
-              <h3 className="text-sm font-bold tracking-wide text-slate-300 uppercase">Общие</h3>
+        {(hasGeneralGoals || goalFolders.length <= 1) && (
+          <div className="bg-slate-900/40 rounded-3xl border border-slate-800/60 overflow-hidden shadow-sm">
+            <div className="bg-slate-800/30 px-5 py-3 border-b border-slate-800/40">
+              <h3 className="text-[11px] font-bold tracking-widest text-slate-400 uppercase flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-slate-500" />
+                🏆 Общие цели
+              </h3>
             </div>
             {renderGoals(generalGoals)}
           </div>
         )}
 
         {/* Custom Folders */}
-        {goalFolders.map((folder) => {
+        {goalFolders.filter(f => f.id !== "general").map((folder) => {
           const folderGoals = goals.filter((g) => g.folder === folder.id);
           return (
-            <div key={folder.id} className="bg-slate-900/50 rounded-2xl border border-slate-800/80 overflow-hidden shadow-sm">
+            <div key={folder.id} className="bg-slate-900/40 rounded-3xl border border-slate-800/60 overflow-hidden shadow-sm">
               <div 
-                className="bg-slate-800/40 px-5 py-3 border-b border-slate-800/80 cursor-pointer flex justify-between items-center transition-colors hover:bg-slate-800/60"
+                className="bg-slate-800/30 px-5 py-3 border-b border-slate-800/40 cursor-pointer flex justify-between items-center transition-colors hover:bg-slate-800/50"
                 onClick={() => toggleGoalFolderCollapse(folder.id)}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: folder.color }} />
-                  <h3 className="text-sm font-bold tracking-wide text-slate-300 uppercase">{folder.name}</h3>
-                  <span className="text-xs font-bold text-slate-500 bg-slate-800/80 px-2 py-0.5 rounded-full">{folderGoals.length}</span>
+                  <div className="w-2.5 h-2.5 rounded-full shadow-sm" style={{ backgroundColor: folder.color }} />
+                  <h3 className="text-[11px] font-bold tracking-widest text-slate-300 uppercase">
+                    {folder.emoji || "🏆"} {folder.name}
+                  </h3>
+                  <span className="text-[10px] font-bold text-slate-500 bg-slate-950/40 px-2 py-0.5 rounded-full border border-slate-800/60">{folderGoals.length}</span>
                 </div>
-                <div className="text-slate-400">
+                <div className="text-slate-500">
                   {folder.collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                 </div>
               </div>
@@ -156,10 +196,14 @@ export default function GoalsPage() {
         })}
 
         {goals.length === 0 && (
-          <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-10 text-center shadow-sm mt-4">
-            <div className="text-5xl mb-4">🎯</div>
-            <h3 className="text-lg font-bold text-slate-200 mb-1">Нет целей</h3>
-            <p className="text-sm text-slate-400">Перейдите во вкладку 'Управление', чтобы поставить первую цель!</p>
+          <div className="bg-slate-900/50 border border-slate-800/80 rounded-3xl p-16 text-center shadow-sm">
+            <div className="w-20 h-20 bg-blue-600/10 border border-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6 scale-110 shadow-2xl">
+              <Target className="w-10 h-10 text-blue-500 animate-pulse" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-100 mb-2">Начни достигать!</h3>
+            <p className="text-sm text-slate-500 leading-relaxed px-4">
+              Поставь свою первую масштабную цель во вкладке <span className="text-blue-400 font-bold">Управление</span> и двигайся к ней каждый день.
+            </p>
           </div>
         )}
       </div>
@@ -170,23 +214,39 @@ export default function GoalsPage() {
         isOpen={showUpdateProgress}
         onClose={() => { setShowUpdateProgress(false); setUpdatingGoalId(null); setProgressValue(""); }}
         onSubmit={handleUpdateProgress}
-        submitText="Обновить"
+        submitText="Записать успех"
       >
         {updatingGoalId && (() => {
           const goal = goals.find((g) => g.id === updatingGoalId);
           if (!goal) return null;
           return (
-            <div className="space-y-4">
-              <div className="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50 text-center">
-                <p className="text-sm font-medium text-slate-400 mb-1">Цель: <span className="text-slate-200 font-bold">{goal.name}</span></p>
-                <p className="text-xs text-slate-500">Осталось: <span className="text-blue-400 font-bold">{goal.targetValue - goal.currentValue}</span></p>
+            <div className="space-y-5">
+              <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-800/60 text-center relative overflow-hidden">
+                 <div className="absolute top-0 right-0 p-4 opacity-5">
+                    <Target className="w-20 h-20" />
+                 </div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Цель достигнута на:</p>
+                <p className="text-xl font-black text-white uppercase tracking-tighter mb-4">{goal.name}</p>
+                
+                <div className="flex justify-center gap-8 mb-2">
+                   <div className="text-center">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-0.5">Текущий</p>
+                      <p className="text-lg font-black text-blue-400 leading-tight">{goal.currentValue}</p>
+                   </div>
+                   <div className="w-px h-8 bg-slate-800/60 mt-2" />
+                   <div className="text-center">
+                      <p className="text-[10px] font-bold text-slate-500 uppercase mb-0.5">Осталось</p>
+                      <p className="text-lg font-black text-slate-300 leading-tight">{Math.max(0, goal.targetValue - goal.currentValue)}</p>
+                   </div>
+                </div>
               </div>
               <FormInput
-                label="Добавить к значению (например, 5)"
+                label="Добавить (например, 5 единиц)"
                 value={progressValue}
                 onChange={setProgressValue}
                 type="number"
                 placeholder="5"
+                autoFocus
               />
             </div>
           );

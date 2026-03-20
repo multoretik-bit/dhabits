@@ -128,21 +128,31 @@ function HabitRow({ habit, dateStr }: { habit: Habit; dateStr: string }) {
 function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
   const { completeTask } = useApp();
   const completed = !!(task.completedDates && task.completedDates[dateStr]);
+  const taskColor = task.color || "#3b82f6";
+
   return (
     <button
       onClick={() => completeTask(task.id, dateStr)}
-      className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all text-left mb-2
-        ${completed ? "bg-slate-900/30 opacity-50 border border-slate-800/40" : "bg-slate-900/60 border border-slate-800/80 shadow-sm hover:border-blue-700/50"}`}
+      className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all text-left mb-2 overflow-hidden border
+        ${completed ? "opacity-60 border-slate-800/40" : "bg-slate-900/60 border-slate-800/80 shadow-sm hover:border-blue-700/50"}`}
+      style={{ 
+        borderLeft: completed ? `3px solid ${taskColor}44` : `3px solid ${taskColor}`,
+        background: completed ? "rgba(15,23,42,0.4)" : `linear-gradient(135deg, ${taskColor}12 0%, rgba(15,23,42,0.6) 100%)`
+      }}
     >
-      <span className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl text-xl bg-slate-800/50">
+      <span 
+        className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl text-xl"
+        style={{ backgroundColor: completed ? "#1e293b" : `${taskColor}22` }}
+      >
         {completed ? <Check className="w-5 h-5 text-slate-500" /> : (task.emoji || "📋")}
       </span>
-      <span className={`flex-1 font-medium text-sm leading-snug ${completed ? "line-through text-slate-500" : "text-slate-200"}`}>
+      <span className={`flex-1 font-bold text-sm leading-snug ${completed ? "line-through text-slate-500" : "text-slate-100"}`}>
         {task.title}
       </span>
     </button>
   );
 }
+
 
 export default function Home() {
   const { habits, tasks, blocks } = useApp();

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Edit2, ChevronDown, ChevronUp, FolderPlus, ListChecks, Target, Layers } from "lucide-react";
+import { Plus, Trash2, Edit2, FolderPlus, ListChecks, Target, Layers, Check } from "lucide-react";
 import { useApp, Habit, HabitFolder, Task, Goal, GoalFolder } from "@/contexts/AppContext";
 import FormModal from "@/components/FormModal";
 import { FormInput, FormCheckbox } from "@/components/FormInputs";
@@ -32,9 +32,23 @@ function DayPicker({ value, onChange }: { value: number[]; onChange: (v: number[
   );
 }
 
+// ─── REUSABLE CARD COMPONENTS ─────────────────────────────────────────────
+
+function UnifiedCoinBadge({ coins, color, label }: { coins: number; color: string; label?: string }) {
+  return (
+    <div
+      className="flex-shrink-0 flex flex-col items-center justify-center w-12 h-12 rounded-xl text-center shadow-sm"
+      style={{ backgroundColor: `${color}25`, border: `1px solid ${color}40` }}
+    >
+      <span className="text-[14px] leading-none">🪙</span>
+      <span className="text-[10px] font-bold text-white leading-tight mt-0.5">{coins}{label ? `/${label}` : ''}</span>
+    </div>
+  );
+}
+
 // ─── HABITS ───────────────────────────────────────────────────────────────
 function HabitsTab() {
-  const { habits, habitFolders, blocks, addHabit, updateHabit, deleteHabit, addHabitFolder, updateHabitFolder, deleteHabitFolder, moveHabitUp, moveHabitDown, moveHabitFolderUp, moveHabitFolderDown } = useApp();
+  const { habits, habitFolders, blocks, addHabit, updateHabit, deleteHabit, addHabitFolder, updateHabitFolder, deleteHabitFolder } = useApp();
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -42,14 +56,19 @@ function HabitsTab() {
   const [showEditFolder, setShowEditFolder] = useState(false);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
 
-  // Form states...
+  // Form states
   const [name, setName] = useState(""); const [emoji, setEmoji] = useState("🎯"); const [color, setColor] = useState("#3b82f6");
   const [folder, setFolder] = useState("general"); const [blockId, setBlockId] = useState("");
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]); const [coins, setCoins] = useState("5");
+  const [initialStreak, setInitialStreak] = useState("0");
   const [unitsTracking, setUnitsTracking] = useState(false); const [progressUnit, setProgressUnit] = useState("units"); const [coinsPerUnit, setCoinsPerUnit] = useState("1");
   const [folderName, setFolderName] = useState(""); const [folderColor, setFolderColor] = useState("#3b82f6"); const [folderEmoji, setFolderEmoji] = useState("📁");
 
-  const resetForm = () => { setName(""); setEmoji("🎯"); setColor("#3b82f6"); setFolder("general"); setBlockId(""); setDays([1, 2, 3, 4, 5]); setCoins("5"); setUnitsTracking(false); setProgressUnit("units"); setCoinsPerUnit("1"); };
+  const resetForm = () => { 
+    setName(""); setEmoji("🎯"); setColor("#3b82f6"); setFolder("general"); 
+    setBlockId(""); setDays([1, 2, 3, 4, 5]); setCoins("5"); setInitialStreak("0");
+    setUnitsTracking(false); setProgressUnit("units"); setCoinsPerUnit("1"); 
+  };
 
   const habitFormContent = (
     <>
@@ -70,8 +89,11 @@ function HabitsTab() {
         </select>
       </div>
       <div className="space-y-2"><label className="text-sm font-medium text-slate-300">Дни недели</label><DayPicker value={days} onChange={setDays} /></div>
-      <FormInput label="Монет за выполнение" value={coins} onChange={setCoins} type="number" />
-      <FormCheckbox label="Отслеживать единицы (км, страниц, подходов...)" checked={unitsTracking} onChange={setUnitsTracking} />
+      <div className="grid grid-cols-2 gap-3">
+        <FormInput label="Монет за вып." value={coins} onChange={setCoins} type="number" />
+        <FormInput label="Начальная серия 🔥" value={initialStreak} onChange={setInitialStreak} type="number" placeholder="0" />
+      </div>
+      <FormCheckbox label="Отслеживать единицы (км, разы...)" checked={unitsTracking} onChange={setUnitsTracking} />
       {unitsTracking && (
         <>
           <FormInput label="Единица измерения" value={progressUnit} onChange={setProgressUnit} placeholder="км, страниц, раз..." />
@@ -80,7 +102,6 @@ function HabitsTab() {
       )}
     </>
   );
-
 
   const folderFormContent = (
     <>
@@ -91,42 +112,63 @@ function HabitsTab() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-20">
       <div className="flex gap-2 justify-end mb-4">
-        <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-slate-800 text-slate-300 hover:bg-slate-800">
+        <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-slate-800 text-slate-300 hover:bg-slate-800 rounded-xl">
           <FolderPlus className="w-4 h-4 mr-2" /> Папка
         </Button>
-        <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+        <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">
           <Plus className="w-4 h-4 mr-2" /> Привычка
         </Button>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-5">
         {habitFolders.map(f => {
           const fHabits = habits.filter(h => h.folder === f.id);
           return (
-            <div key={f.id} className="bg-slate-900/50 rounded-2xl border border-slate-800/80 overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 bg-slate-800/30">
-                <div className="flex items-center gap-2 text-slate-200 font-medium">
-                  {f.emoji || "📁"} {f.name} <span className="text-slate-500 text-sm">({fHabits.length})</span>
+            <div key={f.id} className="bg-slate-900/40 rounded-3xl border border-slate-800/60 overflow-hidden shadow-sm">
+              <div className="flex items-center justify-between px-5 py-3 bg-slate-800/30 border-b border-slate-800/40">
+                <div className="flex items-center gap-3 text-slate-300 font-bold uppercase text-[11px] tracking-wider">
+                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: f.color }} />
+                   {f.emoji || "📁"} {f.name} <span className="text-slate-500 font-medium">({fHabits.length})</span>
                 </div>
                 {f.id !== "general" && (
                   <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => { setEditingFolderId(f.id); setFolderName(f.name); setFolderColor(f.color); setFolderEmoji(f.emoji || "📁"); setShowEditFolder(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) { habits.filter((h) => h.folder === f.id).forEach((h) => updateHabit(h.id, { folder: "general" })); deleteHabitFolder(f.id); } }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => { setEditingFolderId(f.id); setFolderName(f.name); setFolderColor(f.color); setFolderEmoji(f.emoji || "📁"); setShowEditFolder(true); }} className="w-7 h-7 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-3.5 h-3.5" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) { habits.filter((h) => h.folder === f.id).forEach((h) => updateHabit(h.id, { folder: "general" })); deleteHabitFolder(f.id); } }} className="w-7 h-7 text-red-400 hover:bg-red-400/10"><Trash2 className="w-3.5 h-3.5" /></Button>
                   </div>
                 )}
               </div>
-              <div className="divide-y divide-slate-800/50">
+              <div className="p-3 space-y-2">
+                {fHabits.length === 0 && <p className="text-xs text-slate-600 text-center py-4 italic">Пусто</p>}
                 {fHabits.map(h => (
-                  <div key={h.id} className="flex items-center gap-3 px-4 py-3">
-                    <span className="text-2xl">{h.emoji}</span>
+                  <div 
+                    key={h.id} 
+                    className="flex items-center gap-3 p-3 rounded-2xl border border-slate-800/80 bg-slate-950/40"
+                    style={{ borderLeft: `3px solid ${h.color}` }}
+                  >
+                    <UnifiedCoinBadge coins={h.coinsPerComplete} color={h.color} />
+                    <span 
+                      className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl text-xl"
+                      style={{ backgroundColor: `${h.color}22` }}
+                    >
+                      {h.emoji}
+                    </span>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-slate-200 truncate">{h.name}</p>
-                      <p className="text-xs text-slate-500">Дней: {h.daysOfWeek.length} · Монет: {h.coinsPerComplete}</p>
+                      <p className="font-bold text-sm text-slate-100 truncate">{h.name}</p>
+                      <p className="text-[10px] text-slate-500 font-medium tracking-wide">
+                        🔥 {h.streak} · {DAYS_OF_WEEK.filter(d => h.daysOfWeek.includes(d.id)).map(d => d.label).join(", ")}
+                      </p>
                     </div>
                     <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => { setEditingId(h.id); setName(h.name); setEmoji(h.emoji); setColor(h.color); setFolder(h.folder); setBlockId(h.blockId || ""); setDays(h.daysOfWeek); setCoins(String(h.coinsPerComplete)); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => { 
+                        setEditingId(h.id); setName(h.name); setEmoji(h.emoji); setColor(h.color); 
+                        setFolder(h.folder); setBlockId(h.blockId || ""); setDays(h.daysOfWeek); 
+                        setCoins(String(h.coinsPerComplete)); setInitialStreak(String(h.streak));
+                        setUnitsTracking(h.unitsTracking); setProgressUnit(h.progressUnit || "units");
+                        setCoinsPerUnit(String(h.coinsPerUnit || 1));
+                        setShowEdit(true); 
+                      }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteHabit(h.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
                     </div>
                   </div>
@@ -137,8 +179,8 @@ function HabitsTab() {
         })}
       </div>
 
-      <FormModal title="Новая привычка" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addHabit({ id: nanoid(), name, emoji, color, folder, blockId, daysOfWeek: days, streak: 0, coinsPerComplete: Number(coins), completedDates: {}, units: 0, unitsTracking, progressUnit, coinsPerUnit: Number(coinsPerUnit) }); setShowCreate(false); resetForm(); } }} submitText="Создать">{habitFormContent}</FormModal>
-      <FormModal title="Редактировать привычку" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateHabit(editingId, { name, emoji, color, folder, blockId, daysOfWeek: days, coinsPerComplete: Number(coins) }); setShowEdit(false); } }} submitText="Сохранить">{habitFormContent}</FormModal>
+      <FormModal title="Новая привычка" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addHabit({ id: nanoid(), name, emoji, color, folder, blockId, daysOfWeek: days, streak: Number(initialStreak) || 0, coinsPerComplete: Number(coins), completedDates: {}, units: 0, unitsTracking, progressUnit, coinsPerUnit: Number(coinsPerUnit) }); setShowCreate(false); resetForm(); } }} submitText="Создать">{habitFormContent}</FormModal>
+      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateHabit(editingId, { name, emoji, color, folder, blockId, daysOfWeek: days, coinsPerComplete: Number(coins), streak: Number(initialStreak) || 0, unitsTracking, progressUnit, coinsPerUnit: Number(coinsPerUnit) }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{habitFormContent}</FormModal>
       <FormModal title="Новая папка" isOpen={showCreateFolder} onClose={() => { setShowCreateFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (folderName) { addHabitFolder({ id: nanoid(), name: folderName, emoji: folderEmoji, color: folderColor, collapsed: false }); setShowCreateFolder(false); setFolderName(""); } }} submitText="Создать">{folderFormContent}</FormModal>
       <FormModal title="Редактировать папку" isOpen={showEditFolder} onClose={() => { setShowEditFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (editingFolderId && folderName) { updateHabitFolder(editingFolderId, { name: folderName, color: folderColor, emoji: folderEmoji }); setShowEditFolder(false); } }} submitText="Сохранить">{folderFormContent}</FormModal>
     </div>
@@ -153,14 +195,16 @@ function TasksTab() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [title, setTitle] = useState(""); const [emoji, setEmoji] = useState("📋");
-  const [blockId, setBlockId] = useState(""); const [days, setDays] = useState<number[]>([]); const [isAllDay, setIsAllDay] = useState(true);
+  const [color, setColor] = useState("#3b82f6");
+  const [blockId, setBlockId] = useState(""); const [days, setDays] = useState<number[]>([]);
 
-  const resetForm = () => { setTitle(""); setEmoji("📋"); setBlockId(""); setDays([]); setIsAllDay(true); };
+  const resetForm = () => { setTitle(""); setEmoji("📋"); setColor("#3b82f6"); setBlockId(""); setDays([]); };
 
   const taskFormContent = (
     <>
       <FormInput label="Название задачи" value={title} onChange={setTitle} />
       <EmojiPicker label="Эмодзи" value={emoji} onChange={setEmoji} />
+      <div className="space-y-2"><label className="text-sm font-medium text-slate-300">Цвет</label><AdvancedColorPicker value={color} onChange={setColor} /></div>
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-300">Блок</label>
         <select value={blockId} onChange={(e) => setBlockId(e.target.value)} className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-blue-500">
@@ -168,81 +212,141 @@ function TasksTab() {
           {blocks.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
       </div>
-      <div className="space-y-2"><label className="text-sm font-medium text-slate-300">Дни недели (пусто = каждый день)</label><DayPicker value={days} onChange={setDays} /></div>
+      <div className="space-y-2"><label className="text-sm font-medium text-slate-300">Дни недели</label><DayPicker value={days} onChange={setDays} /></div>
     </>
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-20">
       <div className="flex justify-end mb-4">
-        <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+        <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold font-bold">
           <Plus className="w-4 h-4 mr-2" /> Задача
         </Button>
       </div>
       <div className="space-y-3">
         {tasks.map(t => (
-          <div key={t.id} className="flex items-center gap-3 px-4 py-3 bg-slate-900/50 rounded-2xl border border-slate-800/80">
-            <span className="text-2xl">{t.emoji}</span>
+          <div 
+            key={t.id} 
+            className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-2xl border border-slate-800/80"
+            style={{ borderLeft: `3px solid ${t.color || '#3b82f6'}` }}
+          >
+            <span 
+              className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl text-xl"
+              style={{ backgroundColor: `${t.color || '#3b82f6'}22` }}
+            >
+              {t.emoji || "📋"}
+            </span>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-slate-200 truncate">{t.title}</p>
-              <p className="text-xs text-slate-500">{blocks.find(b => b.id === t.blockId)?.name || 'На весь день'}</p>
+              <p className="font-bold text-sm text-slate-200 truncate">{t.title}</p>
+              <p className="text-[10px] text-slate-500 font-medium tracking-wide">
+                {blocks.find(b => b.id === t.blockId)?.name || 'На весь день'}
+              </p>
             </div>
             <div className="flex gap-1">
-              <Button size="icon" variant="ghost" onClick={() => { setEditingId(t.id); setTitle(t.title); setEmoji(t.emoji); setBlockId(t.blockId || ""); setDays(t.daysOfWeek); setIsAllDay(t.isAllDay); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => { setEditingId(t.id); setTitle(t.title); setEmoji(t.emoji); setBlockId(t.blockId || ""); setDays(t.daysOfWeek); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
               <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteTask(t.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
             </div>
           </div>
         ))}
+        {tasks.length === 0 && <p className="text-center py-10 text-slate-600 italic">Нет задач</p>}
       </div>
-      <FormModal title="Новая задача" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (title) { addTask({ id: nanoid(), title, emoji, blockId: blockId || undefined, daysOfWeek: days, isAllDay: !blockId, completedDates: {} }); setShowCreate(false); resetForm(); } }} submitText="Создать">{taskFormContent}</FormModal>
-      <FormModal title="Редактировать задачу" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && title) { updateTask(editingId, { title, emoji, blockId: blockId || undefined, daysOfWeek: days, isAllDay: !blockId }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{taskFormContent}</FormModal>
+      <FormModal title="Новая задача" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (title) { addTask({ id: nanoid(), title, emoji, color, blockId: blockId || undefined, daysOfWeek: days, isAllDay: !blockId, completedDates: {} }); setShowCreate(false); resetForm(); } }} submitText="Создать">{taskFormContent}</FormModal>
+      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && title) { updateTask(editingId, { title, emoji, color, blockId: blockId || undefined, daysOfWeek: days, isAllDay: !blockId }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{taskFormContent}</FormModal>
     </div>
   );
 }
 
 // ─── GOALS ────────────────────────────────────────────────────────────────
 function GoalsTab() {
-  const { goals, addGoal, updateGoal, deleteGoal } = useApp();
+  const { goals, goalFolders, addGoal, updateGoal, deleteGoal, addGoalFolder } = useApp();
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const [name, setName] = useState(""); const [desc, setDesc] = useState(""); const [target, setTarget] = useState("100"); const [color, setColor] = useState("#8b5cf6");
+  const [name, setName] = useState(""); const [desc, setDesc] = useState(""); const [target, setTarget] = useState("100"); 
+  const [color, setColor] = useState("#8b5cf6"); const [emoji, setEmoji] = useState("🎯"); const [folder, setFolder] = useState("general");
+  const [coins, setCoins] = useState("100");
 
-  const resetForm = () => { setName(""); setDesc(""); setTarget("100"); setColor("#8b5cf6"); };
+  const resetForm = () => { setName(""); setDesc(""); setTarget("100"); setColor("#8b5cf6"); setEmoji("🎯"); setFolder("general"); setCoins("100"); };
 
   const goalFormContent = (
     <>
       <FormInput label="Название цели" value={name} onChange={setName} />
-      <FormInput label="Описание (опц.)" value={desc} onChange={setDesc} />
-      <FormInput label="Целевое значение" value={target} onChange={setTarget} type="number" />
+      <EmojiPicker label="Иконка (эмодзи)" value={emoji} onChange={setEmoji} />
       <div className="space-y-2"><label className="text-sm font-medium text-slate-300">Цвет</label><AdvancedColorPicker value={color} onChange={setColor} /></div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-300">Папка</label>
+        <select value={folder} onChange={(e) => setFolder(e.target.value)} className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-blue-500">
+          {goalFolders.map(f => <option key={f.id} value={f.id}>{f.emoji || "🏆"} {f.name}</option>)}
+        </select>
+      </div>
+      <FormInput label="Описание (опционально)" value={desc} onChange={setDesc} />
+      <div className="grid grid-cols-2 gap-3">
+        <FormInput label="Цель (значение)" value={target} onChange={setTarget} type="number" />
+        <FormInput label="Награда (монеты)" value={coins} onChange={setCoins} type="number" />
+      </div>
     </>
   );
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end mb-4">
-        <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+    <div className="space-y-4 pb-20">
+      <div className="flex justify-end gap-2 mb-4">
+        <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold font-bold">
           <Plus className="w-4 h-4 mr-2" /> Цель
         </Button>
       </div>
-      <div className="space-y-3">
-        {goals.map(g => (
-          <div key={g.id} className="flex items-center gap-3 px-4 py-3 bg-slate-900/50 rounded-2xl border border-slate-800/80">
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-slate-200 truncate">{g.name}</p>
-              <p className="text-xs text-slate-500">Прогресс: {g.currentValue} / {g.targetValue}</p>
+      
+      <div className="space-y-5">
+        {goalFolders.map(f => {
+          const fGoals = goals.filter(g => g.folder === f.id);
+          return (
+            <div key={f.id} className="bg-slate-900/40 rounded-3xl border border-slate-800/60 overflow-hidden shadow-sm">
+               <div className="flex items-center justify-between px-5 py-3 bg-slate-800/30 border-b border-slate-800/40">
+                <div className="flex items-center gap-3 text-slate-300 font-bold uppercase text-[11px] tracking-wider">
+                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: f.color }} />
+                   {f.emoji || "🏆"} {f.name} <span className="text-slate-500 font-medium">({fGoals.length})</span>
+                </div>
+              </div>
+              <div className="p-3 space-y-2">
+                {fGoals.length === 0 && <p className="text-xs text-slate-600 text-center py-4 italic">Пусто</p>}
+                {fGoals.map(g => (
+                  <div 
+                    key={g.id} 
+                    className="flex items-center gap-3 p-3 rounded-2xl border border-slate-800/80 bg-slate-950/40"
+                    style={{ borderLeft: `3px solid ${g.color}` }}
+                  >
+                    <UnifiedCoinBadge coins={g.coins} color={g.color} />
+                    <span 
+                      className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl text-xl"
+                      style={{ backgroundColor: `${g.color}22` }}
+                    >
+                      {g.emoji}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-slate-100 truncate">{g.name}</p>
+                      <p className="text-[10px] text-slate-500 font-medium tracking-wide">
+                        Цель: {g.targetValue} · Сейчас: {g.currentValue}
+                      </p>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button size="icon" variant="ghost" onClick={() => { 
+                        setEditingId(g.id); setName(g.name); setEmoji(g.emoji); setColor(g.color); 
+                        setDesc(g.description); setTarget(String(g.targetValue)); setFolder(g.folder);
+                        setCoins(String(g.coins));
+                        setShowEdit(true); 
+                      }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteGoal(g.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-1">
-              <Button size="icon" variant="ghost" onClick={() => { setEditingId(g.id); setName(g.name); setDesc(g.description); setTarget(String(g.targetValue)); setColor(g.color); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
-              <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteGoal(g.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-      <FormModal title="Новая цель" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addGoal({ id: nanoid(), name, description: desc, linkedHabits: [], coins: 100, streak: 0, folder: "general", completed: false, startValue: 0, targetValue: Number(target), currentValue: 0, color }); setShowCreate(false); resetForm(); } }} submitText="Создать">{goalFormContent}</FormModal>
-      <FormModal title="Редактировать цель" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateGoal(editingId, { name, description: desc, targetValue: Number(target), color }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{goalFormContent}</FormModal>
+
+      <FormModal title="Новая цель" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addGoal({ id: nanoid(), name, emoji, description: desc, linkedHabits: [], coins: Number(coins), streak: 0, folder, completed: false, startValue: 0, targetValue: Number(target), currentValue: 0, color }); setShowCreate(false); resetForm(); } }} submitText="Создать">{goalFormContent}</FormModal>
+      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateGoal(editingId, { name, emoji, description: desc, targetValue: Number(target), color, folder, coins: Number(coins) }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{goalFormContent}</FormModal>
     </div>
   );
 }
@@ -275,18 +379,21 @@ function BlocksTab() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-20">
       <div className="flex justify-end mb-4">
-        <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+        <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold font-bold font-bold">
           <Plus className="w-4 h-4 mr-2" /> Блок
         </Button>
       </div>
       <div className="space-y-3">
         {blocks.map(b => (
-          <div key={b.id} className="flex items-center gap-3 px-4 py-3 bg-slate-900/50 rounded-2xl border border-slate-800/80">
+          <div key={b.id} className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-2xl border border-slate-800/80">
+            <div className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl bg-slate-800/50">
+              <Layers className="w-5 h-5 text-slate-400" />
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm text-slate-200 truncate">{b.name}</p>
-              <p className="text-xs text-slate-500">{b.startTime} - {b.endTime}</p>
+              <p className="font-bold text-sm text-slate-200 truncate">{b.name}</p>
+              <p className="text-[10px] text-slate-500 font-medium tracking-wide">{b.startTime} - {b.endTime}</p>
             </div>
             <div className="flex gap-1">
               <Button size="icon" variant="ghost" onClick={() => { setEditingId(b.id); setName(b.name); setStartTime(b.startTime||""); setEndTime(b.endTime||""); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
@@ -294,9 +401,10 @@ function BlocksTab() {
             </div>
           </div>
         ))}
+        {blocks.length === 0 && <p className="text-center py-10 text-slate-600 italic">Нет блоков</p>}
       </div>
       <FormModal title="Новый блок" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addBlock({ id: nanoid(), name, habits: [], collapsed: false, startTime, endTime }); setShowCreate(false); resetForm(); } }} submitText="Создать">{blockFormContent}</FormModal>
-      <FormModal title="Редактировать блок" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateBlock(editingId, { name, startTime, endTime }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{blockFormContent}</FormModal>
+      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateBlock(editingId, { name, startTime, endTime }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{blockFormContent}</FormModal>
     </div>
   );
 }
@@ -307,7 +415,7 @@ export default function AddPage() {
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: "habits", label: "Привычки", icon: <ListChecks className="w-4 h-4" /> },
-    { key: "tasks", label: "Задачи", icon: <ListChecks className="w-4 h-4" /> },
+    { key: "tasks", label: "Задачи", icon: <Plus className="w-4 h-4" /> },
     { key: "goals", label: "Цели", icon: <Target className="w-4 h-4" /> },
     { key: "blocks", label: "Блоки", icon: <Layers className="w-4 h-4" /> },
   ];
@@ -330,10 +438,12 @@ export default function AddPage() {
         ))}
       </div>
 
-      {tab === "habits" && <HabitsTab />}
-      {tab === "tasks" && <TasksTab />}
-      {tab === "goals" && <GoalsTab />}
-      {tab === "blocks" && <BlocksTab />}
+      <div className="pb-10">
+        {tab === "habits" && <HabitsTab />}
+        {tab === "tasks" && <TasksTab />}
+        {tab === "goals" && <GoalsTab />}
+        {tab === "blocks" && <BlocksTab />}
+      </div>
     </div>
   );
 }
