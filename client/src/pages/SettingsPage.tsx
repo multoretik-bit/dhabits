@@ -159,7 +159,7 @@ alter publication supabase_realtime add table user_data;`}
             </div>
           )}
 
-          <div className="pt-2">
+          <div className="pt-2 space-y-4">
             <Button 
               onClick={forceSyncFromCloud} 
               disabled={isSyncing}
@@ -169,6 +169,34 @@ alter publication supabase_realtime add table user_data;`}
               <RefreshCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
               Принудительно загрузить из облака
             </Button>
+            
+            <div className="space-y-2">
+              <h4 className="text-[10px] text-slate-500 font-bold uppercase tracking-wider ml-1">Журнал синхронизации</h4>
+              <div className="bg-slate-950/50 rounded-xl border border-slate-800/50 divide-y divide-slate-800/30 overflow-hidden">
+                {useApp().syncLogs.length === 0 ? (
+                  <div className="p-3 text-center text-[10px] text-slate-600 italic">Событий пока нет...</div>
+                ) : (
+                  useApp().syncLogs.map((log, i) => (
+                    <div key={i} className="p-2.5 flex justify-between items-center text-[10px]">
+                      <div className="flex items-center gap-2 text-slate-300">
+                        <span className="text-slate-500 font-mono">{log.time}</span>
+                        <span className={
+                          log.status === 'success' ? "text-emerald-400" :
+                          log.status === 'error' ? "text-red-400" :
+                          "text-blue-400 animate-pulse"
+                        }>{log.event}</span>
+                      </div>
+                      <div className={`w-1.5 h-1.5 rounded-full ${
+                        log.status === 'success' ? "bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]" :
+                        log.status === 'error' ? "bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]" :
+                        "bg-blue-500 animate-pulse"
+                      }`} />
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
             <p className="text-[10px] text-slate-500 text-center mt-2">
               (Внимание: сотрет текущие данные на ЭТОМ устройстве и заменит их на облачные)
             </p>

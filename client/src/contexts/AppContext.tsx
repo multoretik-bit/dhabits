@@ -227,6 +227,7 @@ interface AppContextType {
   moveTaskDown: (taskId: string) => void;
   isSyncing: boolean;
   isOnline: boolean;
+  syncLogs: {time: string, event: string, status: 'success' | 'error' | 'pending'}[];
   syncWithCloud: () => Promise<void>;
   forceSyncFromCloud: () => Promise<void>;
 }
@@ -257,6 +258,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
+  const [syncLogs, setSyncLogs] = useState<{time: string, event: string, status: 'success' | 'error' | 'pending'}[]>([]);
+
+  const logSyncEvent = (event: string, status: 'success' | 'error' | 'pending') => {
+    setSyncLogs(prev => [{ time: new Date().toLocaleTimeString(), event, status }, ...prev].slice(0, 10));
+  };
   
   // Refs for sync management
   const isInitialLoadRef = React.useRef(true);
@@ -430,14 +436,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       };
       
       console.log("Sync: Sending auto-update to cloud (origin:", clientIdRef.current, ")");
-      storage.saveData(data);
-      await syncSave(session.user.id, data);
-    }, 100); // Super-fast 100ms debounce
+      logSyncEvent("Авто-сохранение...", "pending");
+      
+      try {
+        storage.saveData(data);
+        await syncSave(session.user.id, data);
+        logSyncEvent("Сохранено в облаке", "success");
+        setIsSyncing(false);
+      } catch (err) {
+        logSyncEvent("Ошибка сохранения: " + (err as any).message, "error");
+        setIsSyncing(false);
+      }
+    }, 100); 
 
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     };
   }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks]);
+
+  // Handle mobile wake/focus
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log("Sync: Window focused, checking sync...");
+      syncWithCloud();
+    };
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('online', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('online', handleFocus);
+    };
+  }, []);
 
   const forceSyncFromCloud = async () => {
     setIsSyncing(true);
@@ -1029,7 +1058,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isSyncing,
         syncWithCloud,
         forceSyncFromCloud,
-        isOnline
+        isOnline,
+        syncLogs
       }}
     >
       {children}
