@@ -1,7 +1,9 @@
 import { Link, useLocation } from "wouter";
-import { Home, Target, PlusCircle, ShoppingCart } from "lucide-react";
+import { Home, Target, PlusCircle, ShoppingCart, LogOut } from "lucide-react";
 import CoinDisplay from "./CoinDisplay";
 import { useApp } from "@/contexts/AppContext";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 const navItems = [
   { path: "/", label: "Сегодня", icon: Home },
@@ -12,18 +14,34 @@ const navItems = [
 
 interface MainLayoutProps {
   children: React.ReactNode;
+  onSignOut: () => void;
 }
 
-export default function MainLayout({ children }: MainLayoutProps) {
+export default function MainLayout({ children, onSignOut }: MainLayoutProps) {
   const [location] = useLocation();
   const { coins } = useApp();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    toast.success("Вы вышли из аккаунта");
+    onSignOut();
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <header className="sticky top-0 z-20 bg-[#060c1c]/90 backdrop-blur-md border-b border-blue-900/40 flex items-center justify-between px-4 py-4 shadow-sm">
         <span className="font-extrabold text-xl text-blue-50 tracking-tight">dHabits</span>
-        <div className="flex items-center gap-1.5 bg-blue-950/50 border border-blue-900/60 px-3 py-1.5 rounded-full shadow-inner">
-          <CoinDisplay amount={coins} size="sm" showLabel={true} />
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 bg-blue-950/50 border border-blue-900/60 px-3 py-1.5 rounded-full shadow-inner">
+            <CoinDisplay amount={coins} size="sm" showLabel={true} />
+          </div>
+          <button
+            onClick={handleSignOut}
+            title="Выйти из аккаунта"
+            className="flex items-center justify-center w-8 h-8 rounded-full text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-all"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </header>
 

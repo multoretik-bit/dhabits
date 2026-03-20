@@ -17,9 +17,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 import { User } from "@supabase/supabase-js";
 
-function Router() {
+function Router({ onSignOut }: { onSignOut: () => void }) {
   return (
-    <MainLayout>
+    <MainLayout onSignOut={onSignOut}>
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/add" component={AddPage} />
@@ -37,12 +37,10 @@ function Router() {
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [skipAuth, setSkipAuth] = useState(() => localStorage.getItem("skipAuth") === "true");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) setSkipAuth(true); // Don't show login if logged in
       setLoading(false);
     });
 
@@ -50,22 +48,27 @@ function App() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) setSkipAuth(true);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  if (loading) return null;
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
 
-  if (!user && !skipAuth) {
+  if (loading) return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  if (!user) {
     return (
       <ThemeProvider defaultTheme="dark">
         <Toaster />
-        <AuthPage onLogin={() => {
-          setSkipAuth(true);
-          localStorage.setItem("skipAuth", "true");
-        }} />
+        <AuthPage onLogin={() => {}} />
       </ThemeProvider>
     );
   }
@@ -76,7 +79,7 @@ function App() {
         <AppProvider>
           <TooltipProvider>
             <Toaster />
-            <Router />
+            <Router onSignOut={handleSignOut} />
           </TooltipProvider>
         </AppProvider>
       </ThemeProvider>
