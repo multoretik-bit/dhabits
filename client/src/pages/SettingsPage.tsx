@@ -1,7 +1,8 @@
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Upload, Trash2 } from "lucide-react";
+import { Download, Upload, Trash2, RefreshCw, Cloud } from "lucide-react";
 import { useApp } from "@/contexts/AppContext";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
   const { exportBackup, importBackup } = useApp();
@@ -25,9 +26,46 @@ export default function SettingsPage() {
     }
   };
 
+  const { isSyncing, syncWithCloud } = useApp();
+
+  const handleSync = async () => {
+    try {
+      await syncWithCloud();
+      toast.success("Данные синхронизированы!");
+    } catch (err) {
+      toast.error("Ошибка синхронизации. Проверь интернет.");
+    }
+  };
+
   return (
-    <div className="p-6 space-y-8">
-      <h2 className="text-3xl font-bold text-foreground">Settings</h2>
+    <div className="p-6 space-y-8 max-w-2xl mx-auto pb-24">
+      <h2 className="text-3xl font-bold text-foreground">Настройки</h2>
+
+      {/* Cloud Sync */}
+      <div className="bg-card border border-border rounded-xl p-6 space-y-5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-500/10 rounded-lg">
+            <Cloud className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">Облачная синхронизация</h3>
+            <p className="text-muted-foreground text-xs">Подключите все устройства к вашему аккаунту</p>
+          </div>
+        </div>
+        
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Ваши данные автоматически сохраняются в облаке. Если вы зашли с нового устройства, нажмите кнопку ниже, чтобы загрузить последние изменения.
+        </p>
+
+        <Button 
+          onClick={handleSync} 
+          disabled={isSyncing}
+          className="w-full gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-6 rounded-xl transition-all active:scale-[0.98]"
+        >
+          <RefreshCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
+          {isSyncing ? "Синхронизация..." : "Синхронизировать сейчас"}
+        </Button>
+      </div>
 
       {/* Data Management */}
       <div className="bg-card border border-border rounded-lg p-6 space-y-4">

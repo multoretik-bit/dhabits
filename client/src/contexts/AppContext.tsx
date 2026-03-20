@@ -224,6 +224,8 @@ interface AppContextType {
   isTaskCompletedToday: (task: Task) => boolean;
   moveTaskUp: (taskId: string) => void;
   moveTaskDown: (taskId: string) => void;
+  isSyncing: boolean;
+  syncWithCloud: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -250,6 +252,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [shopFolders, setShopFolders] = useState<ShopFolder[]>([]);
   const [characterState, setCharacterState] = useState<CharacterState>({});
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     const savedData = storage.getData();
@@ -282,27 +285,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCharacterState(savedData.characterState || {});
     setTasks(savedData.tasks || []);
 
-    // Fetch remote data and override if newer
+    // Initial cloud sync
+    setIsSyncing(true);
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        const remoteData = await syncLoad(session.user.id) as any;
-        if (remoteData) {
-          const localLastUpdated = savedData.lastUpdated || 0;
-          if (remoteData.lastUpdated && new Date(remoteData.lastUpdated) > new Date(localLastUpdated)) {
-            setCoins(remoteData.coins || 0);
-            setHabits((remoteData.habits || []).map(migrateHabit));
-            setBlocks(remoteData.blocks || []);
-            setHabitFolders(remoteData.habitFolders || []);
-            setGoals(remoteData.goals || []);
-            setGoalFolders(remoteData.goalFolders || []);
-            setShopItems(remoteData.shopItems || []);
-            setShopFolders(remoteData.shopFolders || []);
-            setCharacterState(remoteData.characterState || {});
-            setTasks(remoteData.tasks || []);
-            storage.saveData(remoteData);
+        try {
+          const remoteData = await syncLoad(session.user.id) as any;
+          if (remoteData) {
+            const localLastUpdated = savedData.lastUpdated || 0;
+            const remoteLastUpdated = remoteData.lastUpdated || 0;
+            
+            // If remote is newer OR local is effectively empty/new
+            const isLocalEmpty = !savedData.habits?.length && !savedData.tasks?.length && (savedData.coins || 0) === 0;
+            
+            if (isLocalEmpty || (remoteLastUpdated && new Date(remoteLastUpdated) > new Date(localLastUpdated))) {
+              console.log("Applying remote data", remoteData);
+              setCoins(remoteData.coins || 0);
+              setHabits((remoteData.habits || []).map(migrateHabit));
+              setBlocks(remoteData.blocks || []);
+              setHabitFolders(remoteData.habitFolders || []);
+              setGoals(remoteData.goals || []);
+              setGoalFolders(remoteData.goalFolders || []);
+              setShopItems(remoteData.shopItems || []);
+              setShopFolders(remoteData.shopFolders || []);
+              setCharacterState(remoteData.characterState || {});
+              setTasks(remoteData.tasks || []);
+              storage.saveData(remoteData);
+            }
           }
+        } catch (err) {
+          console.error("Initial sync fetch failed", err);
         }
       }
+      setIsSyncing(false);
     });
   }, []);
 
@@ -342,12 +357,43 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       lastUpdated: new Date().toISOString(),
     };
     storage.saveData(dataObj);
+    
+    // Skip remote save if we are currently downloading remote data
+    if (isSyncing) return;
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
         await syncSave(session.user.id, dataObj);
       }
     });
+  };
+
+  const syncWithCloud = async () => {
+    setIsSyncing(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      
+      const remoteData = await syncLoad(session.user.id) as any;
+      if (remoteData) {
+        setCoins(remoteData.coins || 0);
+        setHabits((remoteData.habits || []).map(migrateHabit));
+        setBlocks(remoteData.blocks || []);
+        setHabitFolders(remoteData.habitFolders || []);
+        setGoals(remoteData.goals || []);
+        setGoalFolders(remoteData.goalFolders || []);
+        setShopItems(remoteData.shopItems || []);
+        setShopFolders(remoteData.shopFolders || []);
+        setCharacterState(remoteData.characterState || {});
+        setTasks(remoteData.tasks || []);
+        storage.saveData(remoteData);
+      }
+    } catch (err) {
+      console.error("Manual sync failed", err);
+      throw err;
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const addCoins = (amount: number) => {
@@ -839,6 +885,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isTaskCompletedToday,
         moveTaskUp,
         moveTaskDown,
+        isSyncing,
+        syncWithCloud,
       }}
     >
       {children}
