@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Home, Target, PlusCircle, ShoppingCart, LogOut, Settings } from "lucide-react";
+import { Home, Target, PlusCircle, ShoppingCart, LogOut, Settings, Cloud } from "lucide-react";
 import CoinDisplay from "./CoinDisplay";
 import { useApp } from "@/contexts/AppContext";
 import { supabase } from "@/lib/supabase";
@@ -19,7 +19,7 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children, onSignOut }: MainLayoutProps) {
   const [location] = useLocation();
-  const { coins } = useApp();
+  const { coins, isSyncing } = useApp();
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -32,8 +32,11 @@ export default function MainLayout({ children, onSignOut }: MainLayoutProps) {
       <header className="sticky top-0 z-20 bg-[#060c1c]/90 backdrop-blur-md border-b border-blue-900/40 flex items-center justify-between px-4 py-4 shadow-sm">
         <span className="font-extrabold text-xl text-blue-50 tracking-tight">dHabits</span>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-blue-950/40 border border-blue-900/40 px-3 py-1.5 rounded-full shadow-inner mr-1">
+          <div className="flex items-center gap-2 bg-blue-950/40 border border-blue-900/40 px-3 py-1.5 rounded-full shadow-inner mr-1">
             <CoinDisplay amount={coins} size="sm" showLabel={true} />
+            <div className={`transition-all duration-500 ${isSyncing ? "opacity-100 scale-100" : "opacity-30 scale-90"}`}>
+              <Cloud className={`w-3.5 h-3.5 ${isSyncing ? "text-blue-400 animate-pulse" : "text-slate-500"}`} />
+            </div>
           </div>
           <Link href="/settings">
             <button
