@@ -70,9 +70,17 @@ function HabitsTab() {
         </select>
       </div>
       <div className="space-y-2"><label className="text-sm font-medium text-slate-300">Дни недели</label><DayPicker value={days} onChange={setDays} /></div>
-      <FormInput label="Монет" value={coins} onChange={setCoins} type="number" />
+      <FormInput label="Монет за выполнение" value={coins} onChange={setCoins} type="number" />
+      <FormCheckbox label="Отслеживать единицы (км, страниц, подходов...)" checked={unitsTracking} onChange={setUnitsTracking} />
+      {unitsTracking && (
+        <>
+          <FormInput label="Единица измерения" value={progressUnit} onChange={setProgressUnit} placeholder="км, страниц, раз..." />
+          <FormInput label="Монет за единицу" value={coinsPerUnit} onChange={setCoinsPerUnit} type="number" placeholder="1" />
+        </>
+      )}
     </>
   );
+
 
   const folderFormContent = (
     <>
