@@ -139,23 +139,23 @@ export default function SettingsPage() {
                 Скопируйте этот код и вставьте его в SQL Editor вашего проекта Supabase:
               </p>
               <pre className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-[10px] text-emerald-400 overflow-x-auto font-mono whitespace-pre select-all shadow-inner">
-{`-- 1. Создание таблицы
-create table if not exists public.user_data (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users not null unique,
-  data jsonb not null default '{}'::jsonb,
-  updated_at timestamp with time zone default now()
-);
+{`-- 1. Исправление прав (ОБЯЗАТЕЛЬНО)
+grant all on table public.user_data to authenticated;
+grant all on table public.user_data to postgres;
+grant all on table public.user_data to service_role;
 
--- 2. Включение безопасности
+-- 2. Включаем RLS
 alter table public.user_data enable row level security;
 
--- 3. Настройка прав доступа (пересоздание политики)
+-- 3. Настройка политики (Удаляем старую и создаем новую)
 drop policy if exists "Users can manage their own data" on public.user_data;
+
 create policy "Users can manage their own data" 
   on public.user_data 
   for all 
-  using (auth.uid() = user_id);
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
 -- 4. Включение Realtime
 begin;
