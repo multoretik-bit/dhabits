@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useApp, Habit, Task, getCurrentBlock, getTodayDateString } from "@/contexts/AppContext";
 import { Clock, Check, Plus, Minus, ArrowUp, ArrowDown } from "lucide-react";
 import { motion } from "framer-motion";
+import HabitUnitTracker from "@/components/HabitUnitTracker";
 
 function formatTime(t: string | undefined) {
   return t || "--:--";
@@ -20,41 +21,6 @@ function StreakFlames({ streak }: { streak: number }) {
     <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 w-fit">
       <span className="text-[12px]">🔥</span>
       <span className="text-[11px] font-bold text-orange-400">{streak}</span>
-    </div>
-  );
-}
-
-// Unit progress modal/inline
-function UnitTracker({ habit, dateStr }: { habit: Habit; dateStr: string }) {
-  const { addUnitsToHabit } = useApp();
-  const [amount, setAmount] = useState(1);
-
-  return (
-    <div
-      onClick={(e) => e.stopPropagation()}
-      className="flex items-center gap-1.5 mt-2 bg-slate-900/70 rounded-xl px-2 py-1.5 border border-slate-700/50"
-    >
-      <span className="text-xs text-slate-400">{habit.progressUnit || "шт"}</span>
-      <button
-        onClick={() => setAmount(Math.max(1, amount - 1))}
-        className="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-white hover:bg-slate-600"
-      >
-        <Minus className="w-3 h-3" />
-      </button>
-      <span className="text-xs text-white font-bold w-5 text-center">{amount}</span>
-      <button
-        onClick={() => setAmount(amount + 1)}
-        className="w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-white hover:bg-slate-600"
-      >
-        <Plus className="w-3 h-3" />
-      </button>
-      <button
-        onClick={() => addUnitsToHabit(habit.id, amount)}
-        className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-lg text-white"
-        style={{ backgroundColor: habit.color }}
-      >
-        +{amount}
-      </button>
     </div>
   );
 }
@@ -127,7 +93,7 @@ function HabitRow({ habit, dateStr }: { habit: Habit; dateStr: string }) {
       {/* Unit tracker (shown when not completed) */}
       {habit.unitsTracking && !completed && (
         <div className="px-3 pb-3">
-          <UnitTracker habit={habit} dateStr={dateStr} />
+          <HabitUnitTracker habit={habit} />
         </div>
       )}
     </div>

@@ -6,6 +6,7 @@ import FormModal from "@/components/FormModal";
 import { FormInput, FormCheckbox } from "@/components/FormInputs";
 import EmojiPicker from "@/components/EmojiPicker";
 import AdvancedColorPicker from "@/components/AdvancedColorPicker";
+import HabitUnitTracker from "@/components/HabitUnitTracker";
 import { nanoid } from "nanoid";
 
 const DAYS_OF_WEEK = [
@@ -222,6 +223,11 @@ function HabitsTab() {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm text-foreground truncate">{h.name}</p>
                         <p className="text-xs text-muted-foreground">🔥 {h.streak} · {DAYS_OF_WEEK.filter((d) => h.daysOfWeek.includes(d.id)).map((d) => d.label).join(", ")}</p>
+                        {h.unitsTracking && (
+                          <div className="mt-2 max-w-xs">
+                            <HabitUnitTracker habit={h} />
+                          </div>
+                        )}
                       </div>
                       <div className="flex gap-1">
                         <Button size="sm" variant="ghost" onClick={() => moveHabitUp(h.id)} className="text-muted-foreground w-7 h-7 p-0"><ChevronUp className="w-3 h-3" /></Button>
