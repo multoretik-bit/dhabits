@@ -51,7 +51,7 @@ function HabitsTab() {
 
   const resetForm = () => { setName(""); setEmoji("🎯"); setColor("#3b82f6"); setFolder("general"); setBlockId(""); setDays([1, 2, 3, 4, 5]); setCoins("5"); setUnitsTracking(false); setProgressUnit("units"); setCoinsPerUnit("1"); };
 
-  const HabitForm = () => (
+  const habitFormContent = (
     <>
       <FormInput label="Название" value={name} onChange={setName} placeholder="Утренняя пробежка" />
       <EmojiPicker label="Эмодзи" value={emoji} onChange={setEmoji} />
@@ -74,7 +74,7 @@ function HabitsTab() {
     </>
   );
 
-  const FolderForm = () => (
+  const folderFormContent = (
     <>
       <FormInput label="Название папки" value={folderName} onChange={setFolderName} placeholder="Здоровье" />
       <EmojiPicker label="Эмодзи" value={folderEmoji} onChange={setFolderEmoji} />
@@ -129,10 +129,10 @@ function HabitsTab() {
         })}
       </div>
 
-      <FormModal title="Новая привычка" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addHabit({ id: nanoid(), name, emoji, color, folder, blockId, daysOfWeek: days, streak: 0, coinsPerComplete: Number(coins), completedDates: {}, units: 0, unitsTracking, progressUnit, coinsPerUnit: Number(coinsPerUnit) }); setShowCreate(false); resetForm(); } }} submitText="Создать"><HabitForm /></FormModal>
-      <FormModal title="Редактировать привычку" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateHabit(editingId, { name, emoji, color, folder, blockId, daysOfWeek: days, coinsPerComplete: Number(coins) }); setShowEdit(false); } }} submitText="Сохранить"><HabitForm /></FormModal>
-      <FormModal title="Новая папка" isOpen={showCreateFolder} onClose={() => { setShowCreateFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (folderName) { addHabitFolder({ id: nanoid(), name: folderName, emoji: folderEmoji, color: folderColor, collapsed: false }); setShowCreateFolder(false); setFolderName(""); } }} submitText="Создать"><FolderForm /></FormModal>
-      <FormModal title="Редактировать папку" isOpen={showEditFolder} onClose={() => { setShowEditFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (editingFolderId && folderName) { updateHabitFolder(editingFolderId, { name: folderName, color: folderColor, emoji: folderEmoji }); setShowEditFolder(false); } }} submitText="Сохранить"><FolderForm /></FormModal>
+      <FormModal title="Новая привычка" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addHabit({ id: nanoid(), name, emoji, color, folder, blockId, daysOfWeek: days, streak: 0, coinsPerComplete: Number(coins), completedDates: {}, units: 0, unitsTracking, progressUnit, coinsPerUnit: Number(coinsPerUnit) }); setShowCreate(false); resetForm(); } }} submitText="Создать">{habitFormContent}</FormModal>
+      <FormModal title="Редактировать привычку" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateHabit(editingId, { name, emoji, color, folder, blockId, daysOfWeek: days, coinsPerComplete: Number(coins) }); setShowEdit(false); } }} submitText="Сохранить">{habitFormContent}</FormModal>
+      <FormModal title="Новая папка" isOpen={showCreateFolder} onClose={() => { setShowCreateFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (folderName) { addHabitFolder({ id: nanoid(), name: folderName, emoji: folderEmoji, color: folderColor, collapsed: false }); setShowCreateFolder(false); setFolderName(""); } }} submitText="Создать">{folderFormContent}</FormModal>
+      <FormModal title="Редактировать папку" isOpen={showEditFolder} onClose={() => { setShowEditFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (editingFolderId && folderName) { updateHabitFolder(editingFolderId, { name: folderName, color: folderColor, emoji: folderEmoji }); setShowEditFolder(false); } }} submitText="Сохранить">{folderFormContent}</FormModal>
     </div>
   );
 }
@@ -149,7 +149,7 @@ function TasksTab() {
 
   const resetForm = () => { setTitle(""); setEmoji("📋"); setBlockId(""); setDays([]); setIsAllDay(true); };
 
-  const TaskForm = () => (
+  const taskFormContent = (
     <>
       <FormInput label="Название задачи" value={title} onChange={setTitle} />
       <EmojiPicker label="Эмодзи" value={emoji} onChange={setEmoji} />
@@ -186,8 +186,8 @@ function TasksTab() {
           </div>
         ))}
       </div>
-      <FormModal title="Новая задача" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (title) { addTask({ id: nanoid(), title, emoji, blockId: blockId || undefined, daysOfWeek: days, isAllDay: !blockId, completedDates: {} }); setShowCreate(false); resetForm(); } }} submitText="Создать"><TaskForm /></FormModal>
-      <FormModal title="Редактировать задачу" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && title) { updateTask(editingId, { title, emoji, blockId: blockId || undefined, daysOfWeek: days, isAllDay: !blockId }); setShowEdit(false); resetForm(); } }} submitText="Сохранить"><TaskForm /></FormModal>
+      <FormModal title="Новая задача" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (title) { addTask({ id: nanoid(), title, emoji, blockId: blockId || undefined, daysOfWeek: days, isAllDay: !blockId, completedDates: {} }); setShowCreate(false); resetForm(); } }} submitText="Создать">{taskFormContent}</FormModal>
+      <FormModal title="Редактировать задачу" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && title) { updateTask(editingId, { title, emoji, blockId: blockId || undefined, daysOfWeek: days, isAllDay: !blockId }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{taskFormContent}</FormModal>
     </div>
   );
 }
@@ -203,7 +203,7 @@ function GoalsTab() {
 
   const resetForm = () => { setName(""); setDesc(""); setTarget("100"); setColor("#8b5cf6"); };
 
-  const GoalForm = () => (
+  const goalFormContent = (
     <>
       <FormInput label="Название цели" value={name} onChange={setName} />
       <FormInput label="Описание (опц.)" value={desc} onChange={setDesc} />
@@ -233,8 +233,8 @@ function GoalsTab() {
           </div>
         ))}
       </div>
-      <FormModal title="Новая цель" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addGoal({ id: nanoid(), name, description: desc, linkedHabits: [], coins: 100, streak: 0, folder: "general", completed: false, startValue: 0, targetValue: Number(target), currentValue: 0, color }); setShowCreate(false); resetForm(); } }} submitText="Создать"><GoalForm /></FormModal>
-      <FormModal title="Редактировать цель" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateGoal(editingId, { name, description: desc, targetValue: Number(target), color }); setShowEdit(false); resetForm(); } }} submitText="Сохранить"><GoalForm /></FormModal>
+      <FormModal title="Новая цель" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addGoal({ id: nanoid(), name, description: desc, linkedHabits: [], coins: 100, streak: 0, folder: "general", completed: false, startValue: 0, targetValue: Number(target), currentValue: 0, color }); setShowCreate(false); resetForm(); } }} submitText="Создать">{goalFormContent}</FormModal>
+      <FormModal title="Редактировать цель" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateGoal(editingId, { name, description: desc, targetValue: Number(target), color }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{goalFormContent}</FormModal>
     </div>
   );
 }
@@ -250,7 +250,7 @@ function BlocksTab() {
 
   const resetForm = () => { setName(""); setStartTime("09:00"); setEndTime("10:00"); };
 
-  const BlockForm = () => (
+  const blockFormContent = (
     <>
       <FormInput label="Название блока" value={name} onChange={setName} />
       <div className="grid grid-cols-2 gap-3">
@@ -287,8 +287,8 @@ function BlocksTab() {
           </div>
         ))}
       </div>
-      <FormModal title="Новый блок" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addBlock({ id: nanoid(), name, habits: [], collapsed: false, startTime, endTime }); setShowCreate(false); resetForm(); } }} submitText="Создать"><BlockForm /></FormModal>
-      <FormModal title="Редактировать блок" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateBlock(editingId, { name, startTime, endTime }); setShowEdit(false); resetForm(); } }} submitText="Сохранить"><BlockForm /></FormModal>
+      <FormModal title="Новый блок" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addBlock({ id: nanoid(), name, habits: [], collapsed: false, startTime, endTime }); setShowCreate(false); resetForm(); } }} submitText="Создать">{blockFormContent}</FormModal>
+      <FormModal title="Редактировать блок" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateBlock(editingId, { name, startTime, endTime }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{blockFormContent}</FormModal>
     </div>
   );
 }
