@@ -382,7 +382,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 }
 
                 const currentData = storage.getData();
-                if (new Date(newData.lastUpdated) > new Date(currentData.lastUpdated || 0)) {
+                const isNewer = !currentData.lastUpdated || new Date(newData.lastUpdated) > new Date(currentData.lastUpdated);
+                
+                if (isNewer) {
                   console.log("Sync: Applying newer remote data from another device");
                   isRemoteUpdateRef.current = true;
                   setCoins(newData.coins || 0);
@@ -396,7 +398,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   setCharacterState(newData.characterState || {});
                   setTasks(newData.tasks || []);
                   storage.saveData(newData);
-                  setTimeout(() => { isRemoteUpdateRef.current = false; }, 200);
+                  // Allow some time for state updates to propagate
+                  setTimeout(() => { isRemoteUpdateRef.current = false; }, 500);
                 }
               }
             }
@@ -426,25 +429,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
 
     syncTimerRef.current = setTimeout(async () => {
+      if (isRemoteUpdateRef.current) return;
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
 
-      const data: StorageData = {
-        ...currentStateRef.current,
-        clientId: clientIdRef.current,
-        lastUpdated: new Date().toISOString(),
-        character: {},
-        progress: {},
-        streaks: {},
-        shop: [],
-        folders: [],
-      };
+      // CRITICAL: Read the data directly from storage as the source of truth
+      const data = storage.getData();
+      if (!data || !data.lastUpdated) return;
       
       console.log("Sync: Sending auto-update to cloud (origin:", clientIdRef.current, ")");
       logSyncEvent("Авто-сохранение...", "pending");
       
       try {
-        storage.saveData(data);
         await syncSave(session.user.id, data);
         logSyncEvent("Сохранено в облаке", "success");
         setIsSyncing(false);
@@ -452,7 +449,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         logSyncEvent("Ошибка сохранения: " + (err as any).message, "error");
         setIsSyncing(false);
       }
-    }, 100); 
+    }, 500); 
 
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
@@ -572,6 +569,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       shop: [],
       folders: [],
       lastUpdated: new Date().toISOString(),
+      clientId: clientIdRef.current, // CRITICAL: Save client ID to local storage too
     };
     storage.saveData(data);
   };
@@ -584,6 +582,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       
       const remoteData = await syncLoad(session.user.id) as any;
       if (remoteData) {
+        console.log("Sync: Manual fetch success, updating local state");
+        isRemoteUpdateRef.current = true; // Prevent pushing back
         setCoins(remoteData.coins || 0);
         setHabits((remoteData.habits || []).map(migrateHabit));
         setBlocks(remoteData.blocks || []);
@@ -595,6 +595,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCharacterState(remoteData.characterState || {});
         setTasks(remoteData.tasks || []);
         storage.saveData(remoteData);
+        setTimeout(() => { isRemoteUpdateRef.current = false; }, 500);
       }
     } catch (err) {
       console.error("Manual sync failed", err);
