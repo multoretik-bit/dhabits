@@ -372,20 +372,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               filter: `user_id=eq.${session.user.id}`
             },
             (payload: any) => {
-              console.log("Sync: Real-time update payload received:", payload.eventType);
+              console.log("Sync: Event received from cloud:", payload.eventType);
               const newData = payload.new?.data;
               if (newData && newData.lastUpdated) {
-                // Ignore updates from the same client
-                if (newData.clientId === clientIdRef.current) {
-                  console.log("Sync: Ignoring local-originated update from channel");
+                // 1. Ignore updates from THIS client
+                if (String(newData.clientId) === String(clientIdRef.current)) {
+                  console.log("Sync: Ignoring update from THIS device");
                   return;
                 }
-
-                const currentData = storage.getData();
-                const isNewer = !currentData.lastUpdated || new Date(newData.lastUpdated) > new Date(currentData.lastUpdated);
                 
-                if (isNewer) {
-                  console.log("Sync: Applying newer remote data from another device");
+                // 2. Strict timestamp comparison
+                const currentData = storage.getData();
+                const remoteTime = new Date(newData.lastUpdated).getTime();
+                const localTime = currentData.lastUpdated ? new Date(currentData.lastUpdated).getTime() : 0;
+                
+                if (remoteTime > localTime) {
+                  console.log("Sync: Applying NEWER remote data (Remote:", newData.lastUpdated, "Local:", currentData.lastUpdated, ")");
                   isRemoteUpdateRef.current = true;
                   setCoins(newData.coins || 0);
                   setHabits((newData.habits || []).map(migrateHabit));
@@ -398,8 +400,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   setCharacterState(newData.characterState || {});
                   setTasks(newData.tasks || []);
                   storage.saveData(newData);
-                  // Allow some time for state updates to propagate
                   setTimeout(() => { isRemoteUpdateRef.current = false; }, 500);
+                } else {
+                  console.log("Sync: Ignoring OLDER or SAME remote data (Remote:", newData.lastUpdated, "Local:", currentData.lastUpdated, ")");
                 }
               }
             }
