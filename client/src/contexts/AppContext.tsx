@@ -285,21 +285,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCharacterState(savedData.characterState || {});
     setTasks(savedData.tasks || []);
 
-    // Initial cloud sync
-    setIsSyncing(true);
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    // Initial cloud sync and real-time subscription
+    let activeChannel: any = null;
+
+    const startSync = async () => {
+      setIsSyncing(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
       if (session?.user) {
+        console.log("Sync active for user:", session.user.id);
+        
+        // 1. Initial Load
         try {
           const remoteData = await syncLoad(session.user.id) as any;
           if (remoteData) {
             const localLastUpdated = savedData.lastUpdated || 0;
             const remoteLastUpdated = remoteData.lastUpdated || 0;
-            
-            // If remote is newer OR local is effectively empty/new
             const isLocalEmpty = !savedData.habits?.length && !savedData.tasks?.length && (savedData.coins || 0) === 0;
             
-            if (isLocalEmpty || (remoteLastUpdated && new Date(remoteLastUpdated) > new Date(localLastUpdated))) {
-              console.log("Applying remote data", remoteData);
+            if (isLocalEmpty || !localLastUpdated || (remoteLastUpdated && new Date(remoteLastUpdated) > new Date(localLastUpdated))) {
+              console.log("Sync: Applying remote data (newer or local empty)");
               setCoins(remoteData.coins || 0);
               setHabits((remoteData.habits || []).map(migrateHabit));
               setBlocks(remoteData.blocks || []);
@@ -314,11 +319,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }
           }
         } catch (err) {
-          console.error("Initial sync fetch failed", err);
+          console.error("Sync: Initial fetch failed", err);
         }
+
+        // 2. Real-time Subscription
+        activeChannel = supabase
+          .channel(`user_data_${session.user.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'user_data',
+              filter: `user_id=eq.${session.user.id}`
+            },
+            (payload) => {
+              const newData = (payload.new as any)?.data;
+              if (newData && newData.lastUpdated) {
+                const currentData = storage.getData();
+                if (new Date(newData.lastUpdated) > new Date(currentData.lastUpdated || 0)) {
+                  console.log("Sync: Received newer remote data via real-time channel");
+                  setCoins(newData.coins || 0);
+                  setHabits((newData.habits || []).map(migrateHabit));
+                  setBlocks(newData.blocks || []);
+                  setHabitFolders(newData.habitFolders || []);
+                  setGoals(newData.goals || []);
+                  setGoalFolders(newData.goalFolders || []);
+                  setShopItems(newData.shopItems || []);
+                  setShopFolders(newData.shopFolders || []);
+                  setCharacterState(newData.characterState || {});
+                  setTasks(newData.tasks || []);
+                  storage.saveData(newData);
+                }
+              }
+            }
+          )
+          .subscribe();
       }
       setIsSyncing(false);
-    });
+    };
+
+    startSync();
+
+    return () => {
+      if (activeChannel) {
+        supabase.removeChannel(activeChannel);
+      }
+    };
   }, []);
 
   const isHabitCompletedToday = (habit: Habit): boolean => {
