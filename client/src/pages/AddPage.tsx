@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Edit2, FolderPlus, ListChecks, Target, Layers, Check, ArrowUp, ArrowDown, ChevronUp, ChevronDown } from "lucide-react";
-import { useApp, Habit, HabitFolder, Task, Goal, GoalFolder, moveHabitUp, moveHabitDown } from "@/contexts/AppContext";
+import { useApp, Habit, HabitFolder, Task, Goal, GoalFolder } from "@/contexts/AppContext";
 import FormModal from "@/components/FormModal";
 import { FormInput, FormCheckbox } from "@/components/FormInputs";
 import EmojiPicker from "@/components/EmojiPicker";
@@ -313,16 +313,21 @@ function TasksTab() {
 
 // ─── GOALS ────────────────────────────────────────────────────────────────
 function GoalsTab() {
-  const { goals, goalFolders, addGoal, updateGoal, deleteGoal, addGoalFolder, toggleGoalFolderCollapse, moveGoalFolderUp, moveGoalFolderDown } = useApp();
+  const { goals, goalFolders, addGoal, updateGoal, deleteGoal, addGoalFolder, updateGoalFolder, deleteGoalFolder, toggleGoalFolderCollapse, moveGoalFolderUp, moveGoalFolderDown } = useApp();
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [showEditFolder, setShowEditFolder] = useState(false);
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const toggleName = (id: string) => setExpandedItems(p => ({...p, [id]: !p[id]}));
 
   const [name, setName] = useState(""); const [desc, setDesc] = useState(""); const [target, setTarget] = useState("100"); 
   const [color, setColor] = useState("#8b5cf6"); const [emoji, setEmoji] = useState("🎯"); const [folder, setFolder] = useState("general");
   const [coins, setCoins] = useState("100");
+
+  const [folderName, setFolderName] = useState(""); const [folderColor, setFolderColor] = useState("#8b5cf6"); const [folderEmoji, setFolderEmoji] = useState("🏆");
 
   const resetForm = () => { setName(""); setDesc(""); setTarget("100"); setColor("#8b5cf6"); setEmoji("🎯"); setFolder("general"); setCoins("100"); };
 
@@ -345,9 +350,20 @@ function GoalsTab() {
     </>
   );
 
+  const folderFormContent = (
+    <>
+      <FormInput label="Название папки" value={folderName} onChange={setFolderName} placeholder="Здоровье" />
+      <EmojiPicker label="Эмодзи" value={folderEmoji} onChange={setFolderEmoji} />
+      <div className="space-y-2"><label className="text-sm font-medium text-slate-300">Цвет</label><AdvancedColorPicker value={folderColor} onChange={setFolderColor} /></div>
+    </>
+  );
+
   return (
     <div className="space-y-4 pb-20">
       <div className="flex justify-end gap-2 mb-4">
+        <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-slate-800 text-slate-300 hover:bg-slate-800 rounded-xl">
+          <FolderPlus className="w-4 h-4 mr-2" /> Папка
+        </Button>
         <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold font-bold">
           <Plus className="w-4 h-4 mr-2" /> Цель
         </Button>
@@ -367,8 +383,14 @@ function GoalsTab() {
                    {f.emoji || "🏆"} {f.name} <span className="text-slate-500 font-medium">({fGoals.length})</span>
                 </div>
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                    <Button size="icon" variant="ghost" onClick={() => moveGoalFolderUp(f.id)} className="w-8 h-8 text-slate-500 hover:text-blue-400"><ArrowUp className="w-4 h-4" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => moveGoalFolderDown(f.id)} className="w-8 h-8 text-slate-500 hover:text-blue-400"><ArrowDown className="w-4 h-4" /></Button>
+                    {f.id !== "general" && (
+                      <>
+                        <Button size="icon" variant="ghost" onClick={() => moveGoalFolderUp(f.id)} className="w-8 h-8 text-slate-500 hover:text-blue-400"><ArrowUp className="w-4 h-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => moveGoalFolderDown(f.id)} className="w-8 h-8 text-slate-500 hover:text-blue-400"><ArrowDown className="w-4 h-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => { setEditingFolderId(f.id); setFolderName(f.name); setFolderColor(f.color); setFolderEmoji(f.emoji || "🏆"); setShowEditFolder(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) { goals.filter((g) => g.folder === f.id).forEach((g) => updateGoal(g.id, { folder: "general" })); deleteGoalFolder(f.id); } }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
+                      </>
+                    )}
                   <div className="text-slate-500 ml-2">
                     {f.collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                   </div>
@@ -416,6 +438,8 @@ function GoalsTab() {
 
       <FormModal title="Новая цель" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addGoal({ id: nanoid(), name, emoji, description: desc, linkedHabits: [], coins: Number(coins), streak: 0, folder, completed: false, startValue: 0, targetValue: Number(target), currentValue: 0, color }); setShowCreate(false); resetForm(); } }} submitText="Создать">{goalFormContent}</FormModal>
       <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateGoal(editingId, { name, emoji, description: desc, targetValue: Number(target), color, folder, coins: Number(coins) }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{goalFormContent}</FormModal>
+      <FormModal title="Новая папка" isOpen={showCreateFolder} onClose={() => { setShowCreateFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (folderName) { addGoalFolder({ id: nanoid(), name: folderName, emoji: folderEmoji, color: folderColor, collapsed: false }); setShowCreateFolder(false); setFolderName(""); } }} submitText="Создать">{folderFormContent}</FormModal>
+      <FormModal title="Редактировать папку" isOpen={showEditFolder} onClose={() => { setShowEditFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (editingFolderId && folderName) { updateGoalFolder(editingFolderId, { name: folderName, color: folderColor, emoji: folderEmoji }); setShowEditFolder(false); } }} submitText="Сохранить">{folderFormContent}</FormModal>
     </div>
   );
 }

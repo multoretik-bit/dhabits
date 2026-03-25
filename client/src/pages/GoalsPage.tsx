@@ -229,21 +229,8 @@ export default function GoalsPage() {
     const foldersToRender = habitFolders.map((folder: HabitFolder) => {
       const folderHabits = habitsForToday.filter((h: Habit) => h.folder === folder.id);
       return { ...folder, habits: folderHabits };
-    }).filter((f: any) => f.habits.length > 0 || (f.id === "general" && habitsForToday.length > 0));
+    });
 
-    if (habitsForToday.length === 0) {
-      return (
-        <div className="bg-slate-900/50 border border-slate-800/80 rounded-3xl p-16 text-center shadow-sm">
-           <div className="w-20 h-20 bg-blue-600/10 border border-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-              <ListTodo className="w-10 h-10 text-blue-500 opacity-40" />
-           </div>
-           <h3 className="text-xl font-bold text-slate-100 mb-2">Нет привычек на сегодня</h3>
-           <p className="text-sm text-slate-500 leading-relaxed px-4">
-              Добавь привычки, которые хочешь отслеживать, во вкладке <span className="text-blue-400 font-bold">Добавить</span>.
-           </p>
-        </div>
-      );
-    }
 
     return (
       <div className="space-y-6">
@@ -355,7 +342,6 @@ export default function GoalsPage() {
                 onChange={setProgressValue}
                 type="number"
                 placeholder="5"
-                autoFocus
               />
             </div>
           );
