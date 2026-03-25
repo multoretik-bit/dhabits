@@ -873,10 +873,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (habit && amount > 0) {
       const newUnits = habit.units + amount;
       const coinsEarned = (habit.coinsPerUnit || 0) * amount;
-      updateHabit(habitId, { units: newUnits, unitsTracking: true });
-      if (coinsEarned > 0) {
-        addCoins(coinsEarned);
-      }
+      
+      const newHabits = habits.map((h) => (h.id === habitId ? { ...h, units: newUnits, unitsTracking: true } : h));
+      const newCoins = Math.round((coins + coinsEarned) * 100) / 100;
+      
+      setHabits(newHabits);
+      setCoins(newCoins);
+      saveAllData(newCoins, newHabits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors);
     }
   };
 

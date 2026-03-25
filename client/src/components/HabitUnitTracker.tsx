@@ -33,28 +33,41 @@ export default function HabitUnitTracker({ habit, compact = false, alwaysShow = 
         </span>
       </div>
       
-      <div className="flex items-center gap-2">
-      
-      <div className="flex items-center gap-2 bg-slate-950/50 rounded-lg p-1 border border-slate-800/50">
-        <input
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(Math.max(1, parseInt(e.target.value) || 0))}
-          className="bg-transparent text-white text-xs font-bold w-12 text-center outline-none border-none focus:ring-0"
-        />
-      </div>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1">
+          {[1, 5, 10].map((num) => (
+            <Button
+              key={num}
+              size="sm"
+              variant="outline"
+              onClick={() => addUnitsToHabit(habit.id, num)}
+              className="h-7 px-2 text-[10px] font-bold border-slate-700/50 bg-slate-800/40 hover:bg-slate-700/60 text-slate-300"
+            >
+              +{num}
+            </Button>
+          ))}
+        </div>
 
-      <Button
-        size="sm"
-        onClick={() => {
-          addUnitsToHabit(habit.id, amount);
-          setAmount(1); // Reset after adding
-        }}
-        className="h-7 px-3 text-[10px] font-black uppercase tracking-wider rounded-lg shadow-lg shadow-blue-900/20 active:scale-95 transition-all"
-        style={{ backgroundColor: habit.color, color: "#fff" }}
-      >
-        +{amount}
-      </Button>
+        <div className="flex items-center gap-2 bg-slate-950/50 rounded-lg p-1 border border-slate-800/50 ml-1">
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(Math.max(1, parseInt(e.target.value) || 0))}
+            className="bg-transparent text-white text-[10px] font-bold w-10 text-center outline-none border-none focus:ring-0"
+          />
+        </div>
+
+        <Button
+          size="sm"
+          onClick={() => {
+            addUnitsToHabit(habit.id, amount);
+            setAmount(1);
+          }}
+          className="h-7 px-2.5 text-[10px] font-black uppercase tracking-wider rounded-lg shadow-lg active:scale-95 transition-all"
+          style={{ backgroundColor: habit.color, color: "#fff" }}
+        >
+          +{amount}
+        </Button>
       </div>
     </div>
   );
