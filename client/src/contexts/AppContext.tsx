@@ -149,6 +149,10 @@ export interface ShopItem {
   purchased: boolean;
   assetPath?: string;
   slot?: "head" | "body" | "hands" | "feet" | "accessory" | "background" | "vehicle" | "pet";
+  createdAt: string;
+  rarity: "common" | "rare" | "epic" | "legendary" | "legacy";
+  version?: string | number;
+  description?: string;
 }
 
 export interface CharacterState {

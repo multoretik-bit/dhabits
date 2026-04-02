@@ -83,3 +83,25 @@ export function FormCheckbox({ label, checked, onChange }: FormCheckboxProps) {
     </div>
   );
 }
+
+interface FormTextAreaProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+}
+
+export function FormTextArea({ label, value, onChange, placeholder, rows = 3 }: FormTextAreaProps) {
+  return (
+    <FormField label={label}>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+      />
+    </FormField>
+  );
+}
