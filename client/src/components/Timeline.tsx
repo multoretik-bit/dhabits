@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { HabitBlock } from "@/contexts/AppContext";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Clock } from "lucide-react";
+import { Clock, Link as LinkIcon } from "lucide-react";
 
 interface TimelineProps {
   blocks: HabitBlock[];
@@ -97,7 +97,10 @@ export default function Timeline({ blocks, selectedDate, onBlockClick, activeBlo
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex flex-col">
-                        <span className="text-sm font-black text-white leading-tight mb-1 truncate">{b.name}</span>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="text-sm font-black text-white leading-tight truncate">{b.name}</span>
+                          {b.systemUrl && <LinkIcon className="w-3 h-3 text-blue-400 shrink-0" />}
+                        </div>
                         <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-tight">
                           {formatTime(slot.start)} — {formatTime(slot.end)}
                         </span>

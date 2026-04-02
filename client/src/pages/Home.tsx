@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useApp, Habit, Task, HabitBlock, getCurrentBlock, getTodayDateString } from "@/contexts/AppContext";
-import { Clock, Check, Plus, Minus, ArrowUp, ArrowDown, LayoutGrid, ListTodo } from "lucide-react";
+import { Clock, Check, Plus, Minus, ArrowUp, ArrowDown, LayoutGrid, ListTodo, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import HabitRow from "@/components/HabitRow";
 import Calendar from "@/components/Calendar";
@@ -183,7 +183,15 @@ export default function Home() {
                         <span>{formatTime(detailedBlock.startTime)} — {formatTime(detailedBlock.endTime)}</span>
                       </div>
                     </div>
-                    {detailedBlock.habits?.[0]?.emoji && (
+                    {detailedBlock.systemUrl ? (
+                      <button
+                        onClick={() => window.open(detailedBlock.systemUrl, "_blank")}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 rounded-2xl border border-blue-500/30 transition-all font-bold text-xs shadow-lg group"
+                      >
+                        <ExternalLink className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        <span>Система</span>
+                      </button>
+                    ) : detailedBlock.habits?.[0]?.emoji && (
                       <div className="text-4xl p-3 bg-white/5 rounded-3xl backdrop-blur-sm shadow-inner overflow-hidden border border-white/5">
                         {detailedBlock.habits[0].emoji}
                       </div>
