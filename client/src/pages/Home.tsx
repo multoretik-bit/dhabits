@@ -1,8 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useApp, Habit, Task, HabitBlock, getCurrentBlock, getTodayDateString } from "@/contexts/AppContext";
-import { Clock, Check, Plus, Minus, ArrowUp, ArrowDown } from "lucide-react";
-import { motion } from "framer-motion";
+import { Clock, Check, Plus, Minus, ArrowUp, ArrowDown, LayoutGrid, ListTodo } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import HabitRow from "@/components/HabitRow";
+import Calendar from "@/components/Calendar";
+import Timeline from "@/components/Timeline";
+import { formatDateToDateString, isSameDay } from "@/lib/dateUtils";
 
 function formatTime(t: string | undefined) {
   return t || "--:--";
@@ -36,7 +39,6 @@ function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
         background: completed ? "rgba(15,23,42,0.4)" : `linear-gradient(135deg, ${taskColor}12 0%, rgba(15,23,42,0.6) 100%)`
       }}
     >
-      {/* Coin badge LEFT */}
       {!completed && task.coins && task.coins > 0 && (
         <div 
           className="flex-shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl text-center"
@@ -57,7 +59,6 @@ function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
         {task.title}
       </span>
 
-      {/* Reorder controls */}
       {!completed && (
         <div className="flex flex-col gap-1 pr-1" onClick={(e) => e.stopPropagation()}>
           <button onClick={() => moveTaskUp(task.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
@@ -76,31 +77,42 @@ function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
 export default function Home() {
   const { habits, tasks, blocks } = useApp();
   const [now, setNow] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(id);
   }, []);
 
-  const dateStr = getTodayDateString();
-  const dayOfWeek = now.getDay();
+  const dateStr = formatDateToDateString(selectedDate);
+  const isToday = isSameDay(selectedDate, now);
+  const dayOfWeek = selectedDate.getDay();
   const currentMin = now.getHours() * 60 + now.getMinutes();
-  const activeBlock = getCurrentBlock(blocks, now);
+  
+  // Logic for finding the currently active block (only if today is selected)
+  const activeBlock = useMemo(() => isToday ? getCurrentBlock(blocks, now) : null, [blocks, now, isToday]);
+
+  // Determine which block to show details for
+  const detailedBlock = useMemo(() => {
+    if (selectedBlockId) return blocks.find(b => b.id === selectedBlockId);
+    return activeBlock;
+  }, [selectedBlockId, activeBlock, blocks]);
 
   let blockProgress = 0;
-  if (activeBlock?.startTime && activeBlock?.endTime) {
-    const startM = timeToMinutes(activeBlock.startTime);
-    const endM = timeToMinutes(activeBlock.endTime);
+  if (detailedBlock?.startTime && detailedBlock?.endTime && isSameDay(selectedDate, now)) {
+    const startM = timeToMinutes(detailedBlock.startTime);
+    const endM = timeToMinutes(detailedBlock.endTime);
     if (endM > startM) {
       blockProgress = Math.min(100, Math.max(0, ((currentMin - startM) / (endM - startM)) * 100));
     }
   }
 
-  const blockHabits = activeBlock
-    ? habits.filter(h => h.blockId === activeBlock.id && h.daysOfWeek.includes(dayOfWeek))
+  const blockHabits = detailedBlock
+    ? habits.filter(h => h.blockId === detailedBlock.id && h.daysOfWeek.includes(dayOfWeek))
     : [];
-  const blockTasks = activeBlock
-    ? tasks.filter(t => t.blockId === activeBlock.id && (t.daysOfWeek.length === 0 || t.daysOfWeek.includes(dayOfWeek)))
+  const blockTasks = detailedBlock
+    ? tasks.filter(t => t.blockId === detailedBlock.id && (t.daysOfWeek.length === 0 || t.daysOfWeek.includes(dayOfWeek)))
     : [];
 
   const blockIds = new Set(blocks.map(b => b.id));
@@ -111,125 +123,153 @@ export default function Home() {
     t => t.isAllDay && (t.daysOfWeek.length === 0 || t.daysOfWeek.includes(dayOfWeek))
   );
 
-  const blockColor = getBlockColor(activeBlock);
+  const blockColor = getBlockColor(detailedBlock);
 
   return (
     <div 
-      className="flex flex-col min-h-full transition-all duration-700 relative overflow-hidden"
-      style={{ 
-        backgroundColor: blockColor ? `${blockColor}08` : 'transparent'
-      }}
+      className="flex flex-col min-h-screen transition-all duration-700 relative overflow-hidden bg-slate-950"
     >
       {/* Background Glow */}
-      {blockColor && (
+      {blockColor && (detailedBlock || activeBlock) && (
         <div 
           className="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-[500px] blur-[120px] opacity-20 pointer-events-none transition-all duration-1000"
           style={{ background: `radial-gradient(circle, ${blockColor} 0%, transparent 70%)` }}
         />
       )}
 
-      {/* Active Block Header */}
-      <div className="px-5 pt-6 pb-2">
-        {activeBlock ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-            className="border rounded-3xl p-5 shadow-lg relative overflow-hidden"
-            style={{ 
-              backgroundColor: blockColor ? `${blockColor}20` : 'rgba(30, 58, 138, 0.4)',
-              borderColor: blockColor ? `${blockColor}40` : 'rgba(30, 58, 138, 0.5)'
-            }}
-          >
-            <div 
-              className="absolute -top-10 -right-10 w-32 h-32 blur-[50px] rounded-full opacity-30" 
-              style={{ backgroundColor: blockColor || '#3b82f6' }}
-            />
-            <h1 className="text-2xl font-extrabold text-white mb-1 tracking-tight truncate">{activeBlock.name}</h1>
-            <div className="flex items-center gap-1.5 text-sm font-medium mb-4" style={{ color: blockColor || '#93c5fd' }}>
-              <Clock className="w-4 h-4" />
-              <span>с {formatTime(activeBlock.startTime)} до {formatTime(activeBlock.endTime)}</span>
-            </div>
-            {activeBlock.startTime && activeBlock.endTime && (
-              <div className="space-y-2 mt-4">
-                <div className="flex justify-between text-xs font-semibold text-blue-200">
-                  <span>Прогресс блока</span>
-                  <span>{Math.round(blockProgress)}%</span>
-                </div>
-                <div className="w-full h-2 bg-slate-900/80 rounded-full overflow-hidden border border-white/5 relative">
-                  <div
-                    className="absolute top-0 left-0 h-full rounded-full transition-all duration-1000"
-                    style={{ 
-                      width: `${blockProgress}%`,
-                      background: blockColor 
-                        ? `linear-gradient(to right, ${blockColor}, #fff)` 
-                        : 'linear-gradient(to right, #2563eb, #22d3ee)' 
-                    }}
-                  />
-                  <div
-                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)] transition-all duration-1000"
-                    style={{ left: `calc(${blockProgress}% - 8px)` }}
-                  />
-                </div>
-              </div>
-            )}
-          </motion.div>
-        ) : (
-          <div className="text-center py-8">
-            <h2 className="text-2xl font-bold text-slate-300">Свободное время</h2>
-            <p className="text-sm text-slate-500 mt-1">Отдыхайте или выполняйте задачи на весь день</p>
-          </div>
-        )}
+      {/* Header with Calendar */}
+      <div className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-white/5 pb-4">
+        <Calendar selectedDate={selectedDate} onDateChange={(d) => {
+          setSelectedDate(d);
+          setSelectedBlockId(null);
+        }} />
       </div>
 
-      {/* Block habits & tasks - stack on mobile, 2 columns on desktop */}
-      {activeBlock && (
-        <div className="px-3 py-4 grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
-          <div className="flex flex-col">
-            <h3 
-              className="text-[11px] font-black uppercase tracking-[0.2em] mb-4 px-2 opacity-60"
-              style={{ color: blockColor || '#94a3b8' }}
+      <div className="flex-1 flex flex-col sm:flex-row gap-6 p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
+        {/* Left column: Timeline */}
+        <div className="w-full sm:w-1/3 lg:w-1/4 h-[400px] sm:h-auto min-h-[400px] sticky top-24">
+          <Timeline 
+            blocks={blocks} 
+            selectedDate={selectedDate} 
+            onBlockClick={(id) => setSelectedBlockId(id)}
+            activeBlockId={detailedBlock?.id}
+          />
+        </div>
+
+        {/* Right column: Details */}
+        <div className="flex-1 flex flex-col gap-6 relative z-10">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={detailedBlock?.id || "free-time"}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col gap-6"
             >
-              Привычки
-            </h3>
-            {blockHabits.length > 0 ? (
-              blockHabits.map(h => <HabitRow key={h.id} habit={h} dateStr={dateStr} hideUnitTracker={true} />)
-            ) : (
-              <div className="text-xs text-slate-600 text-center py-6 bg-slate-900/20 rounded-3xl border border-slate-800/40 italic">Пусто</div>
+              {detailedBlock ? (
+                <div 
+                  className="border rounded-[32px] p-6 shadow-2xl relative overflow-hidden border-white/5"
+                  style={{ 
+                    backgroundColor: blockColor ? `${blockColor}15` : 'rgba(30, 58, 138, 0.2)',
+                    borderColor: blockColor ? `${blockColor}30` : 'rgba(30, 58, 138, 0.3)'
+                  }}
+                >
+                  <div className="flex items-start justify-between mb-6">
+                    <div>
+                      <h1 className="text-3xl font-black text-white mb-2 tracking-tight">{detailedBlock.name}</h1>
+                      <div className="flex items-center gap-2 text-sm font-bold" style={{ color: blockColor || '#93c5fd' }}>
+                        <Clock className="w-4 h-4" />
+                        <span>{formatTime(detailedBlock.startTime)} — {formatTime(detailedBlock.endTime)}</span>
+                      </div>
+                    </div>
+                    {detailedBlock.habits?.[0]?.emoji && (
+                      <div className="text-4xl p-3 bg-white/5 rounded-3xl backdrop-blur-sm shadow-inner overflow-hidden border border-white/5">
+                        {detailedBlock.habits[0].emoji}
+                      </div>
+                    )}
+                  </div>
+
+                  {blockProgress > 0 && isToday && (
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-xs font-black uppercase tracking-widest text-slate-400">
+                        <span>Block Progress</span>
+                        <span style={{ color: blockColor || '#fff' }}>{Math.round(blockProgress)}%</span>
+                      </div>
+                      <div className="w-full h-3 bg-slate-900/80 rounded-full overflow-hidden border border-white/5 relative">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${blockProgress}%` }}
+                          className="absolute top-0 left-0 h-full rounded-full"
+                          style={{ 
+                            background: blockColor 
+                              ? `linear-gradient(to right, ${blockColor}, #fff)` 
+                              : 'linear-gradient(to right, #2563eb, #22d3ee)' 
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+                    {/* Block Habits */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-4 opacity-60">
+                        <LayoutGrid className="w-3 h-3" />
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-100">Habits</h3>
+                      </div>
+                      <div className="space-y-2">
+                        {blockHabits.length > 0 ? (
+                          blockHabits.map(h => <HabitRow key={h.id} habit={h} dateStr={dateStr} hideUnitTracker={true} />)
+                        ) : (
+                          <div className="py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-600 bg-white/5 rounded-2xl border border-dashed border-white/5">Empty</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Block Tasks */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-4 opacity-60">
+                        <ListTodo className="w-3 h-3" />
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-100">Tasks</h3>
+                      </div>
+                      <div className="space-y-2">
+                        {blockTasks.length > 0 ? (
+                          blockTasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} />)
+                        ) : (
+                          <div className="py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-600 bg-white/5 rounded-2xl border border-dashed border-white/5">None</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-center border rounded-[32px] border-white/5 bg-slate-900/10">
+                  <div className="w-20 h-20 rounded-full bg-slate-900 flex items-center justify-center text-4xl mb-6 shadow-2xl border border-white/5">
+                    🌊
+                  </div>
+                  <h2 className="text-3xl font-black text-slate-200 mb-2">Free Time</h2>
+                  <p className="text-sm text-slate-500 font-medium max-w-[280px]">Enjoy your rest or check off all-day tasks below</p>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+
+          {/* All-day items */}
+          <div className="mt-8">
+            {(allDayHabits.length > 0 || allDayTasks.length > 0) && (
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-[1px] flex-1 bg-white/5" />
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">All-Day Activities</h3>
+                <div className="h-[1px] flex-1 bg-white/5" />
+              </div>
             )}
-          </div>
-          <div className="flex flex-col">
-            <h3 
-              className="text-[11px] font-black uppercase tracking-[0.2em] mb-4 px-2 opacity-60"
-              style={{ color: blockColor || '#94a3b8' }}
-            >
-              Задачи
-            </h3>
-            {blockTasks.length > 0 ? (
-              blockTasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} />)
-            ) : (
-              <div className="text-xs text-slate-600 text-center py-6 bg-slate-900/20 rounded-3xl border border-slate-800/40 italic">Без задач</div>
-            )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6">
+              {allDayHabits.map(h => <HabitRow key={h.id} habit={h} dateStr={dateStr} hideUnitTracker={true} />)}
+              {allDayTasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} />)}
+            </div>
           </div>
         </div>
-      )}
-
-      {/* All-day divider */}
-      {(allDayHabits.length > 0 || allDayTasks.length > 0) && (
-        <div className="mt-4 mb-4 px-6 relative z-10">
-          <div className="w-full h-px" style={{ backgroundColor: blockColor ? `${blockColor}20` : 'rgba(30, 41, 59, 0.5)' }} />
-        </div>
-      )}
-
-      {/* All-day items */}
-      <div className="px-5 pb-10 space-y-1 relative z-10">
-        {(allDayHabits.length > 0 || allDayTasks.length > 0) && (
-          <h3 
-            className="text-[11px] font-black uppercase tracking-[0.2em] mb-5 mt-2 px-2 opacity-60 text-slate-400"
-          >
-            На весь день
-          </h3>
-        )}
-        {allDayHabits.map(h => <HabitRow key={h.id} habit={h} dateStr={dateStr} hideUnitTracker={true} />)}
-        {allDayTasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} />)}
       </div>
     </div>
   );

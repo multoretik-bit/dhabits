@@ -127,7 +127,7 @@ export default function ShopPage() {
       <EmojiPicker label="Эмодзи" value={itemEmoji} onChange={setItemEmoji} />
       <FormInput label="Цена (монеты)" value={itemPrice} onChange={setItemPrice} type="number" />
       <FormSelect label="Категория" value={itemCategory} onChange={(v) => setItemCategory(v as any)} options={ITEM_CATEGORIES} />
-      {itemCategory === "character" && <FormSelect label="Слот" value={itemSlot} onChange={setItemSlot} options={ITEM_SLOTS} />}
+      {itemCategory === "clothing" && <FormSelect label="Слот" value={itemSlot} onChange={setItemSlot} options={ITEM_SLOTS} />}
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-300">Папка</label>
         <select value={itemFolder} onChange={(e) => setItemFolder(e.target.value)} className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-blue-500">
