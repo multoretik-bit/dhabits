@@ -123,6 +123,13 @@ export default function Home() {
     t => t.isAllDay && (t.daysOfWeek.length === 0 || t.daysOfWeek.includes(dayOfWeek))
   );
 
+  // Daily Completion Stats (Only Habits)
+  const dailyScheduledHabits = habits.filter(h => h.daysOfWeek.includes(dayOfWeek));
+  const dailyCompletedHabits = dailyScheduledHabits.filter(h => !!(h.completedDates && h.completedDates[dateStr]));
+  const completionPercentage = dailyScheduledHabits.length > 0 
+    ? (dailyCompletedHabits.length / dailyScheduledHabits.length) * 100 
+    : 0;
+
   const blockColor = getBlockColor(detailedBlock);
 
   return (
@@ -158,6 +165,41 @@ export default function Home() {
 
         {/* Right column: Details */}
         <div className="flex-1 flex flex-col gap-6 relative z-10">
+          {/* Daily Progress Counter */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-slate-900/40 border border-slate-800/60 rounded-[32px] p-5 backdrop-blur-md shadow-xl"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                  <ListChecks className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Прогресс дня</h3>
+                  <p className="text-sm font-black text-white">Привычки: {dailyCompletedHabits.length} из {dailyScheduledHabits.length}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-xl font-black text-blue-400">{Math.round(completionPercentage)}%</span>
+              </div>
+            </div>
+            
+            <div className="relative w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-white/5">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${completionPercentage}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className="absolute top-0 left-0 h-full rounded-full"
+                style={{ 
+                  background: 'linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)',
+                  boxShadow: '0 0 20px rgba(59, 130, 246, 0.4)'
+                }}
+              />
+            </div>
+          </motion.div>
+
           <AnimatePresence mode="wait">
             <motion.div
               key={detailedBlock?.id || "free-time"}

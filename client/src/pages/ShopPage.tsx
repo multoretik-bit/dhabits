@@ -71,6 +71,10 @@ export default function ShopPage() {
   const [invRarity, setInvRarity] = useState<string>("all");
   const [invSort, setInvSort] = useState<string>("newest");
 
+  // Shop filter/sort state
+  const [shopRarity, setShopRarity] = useState<string>("all");
+  const [shopSort, setShopSort] = useState<string>("newest");
+
   // Folder form state
   const [folderName, setFolderName] = useState("");
 
@@ -136,7 +140,16 @@ export default function ShopPage() {
     }
   };
 
-  const availableItems = shopItems.filter(i => !i.purchased && (activeCategory === "all" || i.category === activeCategory));
+  const availableItems = shopItems
+    .filter(i => !i.purchased && (activeCategory === "all" || i.category === activeCategory))
+    .filter(i => shopRarity === "all" || i.rarity === shopRarity)
+    .sort((a, b) => {
+      if (shopSort === "price-asc") return a.price - b.price;
+      if (shopSort === "price-desc") return b.price - a.price;
+      if (shopSort === "newest") return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      if (shopSort === "oldest") return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+      return 0;
+    });
   
   const filteredPurchasedItems = shopItems
     .filter(i => i.purchased)
@@ -227,20 +240,65 @@ export default function ShopPage() {
             </Button>
           </div>
 
-          <div className="flex gap-2 flex-wrap mb-4">
-            {[ { value: "all", label: "Все" }, ...ITEM_CATEGORIES ].map(cat => (
-              <button
-                key={cat.value}
-                onClick={() => setActiveCategory(cat.value as any)}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-colors ${
-                  activeCategory === cat.value
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-800 text-slate-400 hover:bg-slate-700"
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
+          {/* Shop Controls */}
+          <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-5 space-y-4 shadow-sm backdrop-blur-sm">
+            {/* Category Filter */}
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Категория</label>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                {[ { value: "all", label: "Все" }, ...ITEM_CATEGORIES ].map(cat => (
+                  <button
+                    key={cat.value}
+                    onClick={() => setActiveCategory(cat.value as any)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${
+                      activeCategory === cat.value
+                        ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-900/30"
+                        : "bg-slate-800/50 text-slate-400 border-slate-700/50 hover:bg-slate-700/50"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Rarity Filter */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Редкость</label>
+                <select 
+                  value={shopRarity} 
+                  onChange={(e) => setShopRarity(e.target.value)}
+                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2 text-xs font-bold text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                >
+                  <option value="all">Любая</option>
+                  <option value="common">Обычный</option>
+                  <option value="rare">Редкий</option>
+                  <option value="epic">Эпический</option>
+                  <option value="legendary">Легендарный</option>
+                  <option value="legacy">Раритет</option>
+                </select>
+              </div>
+
+              {/* Sorting */}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Сортировка</label>
+                <select 
+                  value={shopSort} 
+                  onChange={(e) => setShopSort(e.target.value)}
+                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2 text-xs font-bold text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                >
+                  <option value="newest">Сначала новые</option>
+                  <option value="oldest">Сначала старые</option>
+                  <option value="price-asc">Дешевле</option>
+                  <option value="price-desc">Дороже</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center px-1">
+            <p className="text-slate-400 text-xs font-bold">Найдено: {availableItems.length}</p>
           </div>
 
           {availableItems.length === 0 ? (
