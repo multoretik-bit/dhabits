@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useApp, Habit, Task, HabitBlock, getCurrentBlock, getTodayDateString } from "@/contexts/AppContext";
-import { Clock, Check, Plus, Minus, ArrowUp, ArrowDown, LayoutGrid, ListTodo, ExternalLink } from "lucide-react";
+import { Clock, Check, Plus, Minus, ArrowUp, ArrowDown, LayoutGrid, ListTodo, ExternalLink, ListChecks } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import HabitRow from "@/components/HabitRow";
 import Calendar from "@/components/Calendar";
