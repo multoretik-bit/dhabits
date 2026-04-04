@@ -30,6 +30,7 @@ export default function Timeline({ blocks, selectedDate, onBlockClick, activeBlo
   const dailyBlocks = useMemo(() => {
     return blocks
       .filter((b) => b.startTime && b.endTime) // Basic filter for valid times
+      .filter((b) => !b.daysOfWeek || b.daysOfWeek.length === 0 || b.daysOfWeek.includes(dayOfWeek))
       .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
   }, [blocks, dayOfWeek]);
 

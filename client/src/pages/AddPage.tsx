@@ -326,10 +326,11 @@ function GoalsTab() {
   const [name, setName] = useState(""); const [desc, setDesc] = useState(""); const [target, setTarget] = useState("100"); 
   const [color, setColor] = useState("#8b5cf6"); const [emoji, setEmoji] = useState("🎯"); const [folder, setFolder] = useState("general");
   const [coins, setCoins] = useState("100");
+  const [deadline, setDeadline] = useState("");
 
   const [folderName, setFolderName] = useState(""); const [folderColor, setFolderColor] = useState("#8b5cf6"); const [folderEmoji, setFolderEmoji] = useState("🏆");
 
-  const resetForm = () => { setName(""); setDesc(""); setTarget("100"); setColor("#8b5cf6"); setEmoji("🎯"); setFolder("general"); setCoins("100"); };
+  const resetForm = () => { setName(""); setDesc(""); setTarget("100"); setColor("#8b5cf6"); setEmoji("🎯"); setFolder("general"); setCoins("100"); setDeadline(""); };
 
   const goalFormContent = (
     <>
@@ -347,6 +348,7 @@ function GoalsTab() {
         <FormInput label="Цель (значение)" value={target} onChange={setTarget} type="number" />
         <FormInput label="Награда (монеты)" value={coins} onChange={setCoins} type="number" />
       </div>
+      <FormInput label="Дедлайн (до какого числа)" value={deadline} onChange={setDeadline} type="date" />
     </>
   );
 
@@ -414,15 +416,16 @@ function GoalsTab() {
                     </span>
                     <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleName(g.id)}>
                       <p className={`font-bold text-sm text-slate-100 ${expandedItems[g.id] ? "" : "truncate"}`}>{g.name}</p>
-                      <p className="text-[10px] text-slate-500 font-medium tracking-wide">
+                      <p className="text-[10px] text-zinc-400 font-medium tracking-wide">
                         Цель: {g.targetValue} · Сейчас: {g.currentValue}
+                        {g.deadline && <span className="ml-2 text-red-400/80">📅 До: {g.deadline}</span>}
                       </p>
                     </div>
                     <div className="flex gap-1">
                       <Button size="icon" variant="ghost" onClick={() => { 
                         setEditingId(g.id); setName(g.name); setEmoji(g.emoji); setColor(g.color); 
                         setDesc(g.description); setTarget(String(g.targetValue)); setFolder(g.folder);
-                        setCoins(String(g.coins));
+                        setCoins(String(g.coins)); setDeadline(g.deadline || "");
                         setShowEdit(true); 
                       }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteGoal(g.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
@@ -436,8 +439,8 @@ function GoalsTab() {
         })}
       </div>
 
-      <FormModal title="Новая цель" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addGoal({ id: nanoid(), name, emoji, description: desc, linkedHabits: [], coins: Number(coins), streak: 0, folder, completed: false, startValue: 0, targetValue: Number(target), currentValue: 0, color }); setShowCreate(false); resetForm(); } }} submitText="Создать">{goalFormContent}</FormModal>
-      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateGoal(editingId, { name, emoji, description: desc, targetValue: Number(target), color, folder, coins: Number(coins) }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{goalFormContent}</FormModal>
+      <FormModal title="Новая цель" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addGoal({ id: nanoid(), name, emoji, description: desc, linkedHabits: [], coins: Number(coins), streak: 0, folder, completed: false, startValue: 0, targetValue: Number(target), currentValue: 0, color, deadline }); setShowCreate(false); resetForm(); } }} submitText="Создать">{goalFormContent}</FormModal>
+      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateGoal(editingId, { name, emoji, description: desc, targetValue: Number(target), color, folder, coins: Number(coins), deadline }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{goalFormContent}</FormModal>
       <FormModal title="Новая папка" isOpen={showCreateFolder} onClose={() => { setShowCreateFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (folderName) { addGoalFolder({ id: nanoid(), name: folderName, emoji: folderEmoji, color: folderColor, collapsed: false }); setShowCreateFolder(false); setFolderName(""); } }} submitText="Создать">{folderFormContent}</FormModal>
       <FormModal title="Редактировать папку" isOpen={showEditFolder} onClose={() => { setShowEditFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (editingFolderId && folderName) { updateGoalFolder(editingFolderId, { name: folderName, color: folderColor, emoji: folderEmoji }); setShowEditFolder(false); } }} submitText="Сохранить">{folderFormContent}</FormModal>
     </div>
@@ -456,8 +459,9 @@ function BlocksTab() {
   const [name, setName] = useState(""); const [startTime, setStartTime] = useState("09:00"); const [endTime, setEndTime] = useState("10:00");
   const [color, setColor] = useState("#3b82f6");
   const [systemUrl, setSystemUrl] = useState("");
+  const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5, 6, 0]);
 
-  const resetForm = () => { setName(""); setStartTime("09:00"); setEndTime("10:00"); setColor("#3b82f6"); setSystemUrl(""); };
+  const resetForm = () => { setName(""); setStartTime("09:00"); setEndTime("10:00"); setColor("#3b82f6"); setSystemUrl(""); setDays([1, 2, 3, 4, 5, 6, 0]); };
 
   const blockFormContent = (
     <>
@@ -472,6 +476,7 @@ function BlocksTab() {
           <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-blue-500" />
         </div>
       </div>
+      <div className="space-y-2"><label className="text-sm font-medium text-slate-300">Дни недели</label><DayPicker value={days} onChange={setDays} /></div>
       <div className="space-y-2">
         <label className="text-sm font-medium text-slate-300">Цвет блока</label>
         <AdvancedColorPicker value={color} onChange={setColor} />
@@ -496,7 +501,7 @@ function BlocksTab() {
             <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleName(b.id)}>
               <p className={`font-bold text-sm text-slate-200 ${expandedItems[b.id] ? "" : "truncate"}`}>{b.name}</p>
               <p className="text-[10px] text-slate-500 font-medium tracking-wide">
-                {b.startTime} - {b.endTime}
+                {b.startTime} - {b.endTime} · {(!b.daysOfWeek || b.daysOfWeek.length === 7 || b.daysOfWeek.length === 0) ? "Каждый день" : DAYS_OF_WEEK.filter(d => b.daysOfWeek?.includes(d.id)).map(d => d.label).join(", ")}
                 {b.systemUrl && <span className="ml-2 text-blue-400">🔗 Система</span>}
               </p>
             </div>
@@ -505,15 +510,15 @@ function BlocksTab() {
                 <Button size="icon" variant="ghost" onClick={() => moveBlockUp(b.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowUp className="w-3 h-3" /></Button>
                 <Button size="icon" variant="ghost" onClick={() => moveBlockDown(b.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowDown className="w-3 h-3" /></Button>
               </div>
-              <Button size="icon" variant="ghost" onClick={() => { setEditingId(b.id); setName(b.name); setStartTime(b.startTime||""); setEndTime(b.endTime||""); setColor(b.color || (b.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][b.colorIndex] : "#3b82f6")); setSystemUrl(b.systemUrl || ""); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => { setEditingId(b.id); setName(b.name); setStartTime(b.startTime||""); setEndTime(b.endTime||""); setColor(b.color || (b.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][b.colorIndex] : "#3b82f6")); setSystemUrl(b.systemUrl || ""); setDays(b.daysOfWeek || [1, 2, 3, 4, 5, 6, 0]); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
               <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteBlock(b.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
             </div>
           </div>
         ))}
         {blocks.length === 0 && <p className="text-center py-10 text-slate-600 italic">Нет блоков</p>}
       </div>
-      <FormModal title="Новый блок" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addBlock({ id: nanoid(), name, habits: [], collapsed: false, startTime, endTime, color, systemUrl }); setShowCreate(false); resetForm(); } }} submitText="Создать">{blockFormContent}</FormModal>
-      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateBlock(editingId, { name, startTime, endTime, color, systemUrl }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{blockFormContent}</FormModal>
+      <FormModal title="Новый блок" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addBlock({ id: nanoid(), name, habits: [], collapsed: false, startTime, endTime, color, systemUrl, daysOfWeek: days }); setShowCreate(false); resetForm(); } }} submitText="Создать">{blockFormContent}</FormModal>
+      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateBlock(editingId, { name, startTime, endTime, color, systemUrl, daysOfWeek: days }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{blockFormContent}</FormModal>
     </div>
   );
 }

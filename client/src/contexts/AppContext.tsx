@@ -61,6 +61,7 @@ export interface HabitBlock {
   colorIndex?: number;
   color?: string;
   systemUrl?: string;
+  daysOfWeek?: number[];
 }
 
 export interface Task {
@@ -129,6 +130,7 @@ export interface Goal {
   targetValue: number;
   currentValue: number;
   color: string;
+  deadline?: string;
 }
 
 export interface GoalFolder {

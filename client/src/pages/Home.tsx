@@ -91,13 +91,18 @@ export default function Home() {
   const currentMin = now.getHours() * 60 + now.getMinutes();
   
   // Logic for finding the currently active block (only if today is selected)
-  const activeBlock = useMemo(() => isToday ? getCurrentBlock(blocks, now) : null, [blocks, now, isToday]);
+  const activeBlock = useMemo(() => {
+    if (!isToday) return null;
+    const todayBlocks = blocks.filter(b => !b.daysOfWeek || b.daysOfWeek.length === 0 || b.daysOfWeek.includes(dayOfWeek));
+    return getCurrentBlock(todayBlocks, now);
+  }, [blocks, now, isToday, dayOfWeek]);
 
   // Determine which block to show details for
   const detailedBlock = useMemo(() => {
-    if (selectedBlockId) return blocks.find(b => b.id === selectedBlockId);
+    const todayBlocks = blocks.filter(b => !b.daysOfWeek || b.daysOfWeek.length === 0 || b.daysOfWeek.includes(dayOfWeek));
+    if (selectedBlockId) return todayBlocks.find(b => b.id === selectedBlockId);
     return activeBlock;
-  }, [selectedBlockId, activeBlock, blocks]);
+  }, [selectedBlockId, activeBlock, blocks, dayOfWeek]);
 
   let blockProgress = 0;
   if (detailedBlock?.startTime && detailedBlock?.endTime && isSameDay(selectedDate, now)) {
