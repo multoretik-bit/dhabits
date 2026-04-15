@@ -160,19 +160,9 @@ export default function Home() {
         }} />
       </div>
 
-      <div className="flex-1 flex flex-col sm:flex-row gap-6 p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
-        {/* Left column: Timeline */}
-        <div className="w-full sm:w-1/3 lg:w-1/4 h-[400px] sm:h-auto min-h-[400px] sticky top-24">
-          <Timeline 
-            blocks={blocks} 
-            selectedDate={selectedDate} 
-            onBlockClick={(id) => setSelectedBlockId(id)}
-            activeBlockId={detailedBlock?.id}
-          />
-        </div>
-
-        {/* Right column: Details */}
-        <div className="flex-1 flex flex-col gap-6 relative z-10">
+      <div className="flex-1 flex flex-col items-center gap-6 p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
+        {/* Main column: Details */}
+        <div className="w-full max-w-4xl flex flex-col gap-6 relative z-10">
           
           {/* Wake-up Prompt or Minutes Info */}
           {isToday && (

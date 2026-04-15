@@ -1,15 +1,21 @@
 import React, { useState, useMemo } from "react";
-import { useApp, SnapshotEntry, getTodayDateString } from "@/contexts/AppContext";
-import { ChevronLeft, Copy, ClipboardPaste, Plus, Trash2, Clock, Calendar as CalendarIcon, ArrowRight, Layout } from "lucide-react";
+import { useApp, SnapshotEntry, getTodayDateString, FOLDER_COLORS, HabitBlock } from "@/contexts/AppContext";
+import { ChevronLeft, Copy, ClipboardPaste, Plus, Trash2, Clock, Calendar as CalendarIcon, ArrowRight, Layout, Check } from "lucide-react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import Timeline from "@/components/Timeline";
 
 function formatMinutes(mins: number): string {
+  mins = mins % 1440; // wrap around for midnight
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function timeToMinutes(t: string | undefined): number {
+    if (!t) return 0;
+    const [h, m] = t.split(":").map(Number);
+    return h * 60 + m;
 }
 
 export default function SnapshotPage() {
@@ -29,19 +35,38 @@ export default function SnapshotPage() {
   const [editingEntry, setEditingEntry] = useState<SnapshotEntry | null>(null);
   const [labelInput, setLabelInput] = useState("");
   const [durationInput, setDurationInput] = useState(10);
+  const [colorInput, setColorInput] = useState("#3b82f6");
 
   const entries = daySnapshots[selectedDate] || [];
   const wakeUpTime = wakeUpTimes[selectedDate];
+  const dayOfWeek = (new Date(selectedDate)).getDay();
 
-  // Generate 144 slots of 10 minutes
+  // Filter blocks for today
+  const dailyBlocks = useMemo(() => {
+    return blocks.filter((b) => !b.daysOfWeek || b.daysOfWeek.length === 0 || b.daysOfWeek.includes(dayOfWeek));
+  }, [blocks, dayOfWeek]);
+
+  // Range: 08:00 (480) to 00:00 (1440)
+  const START_TIME = 480;
+  const END_TIME = 1440;
+  const SLOT_SIZE = 10;
+
   const slots = useMemo(() => {
     const s = [];
-    for (let i = 0; i < 1440; i += 10) {
+    for (let i = START_TIME; i < END_TIME; i += SLOT_SIZE) {
       const entry = entries.find(e => i >= e.startTime && i < e.startTime + e.duration);
-      s.push({ time: i, entry });
+      
+      // Find plan block for this slot
+      const planBlock = dailyBlocks.find(b => {
+        const startM = timeToMinutes(b.startTime);
+        const endM = timeToMinutes(b.endTime);
+        return i >= startM && i < endM;
+      });
+
+      s.push({ time: i, entry, planBlock });
     }
     return s;
-  }, [entries]);
+  }, [entries, dailyBlocks]);
 
   const handleSaveEntry = () => {
     if (!labelInput) return;
@@ -49,7 +74,8 @@ export default function SnapshotPage() {
     if (editingEntry) {
       updateSnapshotEntry(selectedDate, editingEntry.id, {
         label: labelInput,
-        duration: durationInput
+        duration: durationInput,
+        color: colorInput
       });
     } else if (activeSlot !== null) {
       const entry: SnapshotEntry = {
@@ -57,7 +83,7 @@ export default function SnapshotPage() {
         startTime: activeSlot,
         duration: durationInput,
         label: labelInput,
-        color: "#3b82f6" // default blue
+        color: colorInput
       };
       addSnapshotEntry(selectedDate, entry);
     }
@@ -71,6 +97,7 @@ export default function SnapshotPage() {
     setEditingEntry(entry);
     setLabelInput(entry.label);
     setDurationInput(entry.duration);
+    setColorInput(entry.color || "#3b82f6");
   };
 
   const copyEntry = (entry: SnapshotEntry) => {
@@ -115,63 +142,77 @@ export default function SnapshotPage() {
         )}
       </header>
 
-      <main className="flex-1 flex flex-col md:flex-row gap-6 p-4 md:p-6 overflow-hidden">
-        {/* Left Side: Real Trace */}
-        <div className="flex-1 flex flex-col gap-4 min-h-0">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-              <Layout className="w-4 h-4" /> Реальный слепок
-            </h2>
-            {clipboard && (
-              <div className="text-[10px] bg-blue-600/20 text-blue-400 px-3 py-1 rounded-full font-bold border border-blue-500/30">
-                Буфер: {clipboard.label} ({clipboard.duration}м)
-              </div>
-            )}
+      <main className="flex-1 flex flex-col p-4 md:p-6 overflow-hidden items-center">
+        <div className="w-full max-w-5xl flex flex-col gap-4 min-h-0 bg-slate-900/40 rounded-[40px] border border-white/5 p-4 md:p-8 backdrop-blur-sm">
+          
+          {/* Header Row */}
+          <div className="grid grid-cols-[60px_1fr_1fr] md:grid-cols-[80px_1fr_1fr] gap-4 mb-4 px-2">
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Время</div>
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+              <Layout className="w-3 h-3" /> Реальный слепок
+            </div>
+            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+              <ArrowRight className="w-3 h-3" /> План дня
+            </div>
           </div>
 
-          <div className="flex-1 bg-slate-900/40 rounded-[32px] border border-white/5 overflow-y-auto p-4 scrollbar-hide space-y-1">
-            {slots.map(({ time, entry }, idx) => {
-              // Only render the start of entry to avoid duplicates in the 10-min slot list
-              if (entry && entry.startTime !== time) return null;
+          {/* Grid Container */}
+          <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent space-y-1">
+            {slots.map(({ time, entry, planBlock }, idx) => {
+              const isFirstOfBlock = entry && entry.startTime === time;
+              const isOccupied = entry && entry.startTime !== time;
+              
+              // Handle Plan Block rendering: only show name at the start of the block mapping
+              const prevSlotPlanBlock = idx > 0 ? slots[idx-1].planBlock : null;
+              const isFirstOfPlan = planBlock && planBlock.id !== prevSlotPlanBlock?.id;
 
               const isWakeUp = wakeUpTime && formatMinutes(time) === wakeUpTime;
 
               return (
-                <div key={time} className="relative group flex gap-4">
+                <div key={time} className="grid grid-cols-[60px_1fr_1fr] md:grid-cols-[80px_1fr_1fr] gap-4 min-h-[52px]">
+                  {/* Time Column */}
                   <div className={cn(
-                    "w-12 text-[10px] font-bold text-right py-2 transition-colors",
-                    isWakeUp ? "text-yellow-400" : "text-slate-600 group-hover:text-slate-400"
+                    "text-[10px] font-bold text-right py-4 transition-colors border-r border-white/5 pr-4",
+                    isWakeUp ? "text-yellow-400" : "text-slate-600"
                   )}>
                     {formatMinutes(time)}
                   </div>
 
-                  {entry ? (
-                    <motion.div 
-                      layoutId={entry.id}
-                      onClick={() => startEdit(entry)}
-                      className="flex-1 bg-blue-600/20 border border-blue-500/30 rounded-xl p-3 flex items-center justify-between group/entry cursor-pointer hover:bg-blue-600/30 transition-colors"
-                      style={{ minHeight: (entry.duration / 10) * 44 }}
-                    >
-                      <div>
-                        <div className="text-sm font-bold text-white">{entry.label}</div>
-                        <div className="text-[10px] font-medium text-blue-300/60 uppercase tracking-tighter">
-                          {formatMinutes(entry.startTime)} — {formatMinutes(entry.startTime + entry.duration)} ({entry.duration} м)
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover/entry:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => copyEntry(entry)} className="p-1.5 hover:bg-white/10 rounded-lg text-slate-400"><Copy className="w-4 h-4" /></button>
-                        <button onClick={() => deleteSnapshotEntry(selectedDate, entry.id)} className="p-1.5 hover:bg-red-500/20 text-red-400 rounded-lg"><Trash2 className="w-4 h-4" /></button>
-                      </div>
-                    </motion.div>
-                  ) : (
-                    <div className="flex-1 flex gap-2">
-                       <button 
-                         onClick={() => setActiveSlot(time)}
-                         className="flex-1 h-10 border border-dashed border-white/5 hover:border-blue-500/30 hover:bg-blue-500/5 rounded-xl transition-all flex items-center justify-center text-slate-700 hover:text-blue-400"
-                       >
-                         <Plus className="w-4 h-4" />
-                       </button>
-                       {clipboard && (
+                  {/* Trace Column */}
+                  <div className="relative">
+                    {isFirstOfBlock ? (
+                      <motion.div 
+                        layoutId={entry.id}
+                        onClick={() => startEdit(entry)}
+                        className="absolute inset-x-0 top-0 z-20 border rounded-2xl p-3 flex items-start justify-between group/entry cursor-pointer overflow-hidden transition-all hover:brightness-110"
+                        style={{ 
+                          height: `calc(${(entry.duration / SLOT_SIZE) * 52}px + ${(Math.floor(entry.duration / 10) - 1) * 4}px)`,
+                          backgroundColor: `${entry.color}20`,
+                          borderColor: `${entry.color}60`,
+                          boxShadow: `0 8px 24px -12px ${entry.color}80`
+                        }}
+                      >
+                         <div className="absolute top-0 left-0 w-1 h-full" style={{ backgroundColor: entry.color }} />
+                         <div className="min-w-0 pr-2">
+                            <div className="text-sm font-black text-white truncate">{entry.label}</div>
+                            <div className="text-[9px] font-bold opacity-60 uppercase tracking-tighter">
+                              {entry.duration} мин
+                            </div>
+                         </div>
+                         <div className="flex items-center gap-1 opacity-0 group-hover/entry:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                            <button onClick={() => copyEntry(entry)} className="p-1.5 hover:bg-white/10 rounded-lg text-slate-400"><Copy className="w-3.5 h-3.5" /></button>
+                            <button onClick={() => deleteSnapshotEntry(selectedDate, entry.id)} className="p-1.5 hover:bg-red-500/20 text-red-400 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                         </div>
+                      </motion.div>
+                    ) : !isOccupied && (
+                      <div className="flex items-center h-full gap-2">
+                        <button 
+                          onClick={() => setActiveSlot(time)}
+                          className="flex-1 h-10 border border-dashed border-white/5 hover:border-white/10 hover:bg-white/5 rounded-xl transition-all flex items-center justify-center text-slate-800 hover:text-slate-600"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                        {clipboard && (
                          <button 
                            onClick={() => pasteEntry(time)}
                            className="w-10 h-10 border border-dashed border-blue-500/30 bg-blue-500/5 hover:bg-blue-500/20 rounded-xl transition-all flex items-center justify-center text-blue-400"
@@ -179,29 +220,35 @@ export default function SnapshotPage() {
                            <ClipboardPaste className="w-4 h-4" />
                          </button>
                        )}
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Plan Column */}
+                  <div className="relative">
+                    {planBlock && (
+                      <div className={cn(
+                        "h-full px-4 flex items-center border-l-2 transition-all",
+                         isFirstOfPlan ? "bg-white/5 rounded-t-xl mt-1 pt-1" : "bg-white/2"
+                      )}
+                      style={{ borderLeftColor: planBlock.color || "#475569" }}
+                      >
+                        {isFirstOfPlan && (
+                          <span className="text-xs font-bold text-slate-400 truncate py-1">
+                            {planBlock.name}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
-
-        {/* Right Side: Plan */}
-        <div className="w-full md:w-80 flex flex-col gap-4 min-h-0">
-          <h2 className="text-sm font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2 px-2">
-             План дня <ArrowRight className="w-4 h-4" />
-          </h2>
-          <div className="flex-1">
-            <Timeline 
-              blocks={blocks} 
-              selectedDate={new Date(selectedDate)}
-            />
-          </div>
-        </div>
       </main>
 
-      {/* Entry Modal/Overlay */}
+      {/* Entry Modal */}
       <AnimatePresence>
         {(activeSlot !== null || editingEntry !== null) && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -219,43 +266,62 @@ export default function SnapshotPage() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-sm bg-slate-900 border border-slate-800 rounded-[32px] p-8 shadow-2xl"
+              className="relative w-full max-w-md bg-slate-950 border border-white/10 rounded-[40px] p-8 shadow-2xl"
             >
-              <h3 className="text-xl font-black text-white mb-6">
+              <h3 className="text-2xl font-black text-white mb-6">
                 {editingEntry ? `Изменить: ${editingEntry.label}` : `Что вы делали в ${formatMinutes(activeSlot!)}?`}
               </h3>
               
               <div className="space-y-6">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">Занятие</label>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-2 pl-1">Занятие</label>
                   <input 
                     autoFocus
                     type="text" 
                     value={labelInput}
                     onChange={(e) => setLabelInput(e.target.value)}
                     placeholder="Напр: Завтрак, Работа..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:border-blue-500 transition-all shadow-inner"
+                    className="w-full bg-slate-900 border border-white/5 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:border-blue-500 transition-all shadow-inner"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-2">Длительность</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {[10, 30, 60].map(dur => (
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-2 pl-1">Длительность</label>
+                  <div className="flex flex-wrap gap-2">
+                    {[10, 20, 30, 40, 50, 60, 90, 120].map(dur => (
                       <button 
                         key={dur}
                         onClick={() => setDurationInput(dur)}
                         className={cn(
-                          "py-3 rounded-xl border font-black text-sm transition-all",
+                          "px-4 py-2 rounded-xl border font-black text-xs transition-all",
                           durationInput === dur 
                             ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20" 
-                            : "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700"
+                            : "bg-slate-950 border-white/5 text-slate-400 hover:border-white/10"
                         )}
                       >
-                        {dur} м
+                        {dur}м
                       </button>
                     ))}
                   </div>
+                </div>
+
+                <div>
+                   <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-2 pl-1">Цвет</label>
+                   <div className="flex flex-wrap gap-3 p-1">
+                      {FOLDER_COLORS.map(c => (
+                        <button
+                          key={c.text}
+                          onClick={() => setColorInput(c.text)}
+                          className={cn(
+                            "w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center",
+                            colorInput === c.text ? "scale-125 border-white" : "border-transparent opacity-60 hover:opacity-100"
+                          )}
+                          style={{ backgroundColor: c.text }}
+                        >
+                          {colorInput === c.text && <Check className="w-4 h-4 text-white" />}
+                        </button>
+                      ))}
+                   </div>
                 </div>
 
                 <div className="flex gap-3 pt-4">
@@ -264,7 +330,7 @@ export default function SnapshotPage() {
                       setActiveSlot(null);
                       setEditingEntry(null);
                     }}
-                    className="flex-1 py-4 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-400 font-black transition-all"
+                    className="flex-1 py-4 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-400 font-bold transition-all"
                   >
                     Отмена
                   </button>
