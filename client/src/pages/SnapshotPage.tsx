@@ -8,12 +8,13 @@ import { cn } from "@/lib/utils";
 import AdvancedColorPicker from "@/components/AdvancedColorPicker";
 
 const CATEGORIES = [
-  { id: "work", label: "Работа", icon: "💼", color: "#ef4444" },
-  { id: "study", label: "Учеба", icon: "📚", color: "#3b82f6" },
-  { id: "sport", label: "Спорт", icon: "🏃", color: "#22c55e" },
+  { id: "work", label: "Работа", icon: "💼", color: "#ff0000" },
+  { id: "study", label: "Учёба", icon: "📚", color: "#ffff00" },
+  { id: "productive", label: "Продуктивное", icon: "🧠", color: "#8100eb" },
+  { id: "sport", label: "Спорт", icon: "🏃", color: "#0000ff" },
   { id: "useless", label: "Бесполезное", icon: "😴", color: "#94a3b8" },
-  { id: "home", label: "Быт", icon: "🏠", color: "#f59e0b" },
-  { id: "rest", label: "Отдых", icon: "🧘", color: "#8b5cf6" },
+  { id: "home", label: "Быт", icon: "🏠", color: "#06b6d4" },
+  { id: "rest", label: "Отдых", icon: "🧘", color: "#fe8181" },
 ];
 
 function formatMinutes(mins: number): string {
