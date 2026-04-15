@@ -77,7 +77,7 @@ function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
 
 export default function Home() {
   const { habits, tasks, blocks, wakeUpTimes, setWakeUpTime } = useApp();
-  const [,, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const [now, setNow] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
