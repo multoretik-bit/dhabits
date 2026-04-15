@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useApp, SnapshotEntry, getTodayDateString, FOLDER_COLORS, HabitBlock } from "@/contexts/AppContext";
+// Triggering redeploy for categorization features
 import { ChevronLeft, Copy, ClipboardPaste, Plus, Trash2, Clock, Calendar as CalendarIcon, ArrowRight, Layout, Check, Palette } from "lucide-react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
