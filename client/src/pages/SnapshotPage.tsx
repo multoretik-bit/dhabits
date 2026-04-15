@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { useApp, SnapshotEntry, getTodayDateString, FOLDER_COLORS, HabitBlock } from "@/contexts/AppContext";
-import { ChevronLeft, Copy, ClipboardPaste, Plus, Trash2, Clock, Calendar as CalendarIcon, ArrowRight, Layout, Check } from "lucide-react";
+import { ChevronLeft, Copy, ClipboardPaste, Plus, Trash2, Clock, Calendar as CalendarIcon, ArrowRight, Layout, Check, Palette } from "lucide-react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import AdvancedColorPicker from "@/components/AdvancedColorPicker";
 
 function formatMinutes(mins: number): string {
   mins = mins % 1440; // wrap around for midnight
@@ -307,21 +308,7 @@ export default function SnapshotPage() {
 
                 <div>
                    <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-2 pl-1">Цвет</label>
-                   <div className="flex flex-wrap gap-3 p-1">
-                      {FOLDER_COLORS.map(c => (
-                        <button
-                          key={c.text}
-                          onClick={() => setColorInput(c.text)}
-                          className={cn(
-                            "w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center",
-                            colorInput === c.text ? "scale-125 border-white" : "border-transparent opacity-60 hover:opacity-100"
-                          )}
-                          style={{ backgroundColor: c.text }}
-                        >
-                          {colorInput === c.text && <Check className="w-4 h-4 text-white" />}
-                        </button>
-                      ))}
-                   </div>
+                   <AdvancedColorPicker value={colorInput} onChange={setColorInput} />
                 </div>
 
                 <div className="flex gap-3 pt-4">
