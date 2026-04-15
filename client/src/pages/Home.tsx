@@ -7,6 +7,7 @@ import HabitRow from "@/components/HabitRow";
 import Calendar from "@/components/Calendar";
 import Timeline from "@/components/Timeline";
 import { formatDateToDateString, isSameDay } from "@/lib/dateUtils";
+import { cn } from "@/lib/utils";
 
 function formatTime(t: string | undefined) {
   return t || "--:--";
