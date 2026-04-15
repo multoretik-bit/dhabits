@@ -41,7 +41,7 @@ export default function SnapshotPage() {
   
   const today = getTodayDateString();
   const [selectedDate, setSelectedDate] = useState(today);
-  const [clipboard, setClipboard] = useState<{ label: string; duration: number; color?: string } | null>(null);
+  const [clipboard, setClipboard] = useState<{ label: string; duration: number; color?: string; category?: string } | null>(null);
   const [activeSlot, setActiveSlot] = useState<number | null>(null);
   const [editingEntry, setEditingEntry] = useState<SnapshotEntry | null>(null);
   const [labelInput, setLabelInput] = useState("");
@@ -114,7 +114,8 @@ export default function SnapshotPage() {
     setColorInput(entry.color || "#3b82f6");
     setCategoryInput(entry.category || "work");
   };
-
+  const pasteEntry = (startTime: number) => {
+    if (!clipboard) return;
     addSnapshotEntry(selectedDate, {
       id: Math.random().toString(36).substring(7),
       startTime,
