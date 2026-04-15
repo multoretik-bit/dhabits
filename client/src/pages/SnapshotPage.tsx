@@ -6,6 +6,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import AdvancedColorPicker from "@/components/AdvancedColorPicker";
 
+const CATEGORIES = [
+  { id: "work", label: "Работа", icon: "💼", color: "#ef4444" },
+  { id: "study", label: "Учеба", icon: "📚", color: "#3b82f6" },
+  { id: "sport", label: "Спорт", icon: "🏃", color: "#22c55e" },
+  { id: "useless", label: "Бесполезное", icon: "😴", color: "#94a3b8" },
+  { id: "home", label: "Быт", icon: "🏠", color: "#f59e0b" },
+  { id: "rest", label: "Отдых", icon: "🧘", color: "#8b5cf6" },
+];
+
 function formatMinutes(mins: number): string {
   mins = mins % 1440; // wrap around for midnight
   const h = Math.floor(mins / 60);
@@ -37,6 +46,7 @@ export default function SnapshotPage() {
   const [labelInput, setLabelInput] = useState("");
   const [durationInput, setDurationInput] = useState(10);
   const [colorInput, setColorInput] = useState("#3b82f6");
+  const [categoryInput, setCategoryInput] = useState<string>("work");
 
   const entries = daySnapshots[selectedDate] || [];
   const wakeUpTime = wakeUpTimes[selectedDate];
@@ -76,7 +86,8 @@ export default function SnapshotPage() {
       updateSnapshotEntry(selectedDate, editingEntry.id, {
         label: labelInput,
         duration: durationInput,
-        color: colorInput
+        color: colorInput,
+        category: categoryInput
       });
     } else if (activeSlot !== null) {
       const entry: SnapshotEntry = {
@@ -84,7 +95,8 @@ export default function SnapshotPage() {
         startTime: activeSlot,
         duration: durationInput,
         label: labelInput,
-        color: colorInput
+        color: colorInput,
+        category: categoryInput
       };
       addSnapshotEntry(selectedDate, entry);
     }
@@ -99,21 +111,21 @@ export default function SnapshotPage() {
     setLabelInput(entry.label);
     setDurationInput(entry.duration);
     setColorInput(entry.color || "#3b82f6");
+    setCategoryInput(entry.category || "work");
   };
 
-  const copyEntry = (entry: SnapshotEntry) => {
-    setClipboard({ label: entry.label, duration: entry.duration, color: entry.color });
-  };
-
-  const pasteEntry = (startTime: number) => {
-    if (!clipboard) return;
     addSnapshotEntry(selectedDate, {
       id: Math.random().toString(36).substring(7),
       startTime,
       duration: clipboard.duration,
       label: clipboard.label,
-      color: clipboard.color
+      color: clipboard.color,
+      category: clipboard.category
     });
+  };
+
+  const copyEntry = (entry: SnapshotEntry) => {
+    setClipboard({ label: entry.label, duration: entry.duration, color: entry.color, category: entry.category });
   };
 
   return (
@@ -197,7 +209,7 @@ export default function SnapshotPage() {
                          <div className="min-w-0 pr-2">
                             <div className="text-sm font-black text-white truncate">{entry.label}</div>
                             <div className="text-[9px] font-bold opacity-60 uppercase tracking-tighter">
-                              {entry.duration} мин
+                              {entry.duration} мин {entry.category && <span> · {CATEGORIES.find(c => c.id === entry.category)?.label}</span>}
                             </div>
                          </div>
                          <div className="flex items-center gap-1 opacity-0 group-hover/entry:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
@@ -246,6 +258,44 @@ export default function SnapshotPage() {
               );
             })}
           </div>
+
+          {/* Daily Summary Row */}
+          <div className="mt-8 pt-8 border-t border-white/5">
+            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-500 mb-6 flex items-center gap-2">
+              <Check className="w-4 h-4" /> Сводка по дню
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+               {CATEGORIES.map(cat => {
+                 const total = entries.filter(e => e.category === cat.id).reduce((sum, e) => sum + e.duration, 0);
+                 if (total === 0) return null;
+                 return (
+                   <div key={cat.id} className="bg-slate-950/40 border border-white/5 rounded-2xl p-4 flex flex-col gap-1">
+                      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                        <span>{cat.icon}</span>
+                        {cat.label}
+                      </div>
+                      <div className="text-xl font-black text-white">
+                        {total} <span className="text-xs font-bold text-slate-500">мин</span>
+                      </div>
+                      <div className="w-full h-1 bg-white/5 rounded-full mt-2 overflow-hidden">
+                         <div 
+                           className="h-full" 
+                           style={{ 
+                             backgroundColor: cat.color,
+                             width: `${Math.min(100, (total / 1440) * 100 * 5)}%` // scaled for visibility
+                           }} 
+                         />
+                      </div>
+                   </div>
+                 );
+               })}
+               {entries.length === 0 && (
+                 <div className="col-span-full text-center py-4 text-slate-600 text-xs italic">
+                    Заполните слепок дня, чтобы увидеть статистику
+                 </div>
+               )}
+            </div>
+          </div>
         </div>
       </main>
 
@@ -284,6 +334,32 @@ export default function SnapshotPage() {
                     placeholder="Напр: Завтрак, Работа..."
                     className="w-full bg-slate-900 border border-white/5 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:border-blue-500 transition-all shadow-inner"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-2 pl-1">Категория</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {CATEGORIES.map(cat => (
+                      <button 
+                        key={cat.id}
+                        onClick={() => {
+                          setCategoryInput(cat.id);
+                          // Suggest a default color if user hasn't picked one yet or is editing
+                          if (!editingEntry) setColorInput(cat.color);
+                        }}
+                        className={cn(
+                          "py-3 rounded-xl border font-black text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-2",
+                          categoryInput === cat.id 
+                            ? "bg-slate-800 border-white/20 text-white shadow-lg shadow-white/5" 
+                            : "bg-slate-950 border-white/5 text-slate-500 hover:border-white/10"
+                        )}
+                        style={categoryInput === cat.id ? { borderColor: `${cat.color}60` } : {}}
+                      >
+                        <span>{cat.icon}</span>
+                        {cat.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div>

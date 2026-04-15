@@ -174,6 +174,7 @@ export interface SnapshotEntry {
   duration: number;  // minutes
   label: string;
   color?: string;
+  category?: string;
 }
 
 export interface ShopFolder {
