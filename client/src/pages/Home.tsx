@@ -161,6 +161,44 @@ export default function Home() {
       </div>
 
       <div className="flex-1 flex flex-col items-center gap-6 p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
+        {/* Block Switcher (Horizontal Chips) */}
+        <div className="w-full max-w-4xl px-2">
+          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 mask-fade-right">
+            <button
+              onClick={() => setSelectedBlockId(null)}
+              className={cn(
+                "flex-shrink-0 px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border",
+                !selectedBlockId 
+                  ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20" 
+                  : "bg-slate-900/40 border-white/5 text-slate-500 hover:text-slate-300 hover:bg-slate-800/60"
+              )}
+            >
+              Сейчас
+            </button>
+            {blocks.filter(b => !b.daysOfWeek || b.daysOfWeek.length === 0 || b.daysOfWeek.includes(dayOfWeek)).map(b => (
+              <button
+                key={b.id}
+                onClick={() => setSelectedBlockId(b.id)}
+                className={cn(
+                  "flex-shrink-0 px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border flex items-center gap-2",
+                  selectedBlockId === b.id
+                    ? "text-white shadow-lg"
+                    : "bg-slate-900/40 border-white/5 text-slate-500 hover:text-slate-300 hover:bg-slate-800/60"
+                )}
+                style={selectedBlockId === b.id ? { 
+                  backgroundColor: b.color || "#3b82f6", 
+                  borderColor: b.color || "#3b82f6",
+                  boxShadow: `0 8px 20px -6px ${b.color || "#3b82f6"}80`
+                } : {}}
+              >
+                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: b.color || "#fff" }} />
+                {b.name}
+                <span className="opacity-40 font-bold ml-1">{b.startTime}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Main column: Details */}
         <div className="w-full max-w-4xl flex flex-col gap-6 relative z-10">
           
