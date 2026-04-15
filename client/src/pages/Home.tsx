@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useApp, Habit, Task, HabitBlock, getCurrentBlock, getTodayDateString } from "@/contexts/AppContext";
-import { Clock, Check, Plus, Minus, ArrowUp, ArrowDown, LayoutGrid, ListTodo, ExternalLink, ListChecks } from "lucide-react";
+import { Clock, Check, Plus, Minus, ArrowUp, ArrowDown, LayoutGrid, ListTodo, ExternalLink, ListChecks, Sun } from "lucide-react";
+import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import HabitRow from "@/components/HabitRow";
 import Calendar from "@/components/Calendar";
@@ -75,10 +76,12 @@ function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
 
 
 export default function Home() {
-  const { habits, tasks, blocks } = useApp();
+  const { habits, tasks, blocks, wakeUpTimes, setWakeUpTime } = useApp();
+  const [,, setLocation] = useLocation();
   const [now, setNow] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [wakeUpInput, setWakeUpInput] = useState("08:00");
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000);
@@ -170,6 +173,90 @@ export default function Home() {
 
         {/* Right column: Details */}
         <div className="flex-1 flex flex-col gap-6 relative z-10">
+          
+          {/* Wake-up Prompt or Minutes Info */}
+          {isToday && (
+            <AnimatePresence mode="wait">
+              {!wakeUpTimes[dateStr] ? (
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="bg-blue-600/10 border border-blue-500/30 rounded-[32px] p-6 backdrop-blur-md shadow-xl flex flex-col items-center text-center gap-4"
+                >
+                  <Sun className="w-10 h-10 text-yellow-400 animate-pulse" />
+                  <div>
+                    <h2 className="text-xl font-black text-white">Во сколько вы проснулись?</h2>
+                    <p className="text-xs text-blue-300/70 font-bold uppercase tracking-widest mt-1">Начните свой слепок дня</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="time" 
+                      value={wakeUpInput}
+                      onChange={(e) => setWakeUpInput(e.target.value)}
+                      className="bg-slate-900/80 border border-white/10 rounded-xl px-4 py-2 text-white font-bold focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                    <button 
+                      onClick={() => setWakeUpTime(dateStr, wakeUpInput)}
+                      className="bg-blue-600 hover:bg-blue-500 text-white font-black px-6 py-2 rounded-xl transition-all shadow-lg active:scale-95"
+                    >
+                      Я встал!
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setLocation("/snapshot")}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="group relative bg-slate-900/40 border border-white/5 rounded-[32px] p-6 backdrop-blur-md shadow-xl overflow-hidden text-left"
+                >
+                  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Clock className="w-24 h-24 text-blue-400 rotate-12" />
+                  </div>
+                  
+                  <div className="relative z-10">
+                    <h3 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mb-1">Слепок дня</h3>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-4xl font-black text-white leading-none">
+                        {(() => {
+                           const [h, m] = wakeUpTimes[dateStr].split(":").map(Number);
+                           const minutesSinceWake = h * 60 + m;
+                           const totalMins = 1440 - minutesSinceWake;
+                           return totalMins;
+                        })()}
+                      </span>
+                      <span className="text-xl font-bold text-slate-400">минут сегодня</span>
+                    </div>
+                    <p className="text-sm text-slate-500 font-bold mt-2 flex items-center gap-1.5">
+                      Нажмите, чтобы открыть ваш слепок <ExternalLink className="w-3 h-3" />
+                    </p>
+                  </div>
+
+                  {/* Tiny progress bar showing how much of 'today' has passed since waking up */}
+                  <div className="absolute bottom-0 left-0 w-full h-1 bg-white/5">
+                    <motion.div 
+                      className="h-full bg-blue-500" 
+                      initial={{ width: 0 }}
+                      animate={{ 
+                        width: `${(() => {
+                          const [h, m] = wakeUpTimes[dateStr].split(":").map(Number);
+                          const startM = h * 60 + m;
+                          const currentM = now.getHours() * 60 + now.getMinutes();
+                          const total = 1440 - startM;
+                          const elapsed = Math.max(0, currentM - startM);
+                          return Math.min(100, (elapsed / total) * 100);
+                        })()}%`
+                      }}
+                    />
+                  </div>
+                </motion.button>
+              )}
+            </AnimatePresence>
+          )}
+
           {/* Daily Progress Counter */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}

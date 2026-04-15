@@ -13,6 +13,7 @@ import ShopPage from "./pages/ShopPage";
 import StatsPage from "./pages/StatsPage";
 import SettingsPage from "./pages/SettingsPage";
 import AuthPage from "./pages/AuthPage";
+import SnapshotPage from "./pages/SnapshotPage";
 import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 import { User } from "@supabase/supabase-js";
@@ -27,6 +28,7 @@ function Router({ onSignOut }: { onSignOut: () => void }) {
         <Route path="/shop" component={ShopPage} />
         <Route path="/stats" component={StatsPage} />
         <Route path="/settings" component={SettingsPage} />
+        <Route path="/snapshot" component={SnapshotPage} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

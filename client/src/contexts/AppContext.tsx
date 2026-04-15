@@ -168,6 +168,14 @@ export interface CharacterState {
   pet?: string;
 }
 
+export interface SnapshotEntry {
+  id: string;
+  startTime: number; // minutes from midnight
+  duration: number;  // minutes
+  label: string;
+  color?: string;
+}
+
 export interface ShopFolder {
   id: string;
   name: string;
@@ -175,6 +183,14 @@ export interface ShopFolder {
 }
 
 interface AppContextType {
+  // ... existing ...
+  wakeUpTimes: Record<string, string>;
+  setWakeUpTime: (dateStr: string, timeStr: string) => void;
+  daySnapshots: Record<string, SnapshotEntry[]>;
+  addSnapshotEntry: (dateStr: string, entry: SnapshotEntry) => void;
+  updateSnapshotEntry: (dateStr: string, id: string, updates: Partial<SnapshotEntry>) => void;
+  deleteSnapshotEntry: (dateStr: string, id: string) => void;
+  // ... existing fields ...
   customColors: string[];
   addCustomColor: (color: string) => void;
   removeCustomColor: (color: string) => void;
@@ -278,6 +294,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
   const [syncLogs, setSyncLogs] = useState<{time: string, event: string, status: 'success' | 'error' | 'pending'}[]>([]);
+  const [wakeUpTimes, setWakeUpTimes] = useState<Record<string, string>>({});
+  const [daySnapshots, setDaySnapshots] = useState<Record<string, SnapshotEntry[]>>({});
 
   const logSyncEvent = (event: string, status: 'success' | 'error' | 'pending') => {
     setSyncLogs(prev => [{ time: new Date().toLocaleTimeString(), event, status }, ...prev].slice(0, 10));
@@ -291,7 +309,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // State ref to avoid stale closures in sync calls
   const currentStateRef = React.useRef({
-    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors
+    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors, wakeUpTimes, daySnapshots
   });
 
   useEffect(() => {
@@ -300,9 +318,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     currentStateRef.current = {
-      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors
+      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors, wakeUpTimes, daySnapshots
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors]);
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors, wakeUpTimes, daySnapshots]);
 
   useEffect(() => {
     const savedData = storage.getData();
@@ -330,6 +348,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setShopFolders(savedData.shopFolders || []);
     setCharacterState(savedData.characterState || {});
     setTasks(savedData.tasks || []);
+    setWakeUpTimes(savedData.wakeUpTimes || {});
+    setDaySnapshots(savedData.daySnapshots || {});
 
     // Initial cloud sync and real-time subscription
     let activeChannel: any = null;
@@ -372,6 +392,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               });
               setTasks(remoteData.tasks || []);
               setCustomColors(remoteData.customColors || []);
+              setWakeUpTimes(remoteData.wakeUpTimes || {});
+              setDaySnapshots(remoteData.daySnapshots || {});
               storage.saveData(remoteData);
               setTimeout(() => { isRemoteUpdateRef.current = false; }, 200);
             }
@@ -429,6 +451,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   });
                   setTasks(newData.tasks || []);
                   setCustomColors(newData.customColors || []);
+                  setWakeUpTimes(newData.wakeUpTimes || {});
+                  setDaySnapshots(newData.daySnapshots || {});
                   storage.saveData(newData);
                   setTimeout(() => { isRemoteUpdateRef.current = false; }, 500);
                 } else {
@@ -487,7 +511,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks]);
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, wakeUpTimes, daySnapshots]);
 
   // Handle mobile wake/focus
   useEffect(() => {
@@ -519,6 +543,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         streaks: {},
         shop: [],
         folders: [],
+        wakeUpTimes: currentStateRef.current.wakeUpTimes,
+        daySnapshots: currentStateRef.current.daySnapshots,
       };
       
       storage.saveData(data);
@@ -564,6 +590,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       });
       setTasks(remoteData.tasks || []);
       setCustomColors(remoteData.customColors || []);
+      setWakeUpTimes(remoteData.wakeUpTimes || {});
+      setDaySnapshots(remoteData.daySnapshots || {});
       storage.saveData(remoteData);
       
       logSyncEvent("Данные загружены из облака", "success");
@@ -594,7 +622,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     shopFoldersValue: ShopFolder[],
     characterStateValue: CharacterState,
     tasksValue: Task[],
-    customColorsValue: string[]
+    customColorsValue: string[],
+    wakeUpTimesValue?: Record<string, string>,
+    daySnapshotsValue?: Record<string, SnapshotEntry[]>
   ) => {
     const data: StorageData = {
       coins: coinsValue,
@@ -609,6 +639,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       characterState: characterStateValue,
       tasks: tasksValue,
       customColors: customColorsValue,
+      wakeUpTimes: wakeUpTimesValue || wakeUpTimes,
+      daySnapshots: daySnapshotsValue || daySnapshots,
       progress: {},
       streaks: {},
       shop: [],
@@ -640,6 +672,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCharacterState(remoteData.characterState || {});
         setTasks(remoteData.tasks || []);
         setCustomColors(remoteData.customColors || []);
+        setWakeUpTimes(remoteData.wakeUpTimes || {});
+        setDaySnapshots(remoteData.daySnapshots || {});
         storage.saveData(remoteData);
         setTimeout(() => { isRemoteUpdateRef.current = false; }, 500);
       }
@@ -1153,6 +1187,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const setWakeUpTime = (dateStr: string, timeStr: string) => {
+    const newTimes = { ...wakeUpTimes, [dateStr]: timeStr };
+    setWakeUpTimes(newTimes);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors, newTimes);
+  };
+
+  const addSnapshotEntry = (dateStr: string, entry: SnapshotEntry) => {
+    const dayEntries = daySnapshots[dateStr] || [];
+    const newEntries = [...dayEntries, entry].sort((a, b) => a.startTime - b.startTime);
+    const newSnapshots = { ...daySnapshots, [dateStr]: newEntries };
+    setDaySnapshots(newSnapshots);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors, wakeUpTimes, newSnapshots);
+  };
+
+  const updateSnapshotEntry = (dateStr: string, id: string, updates: Partial<SnapshotEntry>) => {
+    const dayEntries = daySnapshots[dateStr] || [];
+    const newEntries = dayEntries.map(e => e.id === id ? { ...e, ...updates } : e).sort((a, b) => a.startTime - b.startTime);
+    const newSnapshots = { ...daySnapshots, [dateStr]: newEntries };
+    setDaySnapshots(newSnapshots);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors, wakeUpTimes, newSnapshots);
+  };
+
+  const deleteSnapshotEntry = (dateStr: string, id: string) => {
+    const dayEntries = daySnapshots[dateStr] || [];
+    const newEntries = dayEntries.filter(e => e.id !== id);
+    const newSnapshots = { ...daySnapshots, [dateStr]: newEntries };
+    setDaySnapshots(newSnapshots);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors, wakeUpTimes, newSnapshots);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -1228,7 +1292,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         syncLogs,
         customColors,
         addCustomColor,
-        removeCustomColor
+        removeCustomColor,
+        wakeUpTimes,
+        setWakeUpTime,
+        daySnapshots,
+        addSnapshotEntry,
+        updateSnapshotEntry,
+        deleteSnapshotEntry
       }}
     >
       {children}
