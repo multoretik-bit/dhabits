@@ -231,10 +231,16 @@ function TasksTab() {
   const [blockId, setBlockId] = useState(""); const [days, setDays] = useState<number[]>([]);
   const [coins, setCoins] = useState("5");
   const [isOneTime, setIsOneTime] = useState(false);
+  const [specificDate, setSpecificDate] = useState("");
+  const [subtasks, setSubtasks] = useState<{ id: string; title: string; completed: boolean }[]>([]);
+
+  const addSubtaskField = () => setSubtasks([...subtasks, { id: nanoid(), title: "", completed: false }]);
+  const updateSubtaskTitle = (id: string, title: string) => setSubtasks(subtasks.map(s => s.id === id ? { ...s, title } : s));
+  const removeSubtaskField = (id: string) => setSubtasks(subtasks.filter(s => s.id !== id));
 
   const resetForm = () => { 
     setTitle(""); setEmoji("📋"); setColor("#3b82f6"); setBlockId(""); setDays([]); 
-    setCoins("5"); setIsOneTime(false);
+    setCoins("5"); setIsOneTime(false); setSpecificDate(""); setSubtasks([]);
   };
 
   const taskFormContent = (
@@ -250,7 +256,42 @@ function TasksTab() {
         </select>
       </div>
       <div className="space-y-2"><label className="text-sm font-medium text-slate-300">Дни недели</label><DayPicker value={days} onChange={setDays} /></div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-300">Конкретная дата (опционально)</label>
+        <input 
+          type="date" 
+          value={specificDate} 
+          onChange={(e) => setSpecificDate(e.target.value)} 
+          className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-blue-500" 
+        />
+      </div>
       <FormInput label="Монет за выполнение" value={coins} onChange={setCoins} type="number" />
+      
+      <div className="space-y-3 mt-4 pt-4 border-t border-slate-800">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-bold text-slate-200">Подзадачи (микро-задачи)</label>
+          <Button type="button" size="sm" onClick={addSubtaskField} variant="outline" className="h-7 px-2 text-[10px] border-slate-700 hover:bg-slate-800">
+            <Plus className="w-3 h-3 mr-1" /> Добавить
+          </Button>
+        </div>
+        <div className="space-y-2">
+          {subtasks.map((st) => (
+            <div key={st.id} className="flex gap-2">
+              <input 
+                value={st.title} 
+                onChange={(e) => updateSubtaskTitle(st.id, e.target.value)} 
+                placeholder="Что нужно сделать?"
+                className="flex-1 px-3 py-1.5 bg-slate-950/50 border border-slate-800 rounded-lg text-xs text-white" 
+              />
+              <Button type="button" size="icon" onClick={() => removeSubtaskField(st.id)} variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-500/10">
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          ))}
+          {subtasks.length === 0 && <p className="text-[10px] text-slate-600 italic">Нет подзадач</p>}
+        </div>
+      </div>
+
       <div className="pt-2 border-t border-slate-800 mt-2">
         <FormCheckbox label="Одноразовая (исчезнет после выполнения)" checked={isOneTime} onChange={setIsOneTime} />
       </div>
@@ -297,6 +338,8 @@ function TasksTab() {
                 setEditingId(t.id); setTitle(t.title); setEmoji(t.emoji); setColor(t.color || "#3b82f6"); 
                 setBlockId(t.blockId || ""); setDays(t.daysOfWeek || []); 
                 setCoins(String(t.coins || 5)); setIsOneTime(!!t.isOneTime);
+                setSpecificDate(t.specificDate || "");
+                setSubtasks(t.subtasks || []);
                 setShowEdit(true); 
               }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
               <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteTask(t.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
@@ -305,8 +348,8 @@ function TasksTab() {
         ))}
         {tasks.length === 0 && <p className="text-center py-10 text-slate-600 italic">Нет задач</p>}
       </div>
-      <FormModal title="Новая задача" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (title) { addTask({ id: nanoid(), title, emoji, color, blockId: blockId || undefined, daysOfWeek: days, isAllDay: !blockId, completedDates: {}, coins: Number(coins), isOneTime }); setShowCreate(false); resetForm(); } }} submitText="Создать">{taskFormContent}</FormModal>
-      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && title) { updateTask(editingId, { title, emoji, color, blockId: blockId || undefined, daysOfWeek: days, isAllDay: !blockId, coins: Number(coins), isOneTime }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{taskFormContent}</FormModal>
+      <FormModal title="Новая задача" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (title) { addTask({ id: nanoid(), title, emoji, color, blockId: blockId || undefined, daysOfWeek: days, specificDate: specificDate || undefined, isAllDay: !blockId, completedDates: {}, coins: Number(coins), isOneTime, subtasks: subtasks.filter(s => s.title.trim() !== "") }); setShowCreate(false); resetForm(); } }} submitText="Создать">{taskFormContent}</FormModal>
+      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && title) { updateTask(editingId, { title, emoji, color, blockId: blockId || undefined, daysOfWeek: days, specificDate: specificDate || undefined, isAllDay: !blockId, coins: Number(coins), isOneTime, subtasks: subtasks.filter(s => s.title.trim() !== "") }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{taskFormContent}</FormModal>
     </div>
   );
 }

@@ -64,17 +64,25 @@ export interface HabitBlock {
   daysOfWeek?: number[];
 }
 
+export interface SubTask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 export interface Task {
   id: string;
   title: string;
   emoji: string;
   blockId?: string;
   daysOfWeek: number[]; // [] = every day
+  specificDate?: string; // YYYY-MM-DD
   isAllDay: boolean;
   color: string;
   completedDates: Record<string, boolean>;
   coins?: number;
   isOneTime?: boolean;
+  subtasks?: SubTask[];
 }
 
 
@@ -259,6 +267,7 @@ interface AppContextType {
   isTaskCompletedToday: (task: Task) => boolean;
   moveTaskUp: (taskId: string) => void;
   moveTaskDown: (taskId: string) => void;
+  toggleSubtask: (taskId: string, subtaskId: string) => void;
   isSyncing: boolean;
   isOnline: boolean;
   syncLogs: {time: string, event: string, status: 'success' | 'error' | 'pending'}[];
@@ -1088,6 +1097,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const toggleSubtask = (taskId: string, subtaskId: string) => {
+    const newTasks = tasks.map((t) => {
+      if (t.id === taskId && t.subtasks) {
+        const newSubtasks = t.subtasks.map((st) => 
+          st.id === subtaskId ? { ...st, completed: !st.completed } : st
+        );
+        return { ...t, subtasks: newSubtasks };
+      }
+      return t;
+    });
+    setTasks(newTasks);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, newTasks, customColors);
+  };
+
   const moveHabitUp = (habitId: string) => {
     const idx = habits.findIndex((h) => h.id === habitId);
     if (idx > 0) {
@@ -1285,6 +1308,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isTaskCompletedToday,
         moveTaskUp,
         moveTaskDown,
+        toggleSubtask,
         isSyncing,
         syncWithCloud,
         forceSyncFromCloud,

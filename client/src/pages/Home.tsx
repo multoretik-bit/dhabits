@@ -27,51 +27,119 @@ function getBlockColor(b: HabitBlock | null | undefined): string | null {
 }
 
 function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
-  const { completeTask, moveTaskUp, moveTaskDown } = useApp();
+  const { completeTask, moveTaskUp, moveTaskDown, toggleSubtask } = useApp();
+  const [expanded, setExpanded] = useState(false);
   const completed = !!(task.completedDates && task.completedDates[dateStr]);
   const taskColor = task.color || "#3b82f6";
+  
+  const hasSubtasks = task.subtasks && task.subtasks.length > 0;
+  const completedSubtasks = task.subtasks?.filter(s => s.completed).length || 0;
+  const totalSubtasks = task.subtasks?.length || 0;
+  const allSubtasksDone = hasSubtasks && completedSubtasks === totalSubtasks;
 
   return (
-    <button
-      onClick={() => completeTask(task.id, dateStr)}
-      className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all text-left mb-2 overflow-hidden border
-        ${completed ? "opacity-60 border-slate-800/40" : "bg-slate-900/60 border-slate-800/80 shadow-sm hover:border-blue-700/50"}`}
-      style={{ 
-        borderLeft: completed ? `3px solid ${taskColor}44` : `3px solid ${taskColor}`,
-        background: completed ? "rgba(15,23,42,0.4)" : `linear-gradient(135deg, ${taskColor}12 0%, rgba(15,23,42,0.6) 100%)`
-      }}
-    >
-      {!completed && task.coins && task.coins > 0 && (
-        <div 
-          className="flex-shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl text-center"
-          style={{ backgroundColor: `${taskColor}25`, border: `1px solid ${taskColor}40` }}
-        >
-          <img src="/coin.png" alt="coin" className="w-3 h-3 object-contain mb-0.5" />
-          <span className="text-[9px] font-bold text-white leading-tight mt-0.5">{task.coins}</span>
-        </div>
-      )}
-
-      <span 
-        className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl text-xl"
-        style={{ backgroundColor: completed ? "#1e293b" : `${taskColor}22` }}
+    <div className="mb-3">
+      <div
+        className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all text-left overflow-hidden border cursor-pointer
+          ${completed ? "opacity-60 border-slate-800/40" : "bg-slate-900/60 border-slate-800/80 shadow-sm hover:border-blue-700/50"}`}
+        style={{ 
+          borderLeft: completed ? `3px solid ${taskColor}44` : `3px solid ${taskColor}`,
+          background: completed ? "rgba(15,23,42,0.4)" : `linear-gradient(135deg, ${taskColor}12 0%, rgba(15,23,42,0.6) 100%)`
+        }}
+        onClick={() => completeTask(task.id, dateStr)}
       >
-        {completed ? <Check className="w-5 h-5 text-slate-500" /> : (task.emoji || "📋")}
-      </span>
-      <span className={`flex-1 font-bold text-sm leading-snug ${completed ? "line-through text-slate-500" : "text-slate-100"}`}>
-        {task.title}
-      </span>
+        {!completed && task.coins && task.coins > 0 && (
+          <div 
+            className="flex-shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl text-center"
+            style={{ backgroundColor: `${taskColor}25`, border: `1px solid ${taskColor}40` }}
+          >
+            <img src="/coin.png" alt="coin" className="w-3 h-3 object-contain mb-0.5" />
+            <span className="text-[9px] font-bold text-white leading-tight mt-0.5">{task.coins}</span>
+          </div>
+        )}
 
-      {!completed && (
-        <div className="flex flex-col gap-1 pr-1" onClick={(e) => e.stopPropagation()}>
-          <button onClick={() => moveTaskUp(task.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
-            <ArrowUp className="w-3 h-3" />
-          </button>
-          <button onClick={() => moveTaskDown(task.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
-            <ArrowDown className="w-3 h-3" />
-          </button>
+        <span 
+          className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl text-xl"
+          style={{ backgroundColor: completed ? "#1e293b" : `${taskColor}22` }}
+        >
+          {completed ? <Check className="w-5 h-5 text-slate-500" /> : (task.emoji || "📋")}
+        </span>
+        
+        <div className="flex-1 min-w-0">
+          <span className={`block font-bold text-sm leading-snug ${completed ? "line-through text-slate-500" : "text-slate-100"}`}>
+            {task.title}
+          </span>
+          {hasSubtasks && (
+            <div className="flex items-center gap-2 mt-1">
+               <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden max-w-[60px]">
+                  <div 
+                    className="h-full bg-blue-500/50 transition-all duration-500" 
+                    style={{ width: `${(completedSubtasks / totalSubtasks) * 100}%` }}
+                  />
+               </div>
+               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">
+                 {completedSubtasks}/{totalSubtasks}
+               </span>
+            </div>
+          )}
         </div>
-      )}
-    </button>
+
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {hasSubtasks && (
+            <button 
+              onClick={() => setExpanded(!expanded)}
+              className="p-1.5 hover:bg-slate-700/50 rounded-lg text-slate-500 hover:text-blue-400 transition-colors"
+            >
+              <ListTodo className={cn("w-4 h-4 transition-transform", expanded && "text-blue-400")} />
+            </button>
+          )}
+          {!completed && (
+            <div className="flex flex-col gap-0.5">
+              <button onClick={() => moveTaskUp(task.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
+                <ArrowUp className="w-3 h-3" />
+              </button>
+              <button onClick={() => moveTaskDown(task.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
+                <ArrowDown className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {expanded && hasSubtasks && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="pt-2 pb-1 pl-12 pr-4 flex flex-col gap-2">
+              {task.subtasks?.map(st => (
+                <div 
+                  key={st.id} 
+                  className="flex items-center gap-3 p-2 rounded-xl bg-slate-900/40 border border-white/5 cursor-pointer hover:bg-slate-800/40 transition-colors"
+                  onClick={() => toggleSubtask(task.id, st.id)}
+                >
+                  <div className={cn(
+                    "w-4 h-4 rounded border flex items-center justify-center transition-colors",
+                    st.completed ? "bg-blue-600 border-blue-600" : "border-slate-700 bg-slate-950"
+                  )}>
+                    {st.completed && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                  <span className={cn(
+                    "text-xs font-medium",
+                    st.completed ? "text-slate-500 line-through" : "text-slate-300"
+                  )}>
+                    {st.title}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -120,16 +188,22 @@ export default function Home() {
   const blockHabits = detailedBlock
     ? habits.filter(h => h.blockId === detailedBlock.id && h.daysOfWeek.includes(dayOfWeek))
     : [];
-  const blockTasks = detailedBlock
-    ? tasks.filter(t => t.blockId === detailedBlock.id && (t.daysOfWeek.length === 0 || t.daysOfWeek.includes(dayOfWeek)))
-    : [];
-
-  const blockIds = new Set(blocks.map(b => b.id));
   const allDayHabits = habits.filter(
     h => (!h.blockId || !blockIds.has(h.blockId)) && h.daysOfWeek.includes(dayOfWeek)
   );
+
+  // New filtering for tasks including specific date
+  const isTaskForDate = (t: Task) => {
+    if (t.specificDate) return t.specificDate === dateStr;
+    return t.daysOfWeek.length === 0 || t.daysOfWeek.includes(dayOfWeek);
+  };
+
+  const blockTasks = detailedBlock
+    ? tasks.filter(t => t.blockId === detailedBlock.id && isTaskForDate(t))
+    : [];
+
   const allDayTasks = tasks.filter(
-    t => t.isAllDay && (t.daysOfWeek.length === 0 || t.daysOfWeek.includes(dayOfWeek))
+    t => t.isAllDay && isTaskForDate(t)
   );
 
   // Daily Completion Stats (Only Habits)
@@ -426,19 +500,49 @@ export default function Home() {
             </motion.div>
           </AnimatePresence>
 
-          {/* All-day items */}
-          <div className="mt-8">
-            {(allDayHabits.length > 0 || allDayTasks.length > 0) && (
+          {/* Only All-day Habits here now */}
+          {(allDayHabits.length > 0) && (
+            <div className="mt-8">
               <div className="flex items-center gap-3 mb-6">
                 <div className="h-[1px] flex-1 bg-white/5" />
-                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">All-Day Activities</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Daily Habits</h3>
                 <div className="h-[1px] flex-1 bg-white/5" />
               </div>
-            )}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6">
-              {allDayHabits.map(h => <HabitRow key={h.id} habit={h} dateStr={dateStr} hideUnitTracker={true} />)}
-              {allDayTasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} />)}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6">
+                {allDayHabits.map(h => <HabitRow key={h.id} habit={h} dateStr={dateStr} hideUnitTracker={true} />)}
+              </div>
             </div>
+          )}
+
+          {/* Dedicated Daily Tasks Section at the bottom */}
+          <div className="mt-12 pb-10">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
+                <ListTodo className="w-5 h-5 text-indigo-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white tracking-tight">Задачи на день</h2>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Личные цели и разовые дела</p>
+              </div>
+              <div className="h-[1px] flex-1 bg-gradient-to-r from-indigo-500/20 to-transparent ml-4" />
+            </div>
+
+            {allDayTasks.length > 0 ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6">
+                {allDayTasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} />)}
+              </div>
+            ) : (
+              <div className="py-12 flex flex-col items-center justify-center bg-slate-900/20 border border-dashed border-white/5 rounded-[32px] text-center">
+                <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-xl mb-3 opacity-50">✨</div>
+                <p className="text-sm font-bold text-slate-600">На сегодня задач нет</p>
+                <button 
+                  onClick={() => setLocation("/add")}
+                  className="mt-4 text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors"
+                >
+                  + Добавить задачу
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
