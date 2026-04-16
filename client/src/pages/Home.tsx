@@ -188,6 +188,7 @@ export default function Home() {
   const blockHabits = detailedBlock
     ? habits.filter(h => h.blockId === detailedBlock.id && h.daysOfWeek.includes(dayOfWeek))
     : [];
+  const blockIds = new Set(blocks.map(b => b.id));
   const allDayHabits = habits.filter(
     h => (!h.blockId || !blockIds.has(h.blockId)) && h.daysOfWeek.includes(dayOfWeek)
   );
