@@ -219,28 +219,34 @@ function HabitsTab() {
 
 // ─── TASKS ────────────────────────────────────────────────────────────────
 function TasksTab() {
-  const { tasks, blocks, addTask, updateTask, deleteTask, moveTaskUp, moveTaskDown } = useApp();
+  const { tasks, taskFolders, blocks, addTask, updateTask, deleteTask, addTaskFolder, updateTaskFolder, deleteTaskFolder, toggleTaskFolderCollapse, moveTaskUp, moveTaskDown, moveTaskFolderUp, moveTaskFolderDown } = useApp();
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [showEditFolder, setShowEditFolder] = useState(false);
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const toggleName = (id: string) => setExpandedItems(p => ({...p, [id]: !p[id]}));
 
   const [title, setTitle] = useState(""); const [emoji, setEmoji] = useState("📋");
   const [color, setColor] = useState("#3b82f6");
-  const [blockId, setBlockId] = useState(""); const [days, setDays] = useState<number[]>([]);
+  const [blockId, setBlockId] = useState(""); const [folderId, setFolderId] = useState("general");
+  const [days, setDays] = useState<number[]>([]);
   const [coins, setCoins] = useState("5");
   const [isOneTime, setIsOneTime] = useState(false);
   const [specificDate, setSpecificDate] = useState("");
   const [subtasks, setSubtasks] = useState<{ id: string; title: string; completed: boolean }[]>([]);
+
+  const [folderName, setFolderName] = useState(""); const [folderColor, setFolderColor] = useState("#3b82f6"); const [folderEmoji, setFolderEmoji] = useState("📁");
 
   const addSubtaskField = () => setSubtasks([...subtasks, { id: nanoid(), title: "", completed: false }]);
   const updateSubtaskTitle = (id: string, title: string) => setSubtasks(subtasks.map(s => s.id === id ? { ...s, title } : s));
   const removeSubtaskField = (id: string) => setSubtasks(subtasks.filter(s => s.id !== id));
 
   const resetForm = () => { 
-    setTitle(""); setEmoji("📋"); setColor("#3b82f6"); setBlockId(""); setDays([]); 
-    setCoins("5"); setIsOneTime(false); setSpecificDate(""); setSubtasks([]);
+    setTitle(""); setEmoji("📋"); setColor("#3b82f6"); setBlockId(""); setFolderId("general");
+    setDays([]); setCoins("5"); setIsOneTime(false); setSpecificDate(""); setSubtasks([]);
   };
 
   const taskFormContent = (
@@ -253,6 +259,12 @@ function TasksTab() {
         <select value={blockId} onChange={(e) => setBlockId(e.target.value)} className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-blue-500">
           <option value="">— На весь день —</option>
           {blocks.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+        </select>
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-slate-300">Папка (Большая задача)</label>
+        <select value={folderId} onChange={(e) => setFolderId(e.target.value)} className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-blue-500">
+          {taskFolders.map(f => <option key={f.id} value={f.id}>{f.emoji} {f.name}</option>)}
         </select>
       </div>
       <div className="space-y-2"><label className="text-sm font-medium text-slate-300">Дни недели</label><DayPicker value={days} onChange={setDays} /></div>
@@ -298,58 +310,105 @@ function TasksTab() {
     </>
   );
 
+  const folderFormContent = (
+    <>
+      <FormInput label="Название большой задачи" value={folderName} onChange={setFolderName} placeholder="Напр. Изучение React" />
+      <EmojiPicker label="Эмодзи" value={folderEmoji} onChange={setFolderEmoji} />
+      <div className="space-y-2"><label className="text-sm font-medium text-slate-300">Цвет</label><AdvancedColorPicker value={folderColor} onChange={setFolderColor} /></div>
+    </>
+  );
+
   return (
     <div className="space-y-4 pb-20">
-      <div className="flex justify-end mb-4">
+      <div className="flex gap-2 justify-end mb-4">
+        <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-slate-800 text-slate-300 hover:bg-slate-800 rounded-xl">
+          <FolderPlus className="w-4 h-4 mr-2" /> Большая задача
+        </Button>
         <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold font-bold">
           <Plus className="w-4 h-4 mr-2" /> Задача
         </Button>
       </div>
-      <div className="space-y-3">
-        {tasks.map(t => (
-          <div 
-            key={t.id} 
-            className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-2xl border border-slate-800/80"
-            style={{ borderLeft: `3px solid ${t.color || '#3b82f6'}` }}
-          >
-            <span 
-              className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl text-xl"
-              style={{ backgroundColor: `${t.color || '#3b82f6'}22` }}
-            >
-              {t.emoji || "📋"}
-            </span>
-            <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleName(t.id)}>
-              <p className={`font-bold text-sm text-slate-200 ${expandedItems[t.id] ? "" : "truncate"}`}>{t.title}</p>
-              <p className="text-[10px] text-slate-500 font-medium tracking-wide">
-                {blocks.find(b => b.id === t.blockId)?.name || 'На весь день'}
-                {t.coins ? (
-                  <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
-                    {' · '}<img src="/coin.png" alt="coin" className="w-2.5 h-2.5 object-contain inline-block -translate-y-0.5" /> {t.coins}
-                  </span>
-                ) : ''}
-              </p>
-            </div>
-            <div className="flex gap-1">
-              <div className="flex flex-col gap-0.5 mr-1">
-                <Button size="icon" variant="ghost" onClick={() => moveTaskUp(t.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowUp className="w-3 h-3" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => moveTaskDown(t.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowDown className="w-3 h-3" /></Button>
+
+      <div className="space-y-5">
+        {taskFolders.map(f => {
+          const fTasks = tasks.filter(t => t.folderId === f.id || (!t.folderId && f.id === "general"));
+          return (
+            <div key={f.id} className="bg-slate-900/40 rounded-3xl border border-slate-800/60 overflow-hidden shadow-sm">
+              <div 
+                className="flex items-center justify-between px-5 py-3 bg-slate-800/30 border-b border-slate-800/40 cursor-pointer transition-colors hover:bg-slate-800/50"
+                onClick={() => toggleTaskFolderCollapse(f.id)}
+              >
+                <div className="flex items-center gap-3 text-slate-300 font-bold uppercase text-[11px] tracking-wider">
+                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: f.color }} />
+                   {f.emoji || "📁"} {f.name} <span className="text-slate-500 font-medium">({fTasks.length})</span>
+                </div>
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                  {f.id !== "general" && (
+                    <>
+                      <Button size="icon" variant="ghost" onClick={() => moveTaskFolderUp(f.id)} className="w-7 h-7 text-slate-500 hover:text-blue-400"><ArrowUp className="w-3.5 h-3.5" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => moveTaskFolderDown(f.id)} className="w-7 h-7 text-slate-500 hover:text-blue-400"><ArrowDown className="w-3.5 h-3.5" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => { setEditingFolderId(f.id); setFolderName(f.name); setFolderColor(f.color); setFolderEmoji(f.emoji || "📁"); setShowEditFolder(true); }} className="w-7 h-7 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-3.5 h-3.5" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteTaskFolder(f.id); }} className="w-7 h-7 text-red-400 hover:bg-red-400/10"><Trash2 className="w-3.5 h-3.5" /></Button>
+                    </>
+                  )}
+                  <div className="text-slate-500 ml-2">
+                    {f.collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                  </div>
+                </div>
               </div>
-              <Button size="icon" variant="ghost" onClick={() => { 
-                setEditingId(t.id); setTitle(t.title); setEmoji(t.emoji); setColor(t.color || "#3b82f6"); 
-                setBlockId(t.blockId || ""); setDays(t.daysOfWeek || []); 
-                setCoins(String(t.coins || 5)); setIsOneTime(!!t.isOneTime);
-                setSpecificDate(t.specificDate || "");
-                setSubtasks(t.subtasks || []);
-                setShowEdit(true); 
-              }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
-              <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteTask(t.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
+              {!f.collapsed && (
+                <div className="p-3 space-y-2">
+                  {fTasks.length === 0 && <p className="text-xs text-slate-600 text-center py-4 italic">Нет задач</p>}
+                  {fTasks.map(t => (
+                    <div 
+                      key={t.id} 
+                      className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-2xl border border-slate-800/80"
+                      style={{ borderLeft: `3px solid ${t.color || '#3b82f6'}` }}
+                    >
+                      <span 
+                        className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl text-xl"
+                        style={{ backgroundColor: `${t.color || '#3b82f6'}22` }}
+                      >
+                        {t.emoji || "📋"}
+                      </span>
+                      <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleName(t.id)}>
+                        <p className={`font-bold text-sm text-slate-200 ${expandedItems[t.id] ? "" : "truncate"}`}>{t.title}</p>
+                        <p className="text-[10px] text-slate-500 font-medium tracking-wide">
+                          {blocks.find(b => b.id === t.blockId)?.name || 'На весь день'}
+                          {t.coins ? (
+                            <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
+                              {' · '}<img src="/coin.png" alt="coin" className="w-2.5 h-2.5 object-contain inline-block -translate-y-0.5" /> {t.coins}
+                            </span>
+                          ) : ''}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <div className="flex flex-col gap-0.5 mr-1">
+                          <Button size="icon" variant="ghost" onClick={() => moveTaskUp(t.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowUp className="w-3 h-3" /></Button>
+                          <Button size="icon" variant="ghost" onClick={() => moveTaskDown(t.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowDown className="w-3 h-3" /></Button>
+                        </div>
+                        <Button size="icon" variant="ghost" onClick={() => { 
+                          setEditingId(t.id); setTitle(t.title); setEmoji(t.emoji); setColor(t.color || "#3b82f6"); 
+                          setBlockId(t.blockId || ""); setDays(t.daysOfWeek || []); setFolderId(t.folderId || "general");
+                          setCoins(String(t.coins || 5)); setIsOneTime(!!t.isOneTime);
+                          setSpecificDate(t.specificDate || "");
+                          setSubtasks(t.subtasks || []);
+                          setShowEdit(true); 
+                        }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteTask(t.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
-        {tasks.length === 0 && <p className="text-center py-10 text-slate-600 italic">Нет задач</p>}
+          );
+        })}
       </div>
-      <FormModal title="Новая задача" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (title) { addTask({ id: nanoid(), title, emoji, color, blockId: blockId || undefined, daysOfWeek: days, specificDate: specificDate || undefined, isAllDay: !blockId, completedDates: {}, coins: Number(coins), isOneTime, subtasks: subtasks.filter(s => s.title.trim() !== "") }); setShowCreate(false); resetForm(); } }} submitText="Создать">{taskFormContent}</FormModal>
-      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && title) { updateTask(editingId, { title, emoji, color, blockId: blockId || undefined, daysOfWeek: days, specificDate: specificDate || undefined, isAllDay: !blockId, coins: Number(coins), isOneTime, subtasks: subtasks.filter(s => s.title.trim() !== "") }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{taskFormContent}</FormModal>
+      <FormModal title="Новая задача" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (title) { addTask({ id: nanoid(), title, emoji, color, blockId: blockId || undefined, folderId: folderId || "general", daysOfWeek: days, specificDate: specificDate || undefined, isAllDay: !blockId, completedDates: {}, coins: Number(coins), isOneTime, subtasks: subtasks.filter(s => s.title.trim() !== "") }); setShowCreate(false); resetForm(); } }} submitText="Создать">{taskFormContent}</FormModal>
+      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && title) { updateTask(editingId, { title, emoji, color, blockId: blockId || undefined, folderId: folderId || "general", daysOfWeek: days, specificDate: specificDate || undefined, isAllDay: !blockId, coins: Number(coins), isOneTime, subtasks: subtasks.filter(s => s.title.trim() !== "") }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{taskFormContent}</FormModal>
+      <FormModal title="Новая большая задача" isOpen={showCreateFolder} onClose={() => { setShowCreateFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (folderName) { addTaskFolder({ id: nanoid(), name: folderName, emoji: folderEmoji, color: folderColor, collapsed: false }); setShowCreateFolder(false); setFolderName(""); } }} submitText="Создать">{folderFormContent}</FormModal>
+      <FormModal title="Редактировать большую задачу" isOpen={showEditFolder} onClose={() => { setShowEditFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (editingFolderId && folderName) { updateTaskFolder(editingFolderId, { name: folderName, color: folderColor, emoji: folderEmoji }); setShowEditFolder(false); } }} submitText="Сохранить">{folderFormContent}</FormModal>
     </div>
   );
 }

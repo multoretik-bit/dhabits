@@ -26,7 +26,7 @@ function getBlockColor(b: HabitBlock | null | undefined): string | null {
   return null;
 }
 
-function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
+function TaskRow({ task, dateStr, isCondensed }: { task: Task; dateStr: string; isCondensed?: boolean }) {
   const { completeTask, moveTaskUp, moveTaskDown, toggleSubtask } = useApp();
   const [expanded, setExpanded] = useState(false);
   const completed = !!(task.completedDates && task.completedDates[dateStr]);
@@ -35,20 +35,22 @@ function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
   const hasSubtasks = task.subtasks && task.subtasks.length > 0;
   const completedSubtasks = task.subtasks?.filter(s => s.completed).length || 0;
   const totalSubtasks = task.subtasks?.length || 0;
-  const allSubtasksDone = hasSubtasks && completedSubtasks === totalSubtasks;
 
   return (
-    <div className="mb-3">
+    <div className={cn("mb-3", isCondensed && "mb-2")}>
       <div
-        className={`w-full flex items-center gap-3 p-3 rounded-2xl transition-all text-left overflow-hidden border cursor-pointer
-          ${completed ? "opacity-60 border-slate-800/40" : "bg-slate-900/60 border-slate-800/80 shadow-sm hover:border-blue-700/50"}`}
+        className={cn(
+          "w-full flex items-center gap-3 p-3 rounded-2xl transition-all text-left overflow-hidden border cursor-pointer",
+          completed ? "opacity-60 border-slate-800/40" : "bg-slate-900/60 border-slate-800/80 shadow-sm hover:border-blue-700/50",
+          isCondensed && "p-2 rounded-xl"
+        )}
         style={{ 
           borderLeft: completed ? `3px solid ${taskColor}44` : `3px solid ${taskColor}`,
           background: completed ? "rgba(15,23,42,0.4)" : `linear-gradient(135deg, ${taskColor}12 0%, rgba(15,23,42,0.6) 100%)`
         }}
         onClick={() => completeTask(task.id, dateStr)}
       >
-        {!completed && task.coins && task.coins > 0 && (
+        {!completed && task.coins && task.coins > 0 && !isCondensed && (
           <div 
             className="flex-shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl text-center"
             style={{ backgroundColor: `${taskColor}25`, border: `1px solid ${taskColor}40` }}
@@ -59,14 +61,22 @@ function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
         )}
 
         <span 
-          className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl text-xl"
+          className={cn(
+            "flex-shrink-0 flex items-center justify-center rounded-xl text-xl",
+            isCondensed ? "w-8 h-8 text-lg" : "w-10 h-10",
+            completed ? "bg-slate-800" : `${taskColor}22`
+          )}
           style={{ backgroundColor: completed ? "#1e293b" : `${taskColor}22` }}
         >
-          {completed ? <Check className="w-5 h-5 text-slate-500" /> : (task.emoji || "📋")}
+          {completed ? <Check className="w-4 h-4 text-slate-500" /> : (task.emoji || "📋")}
         </span>
         
         <div className="flex-1 min-w-0">
-          <span className={`block font-bold text-sm leading-snug ${completed ? "line-through text-slate-500" : "text-slate-100"}`}>
+          <span className={cn(
+            "block font-bold leading-snug",
+            isCondensed ? "text-xs" : "text-sm",
+            completed ? "line-through text-slate-500" : "text-slate-100"
+          )}>
             {task.title}
           </span>
           {hasSubtasks && (
@@ -93,7 +103,7 @@ function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
               <ListTodo className={cn("w-4 h-4 transition-transform", expanded && "text-blue-400")} />
             </button>
           )}
-          {!completed && (
+          {!completed && !isCondensed && (
             <div className="flex flex-col gap-0.5">
               <button onClick={() => moveTaskUp(task.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
                 <ArrowUp className="w-3 h-3" />
@@ -114,7 +124,7 @@ function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="pt-2 pb-1 pl-12 pr-4 flex flex-col gap-2">
+            <div className={cn("pt-2 pb-1 pr-4 flex flex-col gap-2", isCondensed ? "pl-10" : "pl-12")}>
               {task.subtasks?.map(st => (
                 <div 
                   key={st.id} 
@@ -143,9 +153,83 @@ function TaskRow({ task, dateStr }: { task: Task; dateStr: string }) {
   );
 }
 
+function TaskFolderRow({ folder, tasks, dateStr }: { folder: any; tasks: Task[]; dateStr: string }) {
+  const { toggleTaskFolderCollapse } = useApp();
+  const completedCount = tasks.filter(t => !!(t.completedDates && t.completedDates[dateStr])).length;
+  const totalCount = tasks.length;
+  const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+  const folderColor = folder.color || "#3b82f6";
+
+  return (
+    <div className="mb-6">
+      <div 
+        className="group relative bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-4 backdrop-blur-md shadow-xl overflow-hidden cursor-pointer hover:border-slate-700/80 transition-all"
+        onClick={() => toggleTaskFolderCollapse(folder.id)}
+      >
+        <div 
+          className="absolute top-0 left-0 w-1 h-full" 
+          style={{ backgroundColor: folderColor }} 
+        />
+        
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-2xl border transition-transform group-hover:scale-110"
+              style={{ backgroundColor: `${folderColor}15`, borderColor: `${folderColor}30` }}
+            >
+              {folder.emoji || "📁"}
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-white tracking-tight">{folder.name}</h3>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                {completedCount} из {totalCount} выполнено
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+             <span className="text-xs font-black text-blue-400" style={{ color: folderColor }}>{Math.round(progress)}%</span>
+          </div>
+        </div>
+
+        <div className="relative w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-white/5">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="absolute top-0 left-0 h-full rounded-full"
+            style={{ 
+              backgroundColor: folderColor,
+              boxShadow: `0 0 10px ${folderColor}40`
+            }}
+          />
+        </div>
+
+        <div className="absolute top-4 right-4 opacity-20 group-hover:opacity-40 transition-opacity">
+           {folder.collapsed ? <ArrowDown className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {!folder.collapsed && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="pt-3 pl-4 space-y-1 border-l-2 border-slate-800/30 ml-5">
+               {tasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} isCondensed={true} />)}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 
 export default function Home() {
-  const { habits, tasks, blocks, wakeUpTimes, setWakeUpTime } = useApp();
+  const { habits, tasks, taskFolders, blocks, wakeUpTimes, setWakeUpTime } = useApp();
   const [, setLocation] = useLocation();
   const [now, setNow] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -206,6 +290,43 @@ export default function Home() {
   const allDayTasks = tasks.filter(
     t => t.isAllDay && isTaskForDate(t)
   );
+
+  // Group allDayTasks by folder
+  const groupedTasks = useMemo(() => {
+    const foldersWithTasks: { folder: any; tasks: Task[] }[] = [];
+    const standaloneTasks: Task[] = [];
+
+    // Filter tasks for today
+    const activeTasks = tasks.filter(t => isTaskForDate(t));
+    
+    // Group active tasks
+    activeTasks.forEach(task => {
+      if (task.folderId && task.folderId !== "general") {
+        const folder = taskFolders.find(f => f.id === task.folderId);
+        if (folder) {
+          let folderGroup = foldersWithTasks.find(g => g.folder.id === folder.id);
+          if (!folderGroup) {
+            folderGroup = { folder, tasks: [] };
+            foldersWithTasks.push(folderGroup);
+          }
+          folderGroup.tasks.push(task);
+        } else {
+          standaloneTasks.push(task);
+        }
+      } else {
+        standaloneTasks.push(task);
+      }
+    });
+
+    // Sort folders by global taskFolders order
+    foldersWithTasks.sort((a, b) => {
+       const idxA = taskFolders.findIndex(f => f.id === a.folder.id);
+       const idxB = taskFolders.findIndex(f => f.id === b.folder.id);
+       return idxA - idxB;
+    });
+
+    return { foldersWithTasks, standaloneTasks };
+  }, [tasks, taskFolders, dateStr, dayOfWeek]);
 
   // Daily Completion Stats (Only Habits)
   const dailyScheduledHabits = habits.filter(h => h.daysOfWeek.includes(dayOfWeek));
@@ -528,9 +649,24 @@ export default function Home() {
               <div className="h-[1px] flex-1 bg-gradient-to-r from-indigo-500/20 to-transparent ml-4" />
             </div>
 
-            {allDayTasks.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6">
-                {allDayTasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} />)}
+            {groupedTasks.foldersWithTasks.length > 0 || groupedTasks.standaloneTasks.length > 0 ? (
+              <div className="space-y-4">
+                {/* Render Folders first */}
+                {groupedTasks.foldersWithTasks.map(group => (
+                  <TaskFolderRow 
+                    key={group.folder.id} 
+                    folder={group.folder} 
+                    tasks={group.tasks} 
+                    dateStr={dateStr} 
+                  />
+                ))}
+                
+                {/* Render Standalone Tasks */}
+                {groupedTasks.standaloneTasks.length > 0 && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6">
+                    {groupedTasks.standaloneTasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} />)}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="py-12 flex flex-col items-center justify-center bg-slate-900/20 border border-dashed border-white/5 rounded-[32px] text-center">

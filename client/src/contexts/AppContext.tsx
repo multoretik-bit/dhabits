@@ -75,6 +75,7 @@ export interface Task {
   title: string;
   emoji: string;
   blockId?: string;
+  folderId?: string;
   daysOfWeek: number[]; // [] = every day
   specificDate?: string; // YYYY-MM-DD
   isAllDay: boolean;
@@ -142,6 +143,14 @@ export interface Goal {
 }
 
 export interface GoalFolder {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  collapsed: boolean;
+}
+
+export interface TaskFolder {
   id: string;
   name: string;
   emoji: string;
@@ -268,6 +277,13 @@ interface AppContextType {
   moveTaskUp: (taskId: string) => void;
   moveTaskDown: (taskId: string) => void;
   toggleSubtask: (taskId: string, subtaskId: string) => void;
+  taskFolders: TaskFolder[];
+  addTaskFolder: (folder: TaskFolder) => void;
+  updateTaskFolder: (id: string, folder: Partial<TaskFolder>) => void;
+  deleteTaskFolder: (id: string) => void;
+  toggleTaskFolderCollapse: (id: string) => void;
+  moveTaskFolderUp: (folderId: string) => void;
+  moveTaskFolderDown: (folderId: string) => void;
   isSyncing: boolean;
   isOnline: boolean;
   syncLogs: {time: string, event: string, status: 'success' | 'error' | 'pending'}[];
@@ -300,6 +316,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [shopFolders, setShopFolders] = useState<ShopFolder[]>([]);
   const [characterState, setCharacterState] = useState<CharacterState>({});
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [taskFolders, setTaskFolders] = useState<TaskFolder[]>([]);
   const [customColors, setCustomColors] = useState<string[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
@@ -319,7 +336,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // State ref to avoid stale closures in sync calls
   const currentStateRef = React.useRef({
-    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors, wakeUpTimes, daySnapshots
+    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots
   });
 
   useEffect(() => {
@@ -328,9 +345,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     currentStateRef.current = {
-      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors, wakeUpTimes, daySnapshots
+      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors, wakeUpTimes, daySnapshots]);
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots]);
 
   useEffect(() => {
     const savedData = storage.getData();
@@ -358,6 +375,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setShopFolders(savedData.shopFolders || []);
     setCharacterState(savedData.characterState || {});
     setTasks(savedData.tasks || []);
+    let tFolders = savedData.taskFolders || [];
+    if (!tFolders.find((f: any) => f.id === "general")) {
+      tFolders = [{ id: "general", name: "Общие", emoji: "📁", color: "#94a3b8", collapsed: false }, ...tFolders];
+    }
+    setTaskFolders(tFolders);
     setWakeUpTimes(savedData.wakeUpTimes || {});
     setDaySnapshots(savedData.daySnapshots || {});
 
@@ -401,6 +423,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 ...(remoteData.characterState || {})
               });
               setTasks(remoteData.tasks || []);
+              setTaskFolders(remoteData.taskFolders || []);
               setCustomColors(remoteData.customColors || []);
               setWakeUpTimes(remoteData.wakeUpTimes || {});
               setDaySnapshots(remoteData.daySnapshots || {});
@@ -460,6 +483,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                     ...(newData.characterState || {})
                   });
                   setTasks(newData.tasks || []);
+                  setTaskFolders(newData.taskFolders || []);
                   setCustomColors(newData.customColors || []);
                   setWakeUpTimes(newData.wakeUpTimes || {});
                   setDaySnapshots(newData.daySnapshots || {});
@@ -521,7 +545,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, wakeUpTimes, daySnapshots]);
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, wakeUpTimes, daySnapshots]);
 
   // Handle mobile wake/focus
   useEffect(() => {
@@ -546,6 +570,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       
       const data: StorageData = {
         ...currentStateRef.current,
+        taskFolders: currentStateRef.current.taskFolders,
         clientId: clientIdRef.current,
         lastUpdated: new Date().toISOString(),
         character: {},
@@ -599,6 +624,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...(remoteData.characterState || {})
       });
       setTasks(remoteData.tasks || []);
+      setTaskFolders(remoteData.taskFolders || []);
       setCustomColors(remoteData.customColors || []);
       setWakeUpTimes(remoteData.wakeUpTimes || {});
       setDaySnapshots(remoteData.daySnapshots || {});
@@ -632,6 +658,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     shopFoldersValue: ShopFolder[],
     characterStateValue: CharacterState,
     tasksValue: Task[],
+    taskFoldersValue: TaskFolder[],
     customColorsValue: string[],
     wakeUpTimesValue?: Record<string, string>,
     daySnapshotsValue?: Record<string, SnapshotEntry[]>
@@ -648,6 +675,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       character: {},
       characterState: characterStateValue,
       tasks: tasksValue,
+      taskFolders: taskFoldersValue,
       customColors: customColorsValue,
       wakeUpTimes: wakeUpTimesValue || wakeUpTimes,
       daySnapshots: daySnapshotsValue || daySnapshots,
@@ -681,6 +709,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setShopFolders(remoteData.shopFolders || []);
         setCharacterState(remoteData.characterState || {});
         setTasks(remoteData.tasks || []);
+        setTaskFolders(remoteData.taskFolders || []);
         setCustomColors(remoteData.customColors || []);
         setWakeUpTimes(remoteData.wakeUpTimes || {});
         setDaySnapshots(remoteData.daySnapshots || {});
@@ -698,27 +727,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addCoins = (amount: number) => {
     const newCoins = Math.round((coins + amount) * 100) / 100;
     setCoins(newCoins);
-    saveAllData(newCoins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors);
+    saveAllData(newCoins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
   };
 
   const spendCoins = (amount: number): boolean => {
     if (coins < amount) return false;
     const newCoins = Math.round((coins - amount) * 100) / 100;
     setCoins(newCoins);
-    saveAllData(newCoins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors);
+    saveAllData(newCoins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
     return true;
   };
 
   const addHabit = (habit: Habit) => {
     const newHabits = [...habits, habit];
     setHabits(newHabits);
-    saveAllData(coins, newHabits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors);
+    saveAllData(coins, newHabits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
   };
 
   const updateHabit = (id: string, updates: Partial<Habit>) => {
     const newHabits = habits.map((h) => (h.id === id ? { ...h, ...updates } : h));
     setHabits(newHabits);
-    saveAllData(coins, newHabits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors);
+    saveAllData(coins, newHabits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
   };
 
   const deleteHabit = (id: string) => {
@@ -726,7 +755,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const newBlocks = blocks.map((b) => ({ ...b, habits: b.habits.filter((h) => h.id !== id) }));
     setHabits(newHabits);
     setBlocks(newBlocks);
-    saveAllData(coins, newHabits, newBlocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors);
+    saveAllData(coins, newHabits, newBlocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
   };
 
   const completeHabit = (id: string, dateStr?: string) => {
@@ -746,7 +775,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         );
         setHabits(newHabits);
         setCoins(newCoins);
-        saveAllData(newCoins, newHabits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors);
+        saveAllData(newCoins, newHabits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
       }
     } else {
       const newCompletedDates = { ...(habit.completedDates || {}) };
@@ -758,7 +787,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       );
       setHabits(newHabits);
       setCoins(newCoins);
-      saveAllData(newCoins, newHabits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors);
+      saveAllData(newCoins, newHabits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
     }
   };
 
@@ -776,39 +805,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     setHabits(updatedHabits);
     setBlocks(newBlocks);
-    saveAllData(coins, updatedHabits, newBlocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors);
+    saveAllData(coins, updatedHabits, newBlocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
   };
 
   const addBlock = (block: HabitBlock) => {
     const newBlocks = [...blocks, block];
     setBlocks(newBlocks);
-    saveAllData(coins, habits, newBlocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors);
+    saveAllData(coins, habits, newBlocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
   };
 
   const addCustomColor = (color: string) => {
     if (!customColors.includes(color)) {
       const newColors = [...customColors, color];
       setCustomColors(newColors);
-      saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, newColors);
+      saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, newColors);
     }
   };
 
   const removeCustomColor = (color: string) => {
     const newColors = customColors.filter(c => c !== color);
     setCustomColors(newColors);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, newColors);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, newColors);
   };
 
   const updateBlock = (id: string, updates: Partial<HabitBlock>) => {
     const newBlocks = blocks.map((b) => (b.id === id ? { ...b, ...updates } : b));
     setBlocks(newBlocks);
-    saveAllData(coins, habits, newBlocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors);
+    saveAllData(coins, habits, newBlocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
   };
 
   const deleteBlock = (id: string) => {
     const newBlocks = blocks.filter((b) => b.id !== id);
     setBlocks(newBlocks);
-    saveAllData(coins, habits, newBlocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, customColors);
+    saveAllData(coins, habits, newBlocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
   };
 
   const toggleBlockCollapse = (id: string) => {
@@ -1108,7 +1137,52 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return t;
     });
     setTasks(newTasks);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, newTasks, customColors);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, newTasks, taskFolders, customColors);
+  };
+
+  const addTaskFolder = (folder: TaskFolder) => {
+    const newFolders = [...taskFolders, folder];
+    setTaskFolders(newFolders);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, newFolders, customColors);
+  };
+
+  const updateTaskFolder = (id: string, updates: Partial<TaskFolder>) => {
+    const newFolders = taskFolders.map((f) => (f.id === id ? { ...f, ...updates } : f));
+    setTaskFolders(newFolders);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, newFolders, customColors);
+  };
+
+  const deleteTaskFolder = (id: string) => {
+    const newFolders = taskFolders.filter((f) => f.id !== id);
+    // Move tasks to general
+    const newTasks = tasks.map(t => t.folderId === id ? { ...t, folderId: "general" } : t);
+    setTaskFolders(newFolders);
+    setTasks(newTasks);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, newTasks, newFolders, customColors);
+  };
+
+  const toggleTaskFolderCollapse = (id: string) => {
+    updateTaskFolder(id, { collapsed: !taskFolders.find((f) => f.id === id)?.collapsed });
+  };
+
+  const moveTaskFolderUp = (folderId: string) => {
+    const idx = taskFolders.findIndex((f) => f.id === folderId);
+    if (idx > 0) {
+      const newFolders = [...taskFolders];
+      [newFolders[idx], newFolders[idx - 1]] = [newFolders[idx - 1], newFolders[idx]];
+      setTaskFolders(newFolders);
+      saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, newFolders, customColors);
+    }
+  };
+
+  const moveTaskFolderDown = (folderId: string) => {
+    const idx = taskFolders.findIndex((f) => f.id === folderId);
+    if (idx < taskFolders.length - 1) {
+      const newFolders = [...taskFolders];
+      [newFolders[idx], newFolders[idx + 1]] = [newFolders[idx + 1], newFolders[idx]];
+      setTaskFolders(newFolders);
+      saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, newFolders, customColors);
+    }
   };
 
   const moveHabitUp = (habitId: string) => {
@@ -1309,6 +1383,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         moveTaskUp,
         moveTaskDown,
         toggleSubtask,
+        taskFolders,
+        addTaskFolder,
+        updateTaskFolder,
+        deleteTaskFolder,
+        toggleTaskFolderCollapse,
+        moveTaskFolderUp,
+        moveTaskFolderDown,
         isSyncing,
         syncWithCloud,
         forceSyncFromCloud,
