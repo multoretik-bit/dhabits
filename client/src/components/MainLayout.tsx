@@ -4,6 +4,8 @@ import CoinDisplay from "./CoinDisplay";
 import { useApp } from "@/contexts/AppContext";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { useState } from "react";
+import IdentityModal from "./IdentityModal";
 
 const navItems = [
   { path: "/", label: "Сегодня", icon: Home },
@@ -20,6 +22,7 @@ interface MainLayoutProps {
 export default function MainLayout({ children, onSignOut }: MainLayoutProps) {
   const [location] = useLocation();
   const { coins, isSyncing, isOnline } = useApp();
+  const [showIdentityModal, setShowIdentityModal] = useState(false);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -29,11 +32,22 @@ export default function MainLayout({ children, onSignOut }: MainLayoutProps) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="nav-blur px-4 py-4 shadow-sm">
-        <div className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="dHabits Logo" className="w-7 h-7 rounded-[8px] object-contain drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-          <span className="font-extrabold text-xl text-blue-50 tracking-tight">dHabits</span>
+      <header className="nav-blur px-4 py-4 shadow-sm flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2.5">
+            <img src="/logo.png" alt="dHabits Logo" className="w-7 h-7 rounded-[8px] object-contain drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+            <span className="font-extrabold text-xl text-blue-50 tracking-tight hidden sm:inline">dHabits</span>
+          </div>
+          
+          <button
+            onClick={() => setShowIdentityModal(true)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/40 border border-slate-700/50 hover:bg-slate-700/50 transition-all group"
+          >
+            <Target className="w-4 h-4 text-purple-400 group-hover:scale-110 transition-transform" />
+            <span className="text-xs font-bold text-slate-200">Самоидентификация</span>
+          </button>
         </div>
+
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 bg-blue-950/40 border border-blue-900/40 px-3 py-1.5 rounded-full shadow-inner mr-1">
             <CoinDisplay amount={coins} size="sm" showLabel={true} />
@@ -65,6 +79,8 @@ export default function MainLayout({ children, onSignOut }: MainLayoutProps) {
           </button>
         </div>
       </header>
+
+      {showIdentityModal && <IdentityModal onClose={() => setShowIdentityModal(false)} />}
 
       {/* Main content */}
       <main className="flex-1 overflow-auto pb-24 bg-background">

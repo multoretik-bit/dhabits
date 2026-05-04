@@ -4,6 +4,7 @@ import { defaultShopItems } from "@/lib/defaultShopItems";
 import { supabase } from "@/lib/supabase";
 import { syncSave, syncLoad } from "@/lib/sync";
 import { toast } from "sonner";
+import { nanoid } from "nanoid";
 
 // Color palette for folders/goals/blocks
 export const FOLDER_COLORS = [
@@ -70,6 +71,18 @@ export interface SubTask {
   id: string;
   title: string;
   completed: boolean;
+}
+
+export interface IdentityValue {
+  id: string;
+  text: string;
+}
+
+export interface IdentitySystem {
+  id: string;
+  aspect: string;
+  belief: string;
+  color: string;
 }
 
 export interface Task {
@@ -293,6 +306,12 @@ interface AppContextType {
   syncWithCloud: () => Promise<void>;
   forceSyncFromCloud: () => Promise<void>;
   forcePushToCloud: () => Promise<void>;
+  identityValues: IdentityValue[];
+  identitySystems: IdentitySystem[];
+  addIdentityValue: (text: string) => void;
+  updateIdentityValue: (id: string, text: string) => void;
+  deleteIdentityValue: (id: string) => void;
+  updateIdentitySystem: (id: string, belief: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -307,6 +326,19 @@ function migrateHabit(habit: any): Habit {
   }
   return habit as Habit;
 }
+
+const DEFAULT_IDENTITY_SYSTEMS: IdentitySystem[] = [
+  { id: "1", aspect: "Моя внешность", belief: "", color: "#5eead4" },
+  { id: "2", aspect: "Здоровье", belief: "", color: "#2563eb" },
+  { id: "3", aspect: "Отношения", belief: "", color: "#f43f5e" },
+  { id: "4", aspect: "Семья", belief: "", color: "#f97316" },
+  { id: "5", aspect: "Окружение", belief: "", color: "#84cc16" },
+  { id: "6", aspect: "Отдых", belief: "", color: "#fecaca" },
+  { id: "7", aspect: "Стремления", belief: "", color: "#7c3aed" },
+  { id: "8", aspect: "Бизнес и работа", belief: "", color: "#ef4444" },
+  { id: "9", aspect: "Финансы", belief: "", color: "#064e3b" },
+  { id: "10", aspect: "Учёба", belief: "", color: "#facc15" },
+];
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [coins, setCoins] = useState(0);
@@ -326,6 +358,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [syncLogs, setSyncLogs] = useState<{time: string, event: string, status: 'success' | 'error' | 'pending'}[]>([]);
   const [wakeUpTimes, setWakeUpTimes] = useState<Record<string, string>>({});
   const [daySnapshots, setDaySnapshots] = useState<Record<string, SnapshotEntry[]>>({});
+  const [identityValues, setIdentityValues] = useState<IdentityValue[]>([]);
+  const [identitySystems, setIdentitySystems] = useState<IdentitySystem[]>(DEFAULT_IDENTITY_SYSTEMS);
 
   const logSyncEvent = (event: string, status: 'success' | 'error' | 'pending') => {
     setSyncLogs(prev => [{ time: new Date().toLocaleTimeString(), event, status }, ...prev].slice(0, 10));
@@ -339,7 +373,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // State ref to avoid stale closures in sync calls
   const currentStateRef = React.useRef({
-    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots
+    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identitySystems
   });
 
   useEffect(() => {
@@ -348,9 +382,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     currentStateRef.current = {
-      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots
+      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identitySystems
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots]);
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identitySystems]);
 
   useEffect(() => {
     const savedData = storage.getData();
@@ -385,6 +419,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setTaskFolders(tFolders);
     setWakeUpTimes(savedData.wakeUpTimes || {});
     setDaySnapshots(savedData.daySnapshots || {});
+    setIdentityValues(savedData.identityValues || []);
+    if (savedData.identitySystems && savedData.identitySystems.length > 0) {
+      setIdentitySystems(savedData.identitySystems);
+    }
 
     // Initial cloud sync and real-time subscription
     let activeChannel: any = null;
@@ -490,6 +528,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   setCustomColors(newData.customColors || []);
                   setWakeUpTimes(newData.wakeUpTimes || {});
                   setDaySnapshots(newData.daySnapshots || {});
+                  setIdentityValues(newData.identityValues || []);
+                  if (newData.identitySystems) setIdentitySystems(newData.identitySystems);
                   storage.saveData(newData);
                   setTimeout(() => { isRemoteUpdateRef.current = false; }, 500);
                 } else {
@@ -548,7 +588,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, wakeUpTimes, daySnapshots]);
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, wakeUpTimes, daySnapshots, identityValues, identitySystems]);
 
   // Handle mobile wake/focus
   useEffect(() => {
@@ -631,6 +671,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setCustomColors(remoteData.customColors || []);
       setWakeUpTimes(remoteData.wakeUpTimes || {});
       setDaySnapshots(remoteData.daySnapshots || {});
+      setIdentityValues(remoteData.identityValues || []);
+      if (remoteData.identitySystems) setIdentitySystems(remoteData.identitySystems);
       storage.saveData(remoteData);
       
       logSyncEvent("Данные загружены из облака", "success");
@@ -664,7 +706,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     taskFoldersValue: TaskFolder[],
     customColorsValue: string[],
     wakeUpTimesValue?: Record<string, string>,
-    daySnapshotsValue?: Record<string, SnapshotEntry[]>
+    daySnapshotsValue?: Record<string, SnapshotEntry[]>,
+    identityValuesValue?: IdentityValue[],
+    identitySystemsValue?: IdentitySystem[]
   ) => {
     const data: StorageData = {
       coins: coinsValue,
@@ -682,6 +726,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       customColors: customColorsValue,
       wakeUpTimes: wakeUpTimesValue || wakeUpTimes,
       daySnapshots: daySnapshotsValue || daySnapshots,
+      identityValues: identityValuesValue || identityValues,
+      identitySystems: identitySystemsValue || identitySystems,
       progress: {},
       streaks: {},
       shop: [],
@@ -716,6 +762,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setCustomColors(remoteData.customColors || []);
         setWakeUpTimes(remoteData.wakeUpTimes || {});
         setDaySnapshots(remoteData.daySnapshots || {});
+        setIdentityValues(remoteData.identityValues || []);
+        if (remoteData.identitySystems) setIdentitySystems(remoteData.identitySystems);
         storage.saveData(remoteData);
         setTimeout(() => { isRemoteUpdateRef.current = false; }, 500);
       }
@@ -1320,6 +1368,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, newSnapshots);
   };
 
+  const addIdentityValue = (text: string) => {
+    const newValue = { id: nanoid(), text };
+    const newValues = [...identityValues, newValue];
+    setIdentityValues(newValues);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, newValues, identitySystems);
+  };
+
+  const updateIdentityValue = (id: string, text: string) => {
+    const newValues = identityValues.map(v => v.id === id ? { ...v, text } : v);
+    setIdentityValues(newValues);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, newValues, identitySystems);
+  };
+
+  const deleteIdentityValue = (id: string) => {
+    const newValues = identityValues.filter(v => v.id !== id);
+    setIdentityValues(newValues);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, newValues, identitySystems);
+  };
+
+  const updateIdentitySystem = (id: string, belief: string) => {
+    const newSystems = identitySystems.map(s => s.id === id ? { ...s, belief } : s);
+    setIdentitySystems(newSystems);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, newSystems);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -1409,7 +1482,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         daySnapshots,
         addSnapshotEntry,
         updateSnapshotEntry,
-        deleteSnapshotEntry
+        deleteSnapshotEntry,
+        identityValues,
+        identitySystems,
+        addIdentityValue,
+        updateIdentityValue,
+        deleteIdentityValue,
+        updateIdentitySystem
       }}
     >
       {children}

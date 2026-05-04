@@ -20,6 +20,8 @@ export interface StorageData {
   customColors?: string[];
   wakeUpTimes?: Record<string, string>;
   daySnapshots?: Record<string, any[]>;
+  identityValues?: any[];
+  identitySystems?: any[];
   lastUpdated: string;
   clientId?: string;
 }
