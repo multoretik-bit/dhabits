@@ -423,14 +423,16 @@ export default function Home() {
                 
                 // Determine if there is a gap before this block
                 const prevBlock = idx > 0 ? todayBlocks[idx - 1] : null;
-                const hasGap = prevBlock && timeToMinutes(block.startTime) > timeToMinutes(prevBlock.endTime);
+                const gapMinutes = prevBlock ? Math.max(0, timeToMinutes(block.startTime) - timeToMinutes(prevBlock.endTime)) : 0;
+                const hasGap = gapMinutes > 0;
 
                 return (
                   <div key={block.id}>
                     {hasGap && (
-                      <div className="py-6 px-4 text-center">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 bg-slate-950 px-3 py-1 rounded-full border border-slate-800">
-                          Перерыв / Пропуск
+                      <div className="flex flex-col items-center justify-center opacity-50 transition-all" style={{ height: `${Math.max(60, gapMinutes)}px` }}>
+                        <div className="w-px h-full bg-slate-800 border-l border-dashed border-slate-700" />
+                        <span className="absolute text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-950 px-3 py-1 rounded-full border border-slate-800 -translate-x-[11px] sm:-translate-x-[15px]">
+                          {gapMinutes >= 60 ? `${Math.floor(gapMinutes/60)}ч ${gapMinutes%60}м` : `${gapMinutes}м`} перерыв
                         </span>
                       </div>
                     )}

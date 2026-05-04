@@ -835,8 +835,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const deleteBlock = (id: string) => {
     const newBlocks = blocks.filter((b) => b.id !== id);
+    const newHabits = habits.map(h => h.blockId === id ? { ...h, blockId: '' } : h);
+    const newTasks = tasks.map(t => t.blockId === id ? { ...t, blockId: undefined } : t);
     setBlocks(newBlocks);
-    saveAllData(coins, habits, newBlocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
+    setHabits(newHabits);
+    setTasks(newTasks);
+    saveAllData(coins, newHabits, newBlocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, newTasks, taskFolders, customColors);
   };
 
   const toggleBlockCollapse = (id: string) => {
