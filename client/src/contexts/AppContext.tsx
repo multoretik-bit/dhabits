@@ -73,16 +73,36 @@ export interface SubTask {
   completed: boolean;
 }
 
+export interface IdentityValueFolder {
+  id: string;
+  name: string;
+  color?: string;
+}
+
 export interface IdentityValue {
   id: string;
   text: string;
+  folderId?: string;
 }
 
 export interface IdentitySystem {
   id: string;
   aspect: string;
-  belief: string;
   color: string;
+}
+
+export interface IdentitySystemFolder {
+  id: string;
+  aspectId: string;
+  name: string;
+  color?: string;
+}
+
+export interface IdentitySystemIdea {
+  id: string;
+  aspectId: string;
+  folderId?: string;
+  text: string;
 }
 
 export interface Task {
@@ -307,11 +327,20 @@ interface AppContextType {
   forceSyncFromCloud: () => Promise<void>;
   forcePushToCloud: () => Promise<void>;
   identityValues: IdentityValue[];
-  identitySystems: IdentitySystem[];
-  addIdentityValue: (text: string) => void;
+  identityValueFolders: IdentityValueFolder[];
+  addIdentityValue: (text: string, folderId?: string) => void;
   updateIdentityValue: (id: string, text: string) => void;
   deleteIdentityValue: (id: string) => void;
-  updateIdentitySystem: (id: string, belief: string) => void;
+  addIdentityValueFolder: (name: string) => void;
+  deleteIdentityValueFolder: (id: string) => void;
+  identitySystems: IdentitySystem[];
+  identitySystemFolders: IdentitySystemFolder[];
+  identitySystemIdeas: IdentitySystemIdea[];
+  addIdentitySystemFolder: (aspectId: string, name: string) => void;
+  deleteIdentitySystemFolder: (id: string) => void;
+  addIdentitySystemIdea: (aspectId: string, text: string, folderId?: string) => void;
+  updateIdentitySystemIdea: (id: string, text: string) => void;
+  deleteIdentitySystemIdea: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -328,16 +357,16 @@ function migrateHabit(habit: any): Habit {
 }
 
 const DEFAULT_IDENTITY_SYSTEMS: IdentitySystem[] = [
-  { id: "1", aspect: "Моя внешность", belief: "", color: "#5eead4" },
-  { id: "2", aspect: "Здоровье", belief: "", color: "#2563eb" },
-  { id: "3", aspect: "Отношения", belief: "", color: "#f43f5e" },
-  { id: "4", aspect: "Семья", belief: "", color: "#f97316" },
-  { id: "5", aspect: "Окружение", belief: "", color: "#84cc16" },
-  { id: "6", aspect: "Отдых", belief: "", color: "#fecaca" },
-  { id: "7", aspect: "Стремления", belief: "", color: "#7c3aed" },
-  { id: "8", aspect: "Бизнес и работа", belief: "", color: "#ef4444" },
-  { id: "9", aspect: "Финансы", belief: "", color: "#064e3b" },
-  { id: "10", aspect: "Учёба", belief: "", color: "#facc15" },
+  { id: "1", aspect: "Моя внешность", color: "#5eead4" },
+  { id: "2", aspect: "Здоровье", color: "#2563eb" },
+  { id: "3", aspect: "Отношения", color: "#f43f5e" },
+  { id: "4", aspect: "Семья", color: "#f97316" },
+  { id: "5", aspect: "Окружение", color: "#84cc16" },
+  { id: "6", aspect: "Отдых", color: "#fecaca" },
+  { id: "7", aspect: "Стремления", color: "#7c3aed" },
+  { id: "8", aspect: "Бизнес и работа", color: "#ef4444" },
+  { id: "9", aspect: "Финансы", color: "#064e3b" },
+  { id: "10", aspect: "Учёба", color: "#facc15" },
 ];
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -359,7 +388,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [wakeUpTimes, setWakeUpTimes] = useState<Record<string, string>>({});
   const [daySnapshots, setDaySnapshots] = useState<Record<string, SnapshotEntry[]>>({});
   const [identityValues, setIdentityValues] = useState<IdentityValue[]>([]);
+  const [identityValueFolders, setIdentityValueFolders] = useState<IdentityValueFolder[]>([]);
   const [identitySystems, setIdentitySystems] = useState<IdentitySystem[]>(DEFAULT_IDENTITY_SYSTEMS);
+  const [identitySystemFolders, setIdentitySystemFolders] = useState<IdentitySystemFolder[]>([]);
+  const [identitySystemIdeas, setIdentitySystemIdeas] = useState<IdentitySystemIdea[]>([]);
 
   const logSyncEvent = (event: string, status: 'success' | 'error' | 'pending') => {
     setSyncLogs(prev => [{ time: new Date().toLocaleTimeString(), event, status }, ...prev].slice(0, 10));
@@ -373,7 +405,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // State ref to avoid stale closures in sync calls
   const currentStateRef = React.useRef({
-    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identitySystems
+    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, 
+    identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas
   });
 
   useEffect(() => {
@@ -382,9 +415,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     currentStateRef.current = {
-      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identitySystems
+      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, 
+      identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identitySystems]);
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, 
+      identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas]);
 
   useEffect(() => {
     const savedData = storage.getData();
@@ -420,9 +455,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setWakeUpTimes(savedData.wakeUpTimes || {});
     setDaySnapshots(savedData.daySnapshots || {});
     setIdentityValues(savedData.identityValues || []);
+    setIdentityValueFolders(savedData.identityValueFolders || []);
     if (savedData.identitySystems && savedData.identitySystems.length > 0) {
       setIdentitySystems(savedData.identitySystems);
     }
+    setIdentitySystemFolders(savedData.identitySystemFolders || []);
+    setIdentitySystemIdeas(savedData.identitySystemIdeas || []);
 
     // Initial cloud sync and real-time subscription
     let activeChannel: any = null;
@@ -468,6 +506,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               setCustomColors(remoteData.customColors || []);
               setWakeUpTimes(remoteData.wakeUpTimes || {});
               setDaySnapshots(remoteData.daySnapshots || {});
+              setIdentityValues(remoteData.identityValues || []);
+              setIdentityValueFolders(remoteData.identityValueFolders || []);
+              if (remoteData.identitySystems) setIdentitySystems(remoteData.identitySystems);
+              setIdentitySystemFolders(remoteData.identitySystemFolders || []);
+              setIdentitySystemIdeas(remoteData.identitySystemIdeas || []);
               storage.saveData(remoteData);
               setTimeout(() => { isRemoteUpdateRef.current = false; }, 200);
             }
@@ -529,7 +572,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   setWakeUpTimes(newData.wakeUpTimes || {});
                   setDaySnapshots(newData.daySnapshots || {});
                   setIdentityValues(newData.identityValues || []);
+                  setIdentityValueFolders(newData.identityValueFolders || []);
                   if (newData.identitySystems) setIdentitySystems(newData.identitySystems);
+                  setIdentitySystemFolders(newData.identitySystemFolders || []);
+                  setIdentitySystemIdeas(newData.identitySystemIdeas || []);
                   storage.saveData(newData);
                   setTimeout(() => { isRemoteUpdateRef.current = false; }, 500);
                 } else {
@@ -672,7 +718,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setWakeUpTimes(remoteData.wakeUpTimes || {});
       setDaySnapshots(remoteData.daySnapshots || {});
       setIdentityValues(remoteData.identityValues || []);
+      setIdentityValueFolders(remoteData.identityValueFolders || []);
       if (remoteData.identitySystems) setIdentitySystems(remoteData.identitySystems);
+      setIdentitySystemFolders(remoteData.identitySystemFolders || []);
+      setIdentitySystemIdeas(remoteData.identitySystemIdeas || []);
       storage.saveData(remoteData);
       
       logSyncEvent("Данные загружены из облака", "success");
@@ -708,7 +757,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     wakeUpTimesValue?: Record<string, string>,
     daySnapshotsValue?: Record<string, SnapshotEntry[]>,
     identityValuesValue?: IdentityValue[],
-    identitySystemsValue?: IdentitySystem[]
+    identityValueFoldersValue?: IdentityValueFolder[],
+    identitySystemsValue?: IdentitySystem[],
+    identitySystemFoldersValue?: IdentitySystemFolder[],
+    identitySystemIdeasValue?: IdentitySystemIdea[]
   ) => {
     const data: StorageData = {
       coins: coinsValue,
@@ -727,7 +779,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       wakeUpTimes: wakeUpTimesValue || wakeUpTimes,
       daySnapshots: daySnapshotsValue || daySnapshots,
       identityValues: identityValuesValue || identityValues,
+      identityValueFolders: identityValueFoldersValue || identityValueFolders,
       identitySystems: identitySystemsValue || identitySystems,
+      identitySystemFolders: identitySystemFoldersValue || identitySystemFolders,
+      identitySystemIdeas: identitySystemIdeasValue || identitySystemIdeas,
       progress: {},
       streaks: {},
       shop: [],
@@ -763,7 +818,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setWakeUpTimes(remoteData.wakeUpTimes || {});
         setDaySnapshots(remoteData.daySnapshots || {});
         setIdentityValues(remoteData.identityValues || []);
+        setIdentityValueFolders(remoteData.identityValueFolders || []);
         if (remoteData.identitySystems) setIdentitySystems(remoteData.identitySystems);
+        setIdentitySystemFolders(remoteData.identitySystemFolders || []);
+        setIdentitySystemIdeas(remoteData.identitySystemIdeas || []);
         storage.saveData(remoteData);
         setTimeout(() => { isRemoteUpdateRef.current = false; }, 500);
       }
@@ -1368,29 +1426,72 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, newSnapshots);
   };
 
-  const addIdentityValue = (text: string) => {
-    const newValue = { id: nanoid(), text };
+  const addIdentityValue = (text: string, folderId?: string) => {
+    const newValue = { id: nanoid(), text, folderId };
     const newValues = [...identityValues, newValue];
     setIdentityValues(newValues);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, newValues, identitySystems);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, newValues);
   };
 
   const updateIdentityValue = (id: string, text: string) => {
     const newValues = identityValues.map(v => v.id === id ? { ...v, text } : v);
     setIdentityValues(newValues);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, newValues, identitySystems);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, newValues);
   };
 
   const deleteIdentityValue = (id: string) => {
     const newValues = identityValues.filter(v => v.id !== id);
     setIdentityValues(newValues);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, newValues, identitySystems);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, newValues);
   };
 
-  const updateIdentitySystem = (id: string, belief: string) => {
-    const newSystems = identitySystems.map(s => s.id === id ? { ...s, belief } : s);
-    setIdentitySystems(newSystems);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, newSystems);
+  const addIdentityValueFolder = (name: string) => {
+    const newFolder = { id: nanoid(), name };
+    const newFolders = [...identityValueFolders, newFolder];
+    setIdentityValueFolders(newFolders);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, newFolders);
+  };
+
+  const deleteIdentityValueFolder = (id: string) => {
+    const newFolders = identityValueFolders.filter(f => f.id !== id);
+    const newValues = identityValues.map(v => v.folderId === id ? { ...v, folderId: undefined } : v);
+    setIdentityValueFolders(newFolders);
+    setIdentityValues(newValues);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, newValues, newFolders);
+  };
+
+  const addIdentitySystemFolder = (aspectId: string, name: string) => {
+    const newFolder = { id: nanoid(), aspectId, name };
+    const newFolders = [...identitySystemFolders, newFolder];
+    setIdentitySystemFolders(newFolders);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, newFolders);
+  };
+
+  const deleteIdentitySystemFolder = (id: string) => {
+    const newFolders = identitySystemFolders.filter(f => f.id !== id);
+    const newIdeas = identitySystemIdeas.map(i => i.folderId === id ? { ...i, folderId: undefined } : i);
+    setIdentitySystemFolders(newFolders);
+    setIdentitySystemIdeas(newIdeas);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, newFolders, newIdeas);
+  };
+
+  const addIdentitySystemIdea = (aspectId: string, text: string, folderId?: string) => {
+    const newIdea = { id: nanoid(), aspectId, text, folderId };
+    const newIdeas = [...identitySystemIdeas, newIdea];
+    setIdentitySystemIdeas(newIdeas);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, newIdeas);
+  };
+
+  const updateIdentitySystemIdea = (id: string, text: string) => {
+    const newIdeas = identitySystemIdeas.map(i => i.id === id ? { ...i, text } : i);
+    setIdentitySystemIdeas(newIdeas);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, newIdeas);
+  };
+
+  const deleteIdentitySystemIdea = (id: string) => {
+    const newIdeas = identitySystemIdeas.filter(i => i.id !== id);
+    setIdentitySystemIdeas(newIdeas);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, newIdeas);
   };
 
   return (
@@ -1484,11 +1585,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateSnapshotEntry,
         deleteSnapshotEntry,
         identityValues,
-        identitySystems,
+        identityValueFolders,
         addIdentityValue,
         updateIdentityValue,
         deleteIdentityValue,
-        updateIdentitySystem
+        addIdentityValueFolder,
+        deleteIdentityValueFolder,
+        identitySystems,
+        identitySystemFolders,
+        identitySystemIdeas,
+        addIdentitySystemFolder,
+        deleteIdentitySystemFolder,
+        addIdentitySystemIdea,
+        updateIdentitySystemIdea,
+        deleteIdentitySystemIdea
       }}
     >
       {children}

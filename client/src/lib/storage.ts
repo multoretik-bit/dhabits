@@ -21,7 +21,10 @@ export interface StorageData {
   wakeUpTimes?: Record<string, string>;
   daySnapshots?: Record<string, any[]>;
   identityValues?: any[];
+  identityValueFolders?: any[];
   identitySystems?: any[];
+  identitySystemFolders?: any[];
+  identitySystemIdeas?: any[];
   lastUpdated: string;
   clientId?: string;
 }
