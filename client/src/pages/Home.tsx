@@ -433,11 +433,11 @@ export default function Home() {
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 mt-6"
+            className="max-w-[1440px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 mt-6 px-4"
           >
             
             {/* Left Column: Timeline of Blocks */}
-            <div className="relative pl-6 sm:pl-8 border-l-2 border-slate-800/60 pb-12">
+            <div className="lg:col-span-7 relative pl-6 sm:pl-8 border-l-2 border-slate-800/60 pb-12">
               <div className="absolute top-0 -left-[11px] w-5 h-5 rounded-full bg-slate-900 border-4 border-slate-700 shadow-lg" />
               
               {todayBlocks.length > 0 ? todayBlocks.map((block, idx) => {
@@ -504,11 +504,10 @@ export default function Home() {
               <div className="absolute bottom-0 -left-[11px] w-5 h-5 rounded-full bg-slate-900 border-4 border-slate-700 shadow-lg" />
             </div>
 
-            {/* Right Column: Snapshot & Tasks */}
-            <div className="flex flex-col gap-8">
+            <div className="lg:col-span-5 flex flex-col gap-8">
               
               {/* Слепок дня (Snapshot Widget) */}
-              <div className="glass-card rounded-[32px] p-6 border border-white/5 bg-slate-900/40 relative overflow-hidden">
+              <div className="glass-card rounded-[32px] p-8 border border-white/5 bg-slate-900/40 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                    <Target className="w-32 h-32 text-purple-400 rotate-12" />
                 </div>
@@ -541,14 +540,18 @@ export default function Home() {
                   </div>
                 )}
                 
-                <div className="flex flex-wrap gap-2 relative z-10">
+                <div className="grid grid-cols-2 gap-2 relative z-10">
                   {CATEGORIES.map(cat => (
                     <button
                       key={cat.id}
                       onClick={() => { setSnapshotCat(cat.id); setShowSnapshotModal(true); }}
-                      className="px-3 py-2 rounded-xl border border-white/5 bg-black/40 hover:bg-white/10 transition-all flex items-center gap-2 text-xs font-bold text-slate-300"
+                      className="px-3 py-3 rounded-2xl border border-white/5 bg-black/40 hover:bg-white/10 transition-all flex items-center justify-between gap-2 text-xs font-bold text-slate-300 hover:scale-[1.02] active:scale-[0.98]"
                     >
-                      <span>{cat.icon}</span> {cat.label} <Plus className="w-3 h-3 opacity-50" />
+                      <div className="flex items-center gap-2">
+                        <span>{cat.icon}</span>
+                        <span>{cat.label}</span>
+                      </div>
+                      <Plus className="w-4 h-4 opacity-30" />
                     </button>
                   ))}
                 </div>
