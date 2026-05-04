@@ -48,7 +48,7 @@ export interface Habit {
   coinsPerUnit?: number;
   progressUnit?: string;
   unitsTracking: boolean;
-  isOneTime?: boolean;
+  status?: 'implemented' | 'implementing' | 'planned';
 }
 
 export interface HabitBlock {
@@ -767,16 +767,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const newCompletedDates = { ...(habit.completedDates || {}), [targetDate]: true };
       const newStreak = habit.streak + 1;
       const newCoins = Math.round((coins + habit.coinsPerComplete) * 100) / 100;
-      if (habit.isOneTime) {
-        deleteHabit(id);
-      } else {
-        const newHabits = habits.map((h) =>
-          h.id === id ? { ...h, completedDates: newCompletedDates, streak: newStreak, lastCompletedDate: targetDate } : h
-        );
-        setHabits(newHabits);
-        setCoins(newCoins);
-        saveAllData(newCoins, newHabits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
-      }
+      const newHabits = habits.map((h) =>
+        h.id === id ? { ...h, completedDates: newCompletedDates, streak: newStreak, lastCompletedDate: targetDate } : h
+      );
+      setHabits(newHabits);
+      setCoins(newCoins);
+      saveAllData(newCoins, newHabits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
     } else {
       const newCompletedDates = { ...(habit.completedDates || {}) };
       delete newCompletedDates[targetDate];

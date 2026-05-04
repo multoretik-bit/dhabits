@@ -78,19 +78,26 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="flex flex-col items-center gap-4 mb-2">
-            <img src="/logo.png" alt="dHabits Logo" className="w-20 h-20 rounded-2xl drop-shadow-[0_0_15px_rgba(59,130,246,0.6)] object-contain" />
-            <h1 className="text-3xl font-bold text-white tracking-tight">dHabits</h1>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Ambient background blobs */}
+      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[400px] h-[400px] bg-violet-600/10 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="w-full max-w-sm relative z-10">
+        <div className="text-center mb-10">
+          <div className="flex flex-col items-center gap-5 mb-3">
+            <div className="relative">
+              <div className="absolute inset-0 bg-indigo-500/30 blur-2xl rounded-full scale-150" />
+              <img src="/logo.png" alt="dHabits Logo" className="relative w-20 h-20 rounded-2xl object-contain" />
+            </div>
+            <h1 className="text-4xl font-bold text-white tracking-tight">dHabits</h1>
           </div>
-          <p className="text-slate-400 text-sm">Синхронизация данных</p>
+          <p className="text-muted-foreground text-sm">Войдите, чтобы синхронизировать данные</p>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-          {/* Ambient Glow */}
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-600/10 blur-[60px] rounded-full pointer-events-none" />
+        <div className="glass-morphism rounded-3xl p-7 shadow-2xl relative overflow-hidden">
+          {/* Subtle glow inside card */}
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-600/8 blur-[60px] rounded-full pointer-events-none" />
           
           {step === "email" && (
             <form onSubmit={handleSendLink} className="space-y-5 relative z-10">
@@ -102,14 +109,14 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
                     id="email"
                     type="email"
                     placeholder="your@email.com"
-                    className="pl-10 bg-slate-950 border-slate-700 text-white rounded-xl h-12"
+                    className="pl-10 bg-white/5 border-white/10 text-white rounded-xl h-12 focus:border-indigo-500/60 transition-colors placeholder:text-slate-500"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoFocus
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-blue-600 rounded-xl h-12 font-bold" disabled={loading}>
+              <Button type="submit" className="w-full premium-gradient rounded-xl h-12 font-bold shadow-lg shadow-indigo-500/20 hover:opacity-90 transition-opacity" disabled={loading}>
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Отправить ссылку →"}
               </Button>
               <button
@@ -139,7 +146,7 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
                     id="signup-email"
                     type="email"
                     placeholder="your@email.com"
-                    className="pl-10 bg-slate-950 border-slate-700 text-white rounded-xl h-12"
+                    className="pl-10 bg-white/5 border-white/10 text-white rounded-xl h-12 focus:border-indigo-500/60 transition-colors placeholder:text-slate-500"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -153,14 +160,14 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
                     id="signup-password"
                     type="password"
                     placeholder="••••••••"
-                    className="pl-10 bg-slate-950 border-slate-700 text-white rounded-xl h-12"
+                    className="pl-10 bg-white/5 border-white/10 text-white rounded-xl h-12 focus:border-indigo-500/60 transition-colors placeholder:text-slate-500"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoFocus
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-blue-600 rounded-xl h-12 font-bold hover:bg-blue-500" disabled={loading}>
+              <Button type="submit" className="w-full premium-gradient rounded-xl h-12 font-bold shadow-lg shadow-indigo-500/20 hover:opacity-90 transition-opacity" disabled={loading}>
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Зарегистрироваться"}
               </Button>
               <button
@@ -183,7 +190,7 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
                     id="email-password"
                     type="email"
                     placeholder="your@email.com"
-                    className="pl-10 bg-slate-950 border-slate-700 text-white rounded-xl h-12"
+                    className="pl-10 bg-white/5 border-white/10 text-white rounded-xl h-12 focus:border-indigo-500/60 transition-colors placeholder:text-slate-500"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
@@ -197,14 +204,14 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
                     id="password"
                     type="password"
                     placeholder="••••••••"
-                    className="pl-10 bg-slate-950 border-slate-700 text-white rounded-xl h-12"
+                    className="pl-10 bg-white/5 border-white/10 text-white rounded-xl h-12 focus:border-indigo-500/60 transition-colors placeholder:text-slate-500"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     autoFocus
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-blue-600 rounded-xl h-12 font-bold" disabled={loading}>
+              <Button type="submit" className="w-full premium-gradient rounded-xl h-12 font-bold shadow-lg shadow-indigo-500/20 hover:opacity-90 transition-opacity" disabled={loading}>
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Войти"}
               </Button>
               <button
@@ -228,7 +235,7 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
         </div>
 
         {/* Emergency SKIP Button for testing design */}
-        <div className="mt-8 text-center pt-8 border-t border-slate-900">
+        <div className="mt-8 text-center pt-8 border-t border-white/5">
            <Button 
             onClick={handleSkip} 
             variant="ghost" 

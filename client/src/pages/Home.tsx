@@ -40,8 +40,8 @@ function TaskRow({ task, dateStr, isCondensed }: { task: Task; dateStr: string; 
     <div className={cn("mb-3", isCondensed && "mb-2")}>
       <div
         className={cn(
-          "w-full flex items-center gap-3 p-3 rounded-2xl transition-all text-left overflow-hidden border cursor-pointer",
-          completed ? "opacity-60 border-slate-800/40" : "bg-slate-900/60 border-slate-800/80 shadow-sm hover:border-blue-700/50",
+          "w-full flex items-center gap-3 p-3 rounded-2xl transition-all text-left overflow-hidden cursor-pointer hover-lift shadow-sm",
+          completed ? "opacity-60 bg-slate-900/40 border border-white/5" : "glass-card hover:border-blue-500/30",
           isCondensed && "p-2 rounded-xl"
         )}
         style={{ 
@@ -163,7 +163,7 @@ function TaskFolderRow({ folder, tasks, dateStr }: { folder: any; tasks: Task[];
   return (
     <div className="mb-6">
       <div 
-        className="group relative bg-slate-900/40 border border-slate-800/60 rounded-[24px] p-4 backdrop-blur-md shadow-xl overflow-hidden cursor-pointer hover:border-slate-700/80 transition-all"
+        className="group relative glass-card rounded-[24px] p-4 overflow-hidden cursor-pointer hover:border-white/10 hover-lift transition-all"
         onClick={() => toggleTaskFolderCollapse(folder.id)}
       >
         <div 
@@ -339,7 +339,7 @@ export default function Home() {
 
   return (
     <div 
-      className="flex flex-col min-h-screen transition-all duration-700 relative overflow-hidden bg-slate-950"
+      className="flex flex-col min-h-screen transition-all duration-700 relative overflow-hidden bg-background"
     >
       {/* Background Glow */}
       {blockColor && (detailedBlock || activeBlock) && (
@@ -350,7 +350,7 @@ export default function Home() {
       )}
 
       {/* Header with Calendar */}
-      <div className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-xl border-b border-white/5 pb-4">
+      <div className="nav-blur pb-4 pt-2">
         <Calendar selectedDate={selectedDate} onDateChange={(d) => {
           setSelectedDate(d);
           setSelectedBlockId(null);
@@ -366,8 +366,8 @@ export default function Home() {
               className={cn(
                 "flex-shrink-0 px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border",
                 !selectedBlockId 
-                  ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20" 
-                  : "bg-slate-900/40 border-white/5 text-slate-500 hover:text-slate-300 hover:bg-slate-800/60"
+                  ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20" 
+                  : "bg-card/40 border-border text-muted-foreground hover:text-foreground hover:bg-card/60"
               )}
             >
               Сейчас
@@ -379,8 +379,8 @@ export default function Home() {
                 className={cn(
                   "flex-shrink-0 px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border flex items-center gap-2",
                   selectedBlockId === b.id
-                    ? "text-white shadow-lg"
-                    : "bg-slate-900/40 border-white/5 text-slate-500 hover:text-slate-300 hover:bg-slate-800/60"
+                    ? "text-primary-foreground shadow-lg"
+                    : "bg-card/40 border-border text-muted-foreground hover:text-foreground hover:bg-card/60"
                 )}
                 style={selectedBlockId === b.id ? { 
                   backgroundColor: b.color || "#3b82f6", 

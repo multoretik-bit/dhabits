@@ -227,7 +227,7 @@ export default function GoalsPage() {
 
   const renderHabitsList = () => {
     const foldersToRender = habitFolders.map((folder: HabitFolder) => {
-      const folderHabits = habits.filter((h: Habit) => h.folder === folder.id);
+      const folderHabits = habitsForToday.filter((h: Habit) => h.folder === folder.id);
       return { ...folder, habits: folderHabits };
     });
 
@@ -273,7 +273,7 @@ export default function GoalsPage() {
       <div className="mb-6">
         <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic flex items-center gap-3">
           <Target className="w-8 h-8 text-blue-500" />
-          {activeTab === 'goals' ? 'Мои Цели' : 'Мои Привычки'}
+          {activeTab === 'goals' ? 'Саморазвитие' : 'Мои Привычки'}
         </h2>
         <p className="text-slate-500 text-xs font-medium mt-1 uppercase tracking-widest">
             {activeTab === 'goals' ? 'Твой путь к успеху' : 'Личный прогресс каждый день'}
@@ -288,7 +288,7 @@ export default function GoalsPage() {
             ${activeTab === 'goals' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-slate-500 hover:text-slate-300'}`}
         >
           <Target className="w-3.5 h-3.5" />
-          Цели
+          Саморазвитие
         </button>
         <button
           onClick={() => setActiveTab('habits')}

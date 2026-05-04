@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 const navItems = [
   { path: "/", label: "Сегодня", icon: Home },
-  { path: "/goals", label: "Цели", icon: Target },
+  { path: "/goals", label: "Саморазвитие", icon: Target },
   { path: "/add", label: "Добавить", icon: PlusCircle },
   { path: "/shop", label: "Магазин", icon: ShoppingCart },
 ];
@@ -29,7 +29,7 @@ export default function MainLayout({ children, onSignOut }: MainLayoutProps) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="sticky top-0 z-20 bg-[#060c1c]/90 backdrop-blur-md border-b border-blue-900/40 flex items-center justify-between px-4 py-4 shadow-sm">
+      <header className="nav-blur px-4 py-4 shadow-sm">
         <div className="flex items-center gap-2.5">
           <img src="/logo.png" alt="dHabits Logo" className="w-7 h-7 rounded-[8px] object-contain drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
           <span className="font-extrabold text-xl text-blue-50 tracking-tight">dHabits</span>
@@ -67,12 +67,12 @@ export default function MainLayout({ children, onSignOut }: MainLayoutProps) {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto pb-24 bg-[#020617]">
+      <main className="flex-1 overflow-auto pb-24 bg-background">
         {children}
       </main>
 
       {/* Bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[#060c1c]/95 backdrop-blur-xl border-t border-blue-900/40 safe-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-background/80 backdrop-blur-2xl border-t border-white/5 safe-bottom shadow-[0_-4px_24px_rgba(0,0,0,0.2)]">
         <div className="flex items-center justify-around px-2 py-3 max-w-lg mx-auto">
           {navItems.map(({ path, label, icon: Icon }) => {
             const isActive = location === path;

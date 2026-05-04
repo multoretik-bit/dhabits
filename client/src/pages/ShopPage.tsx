@@ -197,19 +197,19 @@ export default function ShopPage() {
   };
 
   return (
-    <div className="px-5 pt-8 pb-4 min-h-full">
+    <div className="px-5 pt-8 pb-4 min-h-full bg-background">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-extrabold text-white tracking-tight">Магазин</h2>
+        <h2 className="text-2xl font-bold text-foreground tracking-tight">Магазин</h2>
         <div className="flex items-center gap-3">
-          <div className="bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/50 shadow-sm flex items-center">
+          <div className="glass-card px-3 py-1.5 rounded-xl flex items-center">
             <CoinDisplay amount={coins} size="md" showLabel={true} />
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 bg-slate-900/50 rounded-2xl p-1.5 mb-6 border border-slate-800/80 shadow-inner overflow-x-auto no-scrollbar">
+      <div className="flex gap-2 glass-card rounded-2xl p-1.5 mb-6 overflow-x-auto no-scrollbar">
         {[
           { id: "shop", label: "Магазин", icon: <ShoppingCart className="w-4 h-4" /> },
           { id: "inventory", label: "Инвентарь", icon: <Package className="w-4 h-4" /> },
@@ -219,7 +219,7 @@ export default function ShopPage() {
             key={t.id}
             onClick={() => setActiveTab(t.id as any)}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold transition-all whitespace-nowrap
-              ${activeTab === t.id ? "bg-blue-600 text-white shadow-md shadow-blue-900/50" : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"}`}
+              ${activeTab === t.id ? "bg-indigo-600 text-white shadow-md shadow-indigo-900/50" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}
           >
             {t.icon}
             {t.label}
@@ -241,10 +241,10 @@ export default function ShopPage() {
           </div>
 
           {/* Shop Controls */}
-          <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-5 space-y-4 shadow-sm backdrop-blur-sm">
+          <div className="glass-card rounded-3xl p-5 space-y-4">
             {/* Category Filter */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Категория</label>
+              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] px-1">Категория</label>
               <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                 {[ { value: "all", label: "Все" }, ...ITEM_CATEGORIES ].map(cat => (
                   <button
@@ -252,8 +252,8 @@ export default function ShopPage() {
                     onClick={() => setActiveCategory(cat.value as any)}
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${
                       activeCategory === cat.value
-                        ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-900/30"
-                        : "bg-slate-800/50 text-slate-400 border-slate-700/50 hover:bg-slate-700/50"
+                        ? "bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-900/30"
+                        : "bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10"
                     }`}
                   >
                     {cat.label}
@@ -298,7 +298,7 @@ export default function ShopPage() {
           </div>
 
           <div className="flex justify-between items-center px-1">
-            <p className="text-slate-400 text-xs font-bold">Найдено: {availableItems.length}</p>
+            <p className="text-muted-foreground text-xs font-bold">Найдено: {availableItems.length}</p>
           </div>
 
           {availableItems.length === 0 ? (
@@ -312,7 +312,7 @@ export default function ShopPage() {
                   key={item.id}
                   layoutId={`item-${item.id}`}
                   onClick={() => setSelectedItem(item)}
-                  className={`bg-slate-900/60 border rounded-2xl p-4 flex flex-col items-center gap-3 relative overflow-hidden group hover:border-slate-600/50 transition-all shadow-sm cursor-pointer active:scale-95
+                  className={`glass-card rounded-2xl p-4 flex flex-col items-center gap-3 relative group hover-lift cursor-pointer active:scale-95
                     ${rarityColors[item.rarity || "common"]}`}
                 >
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={e => e.stopPropagation()}>
@@ -352,10 +352,10 @@ export default function ShopPage() {
       {activeTab === "inventory" && (
         <div className="space-y-6">
           {/* Inventory Controls */}
-          <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-5 space-y-4 shadow-sm backdrop-blur-sm">
+          <div className="glass-card rounded-3xl p-5 space-y-4">
             {/* Category Filter */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Категория</label>
+              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] px-1">Категория</label>
               <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                 {[ { value: "all", label: "Все" }, ...ITEM_CATEGORIES ].map(cat => (
                   <button
@@ -363,8 +363,8 @@ export default function ShopPage() {
                     onClick={() => setInvCategory(cat.value)}
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${
                       invCategory === cat.value
-                        ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-900/30"
-                        : "bg-slate-800/50 text-slate-400 border-slate-700/50 hover:bg-slate-700/50"
+                        ? "bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-900/30"
+                        : "bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10"
                     }`}
                   >
                     {cat.label}
@@ -434,8 +434,8 @@ export default function ShopPage() {
                     layoutId={`item-${item.id}`}
                     key={item.id} 
                     onClick={() => setSelectedItem(item)}
-                    className={`bg-slate-900/60 border rounded-2xl p-4 flex flex-col items-center gap-3 relative shadow-sm transition-all cursor-pointer hover:border-slate-600/50 active:scale-95
-                      ${isEquipped ? "border-blue-500/50 bg-blue-950/20" : "border-slate-800/80"} ${rarityColors[item.rarity || "common"]}`}
+                    className={`glass-card rounded-2xl p-4 flex flex-col items-center gap-3 relative cursor-pointer hover-lift active:scale-95
+                      ${isEquipped ? "border-indigo-500/50 bg-indigo-950/20" : ""} ${rarityColors[item.rarity || "common"]}`}
                   >
                     {isEquipped && <div className="absolute top-0 right-0 bg-blue-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg tracking-wider uppercase z-10">Надето</div>}
                     
@@ -477,10 +477,10 @@ export default function ShopPage() {
       {/* CHARACTER TAB */}
       {activeTab === "character" && (
         <div className="space-y-6">
-          <div className="bg-gradient-to-b from-blue-950/60 to-slate-900 rounded-3xl border border-blue-900/40 p-6 flex flex-col items-center shadow-lg relative overflow-hidden">
-            <div className="absolute top-0 w-full h-1/2 bg-blue-600/10 blur-[50px] pointer-events-none" />
-            <h3 className="font-extrabold text-blue-100 text-lg mb-4 z-10">Ваш Персонаж</h3>
-            <div className="bg-slate-900/80 p-5 rounded-2xl border border-slate-700/50 shadow-inner z-10">
+          <div className="glass-card rounded-3xl p-6 flex flex-col items-center relative overflow-hidden">
+            <div className="absolute top-0 w-full h-1/2 bg-indigo-600/10 blur-[50px] pointer-events-none" />
+            <h3 className="font-extrabold text-white text-lg mb-4 z-10">Ваш Персонаж</h3>
+            <div className="bg-black/20 p-5 rounded-2xl border border-white/5 z-10">
               <CharacterDisplay width={120} height={180} />
             </div>
           </div>
@@ -529,7 +529,7 @@ export default function ShopPage() {
             />
             <motion.div
               layoutId={`item-${selectedItem.id}`}
-              className={`w-full max-w-md bg-slate-900 border rounded-[32px] p-8 shadow-2xl relative overflow-hidden z-10 ${rarityColors[selectedItem.rarity || "common"]}`}
+              className={`w-full max-w-md glass-card rounded-[32px] p-8 relative z-10 ${rarityColors[selectedItem.rarity || "common"]}`}
             >
               {/* Background Glow */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-40 blur-[80px] opacity-20 pointer-events-none" style={{ background: selectedItem.rarity === 'legendary' ? 'orange' : selectedItem.rarity === 'epic' ? 'purple' : 'blue' }} />

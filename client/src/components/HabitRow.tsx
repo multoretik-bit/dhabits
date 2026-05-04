@@ -27,22 +27,32 @@ export default function HabitRow({ habit, dateStr, hideUnitTracker }: HabitRowPr
 
   return (
     <div
-      className={`w-full flex flex-col rounded-2xl transition-all mb-2 overflow-hidden border
+      className={`w-full flex flex-col rounded-2xl transition-all mb-2 overflow-hidden
         ${completed
-          ? "opacity-60 border-slate-800/40"
-          : "border-slate-800/80 shadow-sm"
+          ? "opacity-60 bg-slate-900/30 border border-white/5"
+          : "bg-slate-900/40 backdrop-blur-sm border border-white/5 shadow-sm hover:border-white/10"
         }`}
       style={{
+        borderLeft: `3px solid ${completed ? habit.color + '44' : habit.color}`,
         background: completed
-          ? "rgba(15,23,42,0.5)"
-          : `linear-gradient(135deg, ${habit.color}18 0%, rgba(15,23,42,0.7) 100%)`,
-        borderLeft: `3px solid ${habit.color}`,
+          ? "rgba(15,23,42,0.4)"
+          : `linear-gradient(135deg, ${habit.color}10 0%, rgba(15,23,42,0.5) 100%)`,
       }}
     >
       <button
         onClick={() => completeHabit(habit.id, dateStr)}
-        className="flex items-center gap-3 p-3 text-left"
+        className="flex items-center gap-2 p-3 text-left w-full"
       >
+        {/* Status Indicator */}
+        <div 
+          className="w-1.5 h-10 rounded-full shrink-0"
+          style={{
+             backgroundColor: habit.status === 'implemented' ? '#22c55e' : habit.status === 'implementing' ? '#eab308' : '#ef4444',
+             boxShadow: `0 0 8px ${habit.status === 'implemented' ? '#22c55e' : habit.status === 'implementing' ? '#eab308' : '#ef4444'}40`
+          }}
+          title={habit.status === 'implemented' ? 'Уже введена' : habit.status === 'implementing' ? 'Внедряется' : 'Планируется'}
+        />
+
         {/* Coin badge LEFT */}
         <div
           className="flex-shrink-0 flex flex-col items-center justify-center w-11 h-11 rounded-xl text-center"

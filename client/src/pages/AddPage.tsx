@@ -65,14 +65,14 @@ function HabitsTab() {
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]); const [coins, setCoins] = useState("5");
   const [initialStreak, setInitialStreak] = useState("0");
   const [unitsTracking, setUnitsTracking] = useState(false); const [progressUnit, setProgressUnit] = useState("units"); const [coinsPerUnit, setCoinsPerUnit] = useState("1");
-  const [isOneTime, setIsOneTime] = useState(false);
+  const [status, setStatus] = useState<'implemented' | 'implementing' | 'planned'>('planned');
   const [folderName, setFolderName] = useState(""); const [folderColor, setFolderColor] = useState("#3b82f6"); const [folderEmoji, setFolderEmoji] = useState("📁");
 
   const resetForm = () => { 
     setName(""); setEmoji("🎯"); setColor("#3b82f6"); setFolder("general"); 
     setBlockId(""); setDays([1, 2, 3, 4, 5]); setCoins("5"); setInitialStreak("0");
     setUnitsTracking(false); setProgressUnit("units"); setCoinsPerUnit("1"); 
-    setIsOneTime(false);
+    setStatus('planned');
   };
 
   const habitFormContent = (
@@ -105,8 +105,13 @@ function HabitsTab() {
           <FormInput label="Монет за единицу" value={coinsPerUnit} onChange={setCoinsPerUnit} type="number" placeholder="1" />
         </>
       )}
-      <div className="pt-2 border-t border-slate-800/50">
-        <FormCheckbox label="Одноразовая (исчезнет после выполнения)" checked={isOneTime} onChange={setIsOneTime} />
+      <div className="space-y-2 pt-2 border-t border-slate-800/50">
+        <label className="text-sm font-medium text-slate-300">Статус привычки</label>
+        <select value={status} onChange={(e) => setStatus(e.target.value as any)} className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-blue-500">
+          <option value="implemented">Уже введена (зеленая)</option>
+          <option value="implementing">Внедряется (желтая)</option>
+          <option value="planned">Только планирую (красная)</option>
+        </select>
       </div>
     </>
   );
@@ -122,10 +127,10 @@ function HabitsTab() {
   return (
     <div className="space-y-4 pb-20">
       <div className="flex gap-2 justify-end mb-4">
-        <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-slate-800 text-slate-300 hover:bg-slate-800 rounded-xl">
+        <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-white/10 text-muted-foreground hover:bg-white/5 hover:text-foreground rounded-xl">
           <FolderPlus className="w-4 h-4 mr-2" /> Папка
         </Button>
-        <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">
+        <Button onClick={() => setShowCreate(true)} className="premium-gradient text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 active:scale-[0.98]">
           <Plus className="w-4 h-4 mr-2" /> Привычка
         </Button>
       </div>
@@ -134,14 +139,14 @@ function HabitsTab() {
         {habitFolders.map(f => {
           const fHabits = habits.filter(h => h.folder === f.id);
           return (
-            <div key={f.id} className="bg-slate-900/40 rounded-3xl border border-slate-800/60 overflow-hidden shadow-sm">
+            <div key={f.id} className="glass-card rounded-3xl overflow-hidden shadow-sm">
               <div 
-                className="flex items-center justify-between px-5 py-3 bg-slate-800/30 border-b border-slate-800/40 cursor-pointer transition-colors hover:bg-slate-800/50"
+                className="flex items-center justify-between px-5 py-3 bg-white/5 border-b border-white/5 cursor-pointer transition-colors hover:bg-white/10"
                 onClick={() => toggleHabitFolderCollapse(f.id)}
               >
-                <div className="flex items-center gap-3 text-slate-300 font-bold uppercase text-[11px] tracking-wider">
+                <div className="flex items-center gap-3 text-foreground font-bold uppercase text-[11px] tracking-wider">
                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: f.color }} />
-                   {f.emoji || "📁"} {f.name} <span className="text-slate-500 font-medium">({fHabits.length})</span>
+                   {f.emoji || "📁"} {f.name} <span className="text-muted-foreground font-medium">({fHabits.length})</span>
                 </div>
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                   {f.id !== "general" && (
@@ -163,7 +168,7 @@ function HabitsTab() {
                 {fHabits.map(h => (
                   <div 
                     key={h.id} 
-                    className="flex items-center gap-3 p-3 rounded-2xl border border-slate-800/80 bg-slate-950/40"
+                    className="flex items-center gap-3 p-3 rounded-2xl bg-black/20 border border-white/5 hover:bg-white/5 transition-colors"
                     style={{ borderLeft: `3px solid ${h.color}` }}
                   >
                     <UnifiedCoinBadge coins={h.coinsPerComplete} color={h.color} />
@@ -175,7 +180,7 @@ function HabitsTab() {
                     </span>
                     <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleName(h.id)}>
                       <p className={`font-bold text-sm text-slate-100 ${expandedItems[h.id] ? "" : "truncate"}`}>{h.name}</p>
-                      <p className="text-[10px] text-slate-500 font-medium tracking-wide">
+                      <p className="text-[10px] text-muted-foreground font-medium tracking-wide">
                         🔥 {h.streak} · {DAYS_OF_WEEK.filter(d => h.daysOfWeek.includes(d.id)).map(d => d.label).join(", ")}
                       </p>
                       {h.unitsTracking && (
@@ -195,7 +200,7 @@ function HabitsTab() {
                         setCoins(String(h.coinsPerComplete)); setInitialStreak(String(h.streak));
                         setUnitsTracking(h.unitsTracking); setProgressUnit(h.progressUnit || "units");
                         setCoinsPerUnit(String(h.coinsPerUnit || 1));
-                        setIsOneTime(!!h.isOneTime);
+                        setStatus(h.status || 'planned');
                         setShowEdit(true); 
                       }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteHabit(h.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
@@ -209,8 +214,8 @@ function HabitsTab() {
         })}
       </div>
 
-      <FormModal title="Новая привычка" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addHabit({ id: nanoid(), name, emoji, color, folder, blockId, daysOfWeek: days, streak: Number(initialStreak) || 0, coinsPerComplete: Number(coins), completedDates: {}, units: 0, unitsTracking, progressUnit, coinsPerUnit: Number(coinsPerUnit), isOneTime }); setShowCreate(false); resetForm(); } }} submitText="Создать">{habitFormContent}</FormModal>
-      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateHabit(editingId, { name, emoji, color, folder, blockId, daysOfWeek: days, coinsPerComplete: Number(coins), streak: Number(initialStreak) || 0, unitsTracking, progressUnit, coinsPerUnit: Number(coinsPerUnit), isOneTime }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{habitFormContent}</FormModal>
+      <FormModal title="Новая привычка" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addHabit({ id: nanoid(), name, emoji, color, folder, blockId, daysOfWeek: days, streak: Number(initialStreak) || 0, coinsPerComplete: Number(coins), completedDates: {}, units: 0, unitsTracking, progressUnit, coinsPerUnit: Number(coinsPerUnit), status }); setShowCreate(false); resetForm(); } }} submitText="Создать">{habitFormContent}</FormModal>
+      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateHabit(editingId, { name, emoji, color, folder, blockId, daysOfWeek: days, coinsPerComplete: Number(coins), streak: Number(initialStreak) || 0, unitsTracking, progressUnit, coinsPerUnit: Number(coinsPerUnit), status }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{habitFormContent}</FormModal>
       <FormModal title="Новая папка" isOpen={showCreateFolder} onClose={() => { setShowCreateFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (folderName) { addHabitFolder({ id: nanoid(), name: folderName, emoji: folderEmoji, color: folderColor, collapsed: false }); setShowCreateFolder(false); setFolderName(""); } }} submitText="Создать">{folderFormContent}</FormModal>
       <FormModal title="Редактировать папку" isOpen={showEditFolder} onClose={() => { setShowEditFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (editingFolderId && folderName) { updateHabitFolder(editingFolderId, { name: folderName, color: folderColor, emoji: folderEmoji }); setShowEditFolder(false); } }} submitText="Сохранить">{folderFormContent}</FormModal>
     </div>
@@ -321,10 +326,10 @@ function TasksTab() {
   return (
     <div className="space-y-4 pb-20">
       <div className="flex gap-2 justify-end mb-4">
-        <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-slate-800 text-slate-300 hover:bg-slate-800 rounded-xl">
+        <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-white/10 text-muted-foreground hover:bg-white/5 hover:text-foreground rounded-xl">
           <FolderPlus className="w-4 h-4 mr-2" /> Большая задача
         </Button>
-        <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold font-bold">
+        <Button onClick={() => setShowCreate(true)} className="premium-gradient text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 active:scale-[0.98]">
           <Plus className="w-4 h-4 mr-2" /> Задача
         </Button>
       </div>
@@ -333,14 +338,14 @@ function TasksTab() {
         {taskFolders.map(f => {
           const fTasks = tasks.filter(t => t.folderId === f.id || (!t.folderId && f.id === "general"));
           return (
-            <div key={f.id} className="bg-slate-900/40 rounded-3xl border border-slate-800/60 overflow-hidden shadow-sm">
+            <div key={f.id} className="glass-card rounded-3xl overflow-hidden shadow-sm">
               <div 
-                className="flex items-center justify-between px-5 py-3 bg-slate-800/30 border-b border-slate-800/40 cursor-pointer transition-colors hover:bg-slate-800/50"
+                className="flex items-center justify-between px-5 py-3 bg-white/5 border-b border-white/5 cursor-pointer transition-colors hover:bg-white/10"
                 onClick={() => toggleTaskFolderCollapse(f.id)}
               >
-                <div className="flex items-center gap-3 text-slate-300 font-bold uppercase text-[11px] tracking-wider">
+                <div className="flex items-center gap-3 text-foreground font-bold uppercase text-[11px] tracking-wider">
                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: f.color }} />
-                   {f.emoji || "📁"} {f.name} <span className="text-slate-500 font-medium">({fTasks.length})</span>
+                   {f.emoji || "📁"} {f.name} <span className="text-muted-foreground font-medium">({fTasks.length})</span>
                 </div>
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                   {f.id !== "general" && (
@@ -362,18 +367,18 @@ function TasksTab() {
                   {fTasks.map(t => (
                     <div 
                       key={t.id} 
-                      className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-2xl border border-slate-800/80"
-                      style={{ borderLeft: `3px solid ${t.color || '#3b82f6'}` }}
+                      className="flex items-center gap-3 p-3 bg-black/20 hover:bg-white/5 rounded-2xl border border-white/5 transition-colors"
+                      style={{ borderLeft: `3px solid ${t.color || '#6366f1'}` }}
                     >
                       <span 
                         className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl text-xl"
-                        style={{ backgroundColor: `${t.color || '#3b82f6'}22` }}
+                        style={{ backgroundColor: `${t.color || '#6366f1'}22` }}
                       >
                         {t.emoji || "📋"}
                       </span>
                       <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleName(t.id)}>
                         <p className={`font-bold text-sm text-slate-200 ${expandedItems[t.id] ? "" : "truncate"}`}>{t.title}</p>
-                        <p className="text-[10px] text-slate-500 font-medium tracking-wide">
+                        <p className="text-[10px] text-muted-foreground font-medium tracking-wide">
                           {blocks.find(b => b.id === t.blockId)?.name || 'На весь день'}
                           {t.coins ? (
                             <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
@@ -465,10 +470,10 @@ function GoalsTab() {
   return (
     <div className="space-y-4 pb-20">
       <div className="flex justify-end gap-2 mb-4">
-        <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-slate-800 text-slate-300 hover:bg-slate-800 rounded-xl">
+        <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-white/10 text-muted-foreground hover:bg-white/5 hover:text-foreground rounded-xl">
           <FolderPlus className="w-4 h-4 mr-2" /> Папка
         </Button>
-        <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold font-bold">
+        <Button onClick={() => setShowCreate(true)} className="premium-gradient text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 active:scale-[0.98]">
           <Plus className="w-4 h-4 mr-2" /> Цель
         </Button>
       </div>
@@ -477,14 +482,14 @@ function GoalsTab() {
         {goalFolders.map(f => {
           const fGoals = goals.filter(g => g.folder === f.id);
           return (
-            <div key={f.id} className="bg-slate-900/40 rounded-3xl border border-slate-800/60 overflow-hidden shadow-sm">
+            <div key={f.id} className="glass-card rounded-3xl overflow-hidden shadow-sm">
               <div 
-                className="flex items-center justify-between px-5 py-3 bg-slate-800/30 border-b border-slate-800/40 cursor-pointer transition-colors hover:bg-slate-800/50"
+                className="flex items-center justify-between px-5 py-3 bg-white/5 border-b border-white/5 cursor-pointer transition-colors hover:bg-white/10"
                 onClick={() => toggleGoalFolderCollapse(f.id)}
               >
-                <div className="flex items-center gap-3 text-slate-300 font-bold uppercase text-[11px] tracking-wider">
+                <div className="flex items-center gap-3 text-foreground font-bold uppercase text-[11px] tracking-wider">
                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: f.color }} />
-                   {f.emoji || "🏆"} {f.name} <span className="text-slate-500 font-medium">({fGoals.length})</span>
+                   {f.emoji || "🏆"} {f.name} <span className="text-muted-foreground font-medium">({fGoals.length})</span>
                 </div>
                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     {f.id !== "general" && (
@@ -506,7 +511,7 @@ function GoalsTab() {
                 {fGoals.map(g => (
                   <div 
                     key={g.id} 
-                    className="flex items-center gap-3 p-3 rounded-2xl border border-slate-800/80 bg-slate-950/40"
+                    className="flex items-center gap-3 p-3 rounded-2xl bg-black/20 hover:bg-white/5 border border-white/5 transition-colors"
                     style={{ borderLeft: `3px solid ${g.color}` }}
                   >
                     <UnifiedCoinBadge coins={g.coins} color={g.color} />
@@ -518,7 +523,7 @@ function GoalsTab() {
                     </span>
                     <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleName(g.id)}>
                       <p className={`font-bold text-sm text-slate-100 ${expandedItems[g.id] ? "" : "truncate"}`}>{g.name}</p>
-                      <p className="text-[10px] text-zinc-400 font-medium tracking-wide">
+                      <p className="text-[10px] text-muted-foreground font-medium tracking-wide">
                         Цель: {g.targetValue} · Сейчас: {g.currentValue}
                         {g.deadline && <span className="ml-2 text-red-400/80">📅 До: {g.deadline}</span>}
                       </p>
@@ -590,13 +595,13 @@ function BlocksTab() {
   return (
     <div className="space-y-4 pb-20">
       <div className="flex justify-end mb-4">
-        <Button onClick={() => setShowCreate(true)} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold">
+        <Button onClick={() => setShowCreate(true)} className="premium-gradient text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 active:scale-[0.98]">
           <Plus className="w-4 h-4 mr-2" /> Блок
         </Button>
       </div>
       <div className="space-y-3">
         {blocks.map(b => (
-          <div key={b.id} className="flex items-center gap-3 p-3 bg-slate-900/50 rounded-2xl border border-slate-800/80">
+          <div key={b.id} className="flex items-center gap-3 p-3 glass-card rounded-2xl hover:bg-white/5 transition-colors">
             <div className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: b.color ? b.color + '25' : (b.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][b.colorIndex] + '25' : 'rgba(148, 163, 184, 0.1)') }}>
               <Layers className="w-5 h-5" style={{ color: b.color ? b.color : (b.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][b.colorIndex] : "#94a3b8") }} />
             </div>
@@ -637,17 +642,17 @@ export default function AddPage() {
   ];
 
   return (
-    <div className="px-5 pt-8 pb-4 min-h-full">
-      <h2 className="text-2xl font-extrabold text-white mb-6 tracking-tight">Управление</h2>
+    <div className="px-5 pt-8 pb-4 min-h-full bg-background">
+      <h2 className="text-2xl font-bold text-foreground mb-6 tracking-tight">Управление</h2>
 
       {/* Tabs */}
-      <div className="flex gap-2 bg-slate-900/50 rounded-2xl p-1.5 mb-6 border border-slate-800/80 shadow-inner overflow-x-auto no-scrollbar">
+      <div className="flex gap-2 glass-card rounded-2xl p-1.5 mb-6 overflow-x-auto no-scrollbar">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold transition-all whitespace-nowrap
-              ${tab === t.key ? "bg-blue-600 text-white shadow-md shadow-blue-900/50" : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"}`}
+              ${tab === t.key ? "bg-indigo-600 text-white shadow-md shadow-indigo-900/50" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}
           >
             {t.label}
           </button>
