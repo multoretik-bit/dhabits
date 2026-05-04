@@ -264,6 +264,8 @@ export default function Home() {
   const activeBlockHabits = activeBlock ? habits.filter(h => h.blockId === activeBlock.id && h.daysOfWeek.includes(dayOfWeek)) : [];
   const activeBlockTasks = activeBlock ? todayTasks.filter(t => t.blockId === activeBlock.id) : [];
 
+  const allDayHabits = habits.filter(h => (!h.blockId || h.blockId === "general") && (h.daysOfWeek.length === 0 || h.daysOfWeek.includes(dayOfWeek)));
+
   let blockProgress = 0;
   if (activeBlock?.startTime && activeBlock?.endTime && isToday) {
     const startM = timeToMinutes(activeBlock.startTime);
@@ -411,6 +413,19 @@ export default function Home() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* All-day habits below the block */}
+            {allDayHabits.length > 0 && (
+              <div className="w-full max-w-4xl mt-8">
+                <div className="flex items-center gap-2 mb-4 opacity-60 px-2">
+                  <LayoutGrid className="w-5 h-5 text-indigo-400" />
+                  <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-100">Привычки на весь день</h3>
+                </div>
+                <div className="space-y-3">
+                  {allDayHabits.map(h => <HabitRow key={h.id} habit={h} dateStr={dateStr} hideUnitTracker={true} />)}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
