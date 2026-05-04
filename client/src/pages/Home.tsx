@@ -507,7 +507,7 @@ export default function Home() {
             <div className="lg:col-span-5 flex flex-col gap-8">
               
               {/* Слепок дня (Snapshot Widget) */}
-              <div className="glass-card rounded-[32px] p-8 border border-white/5 bg-slate-900/40 relative overflow-hidden">
+              <div className="glass-card rounded-[32px] p-8 border border-white/5 bg-slate-900/40 relative">
                 <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
                    <Target className="w-32 h-32 text-purple-400 rotate-12" />
                 </div>
@@ -517,43 +517,45 @@ export default function Home() {
                   <h2 className="text-xl font-black text-white tracking-tight">Слепок дня</h2>
                 </div>
 
-                <div className="mb-4 flex items-baseline gap-2 relative z-10">
-                  <span className="text-4xl font-black text-white">{trackedStats.total}</span>
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">минут отслежено</span>
-                </div>
-
-                {Object.keys(trackedStats.byCategory).length > 0 && (
-                  <div className="mb-6 space-y-2 relative z-10">
-                    {Object.entries(trackedStats.byCategory).sort((a, b) => b[1] - a[1]).map(([catId, duration]) => {
-                      const cat = CATEGORIES.find(c => c.id === catId);
-                      if (!cat) return null;
-                      return (
-                        <div key={catId} className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-xl border border-white/5">
-                          <div className="flex items-center gap-2">
-                            <span>{cat.icon}</span>
-                            <span className="text-xs font-bold text-slate-300">{cat.label}</span>
-                          </div>
-                          <span className="text-xs font-black" style={{ color: cat.color }}>{duration} мин</span>
-                        </div>
-                      );
-                    })}
+                <div className="max-h-[600px] overflow-y-auto pr-2 no-scrollbar space-y-6">
+                  <div className="flex items-baseline gap-2 relative z-10">
+                    <span className="text-4xl font-black text-white">{trackedStats.total}</span>
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">минут отслежено</span>
                   </div>
-                )}
-                
-                <div className="grid grid-cols-2 gap-2 relative z-10">
-                  {CATEGORIES.map(cat => (
-                    <button
-                      key={cat.id}
-                      onClick={() => { setSnapshotCat(cat.id); setShowSnapshotModal(true); }}
-                      className="px-3 py-3 rounded-2xl border border-white/5 bg-black/40 hover:bg-white/10 transition-all flex items-center justify-between gap-2 text-xs font-bold text-slate-300 hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>{cat.icon}</span>
-                        <span>{cat.label}</span>
-                      </div>
-                      <Plus className="w-4 h-4 opacity-30" />
-                    </button>
-                  ))}
+
+                  {Object.keys(trackedStats.byCategory).length > 0 && (
+                    <div className="space-y-2 relative z-10">
+                      {Object.entries(trackedStats.byCategory).sort((a, b) => b[1] - a[1]).map(([catId, duration]) => {
+                        const cat = CATEGORIES.find(c => c.id === catId);
+                        if (!cat) return null;
+                        return (
+                          <div key={catId} className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-xl border border-white/5">
+                            <div className="flex items-center gap-2">
+                              <span>{cat.icon}</span>
+                              <span className="text-xs font-bold text-slate-300">{cat.label}</span>
+                            </div>
+                            <span className="text-xs font-black" style={{ color: cat.color }}>{duration} мин</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-2 gap-2 relative z-10 pb-4">
+                    {CATEGORIES.map(cat => (
+                      <button
+                        key={cat.id}
+                        onClick={() => { setSnapshotCat(cat.id); setShowSnapshotModal(true); }}
+                        className="px-3 py-3 rounded-2xl border border-white/5 bg-black/40 hover:bg-white/10 transition-all flex items-center justify-between gap-2 text-xs font-bold text-slate-300 hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>{cat.icon}</span>
+                          <span>{cat.label}</span>
+                        </div>
+                        <Plus className="w-4 h-4 opacity-30" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
