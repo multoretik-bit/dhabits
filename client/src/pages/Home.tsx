@@ -190,14 +190,14 @@ export default function Home() {
 
   // Blocks for today
   const todayBlocks = useMemo(() => {
-    return blocks.filter(b => b.isOneTime ? b.specificDate === dateStr : (!b.daysOfWeek || b.daysOfWeek.length === 0 || b.daysOfWeek.includes(dayOfWeek)))
+    return blocks.filter(b => b.isOneTime ? b.specificDate === dateStr : (b.daysOfWeek && b.daysOfWeek.includes(dayOfWeek)))
       .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
   }, [blocks, dateStr, dayOfWeek]);
 
   // Tasks for today
   const isTaskForDate = (t: Task) => {
     if (t.specificDate) return t.specificDate === dateStr;
-    return t.daysOfWeek.length === 0 || t.daysOfWeek.includes(dayOfWeek);
+    return t.daysOfWeek && t.daysOfWeek.includes(dayOfWeek);
   };
 
   const todayTasks = useMemo(() => {
@@ -264,7 +264,7 @@ export default function Home() {
   const activeBlockHabits = activeBlock ? habits.filter(h => h.blockId === activeBlock.id && h.daysOfWeek.includes(dayOfWeek)) : [];
   const activeBlockTasks = activeBlock ? todayTasks.filter(t => t.blockId === activeBlock.id) : [];
 
-  const allDayHabits = habits.filter(h => (!h.blockId || h.blockId === "general") && (h.daysOfWeek.length === 0 || h.daysOfWeek.includes(dayOfWeek)));
+  const allDayHabits = habits.filter(h => (!h.blockId || h.blockId === "general") && (h.daysOfWeek && h.daysOfWeek.includes(dayOfWeek)));
 
   let blockProgress = 0;
   if (activeBlock?.startTime && activeBlock?.endTime && isToday) {
