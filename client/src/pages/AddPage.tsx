@@ -566,7 +566,7 @@ function GoalsTab() {
 
 // ─── BLOCKS ───────────────────────────────────────────────────────────────
 function BlocksTab() {
-  const { blocks, addBlock, updateBlock, deleteBlock, moveBlockUp, moveBlockDown } = useApp();
+  const { blocks, addBlock, updateBlock, deleteBlock, moveBlockUp, moveBlockDown, forcePushToCloud } = useApp();
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -632,14 +632,14 @@ function BlocksTab() {
                 {b.systemUrl && <span className="ml-2 text-blue-400">🔗 Система</span>}
               </p>
             </div>
-            <div className="flex gap-1">
-              <div className="flex flex-col gap-0.5 mr-1">
-                <Button size="icon" variant="ghost" onClick={() => moveBlockUp(b.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowUp className="w-3 h-3" /></Button>
-                <Button size="icon" variant="ghost" onClick={() => moveBlockDown(b.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowDown className="w-3 h-3" /></Button>
+              <div className="flex gap-1">
+                <div className="flex flex-col gap-0.5 mr-1">
+                  <Button size="icon" variant="ghost" onClick={() => moveBlockUp(b.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowUp className="w-3 h-3" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => moveBlockDown(b.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowDown className="w-3 h-3" /></Button>
+                </div>
+                <Button size="icon" variant="ghost" onClick={() => { setEditingId(b.id); setName(b.name); setStartTime(b.startTime||""); setEndTime(b.endTime||""); setColor(b.color || (b.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][b.colorIndex] : "#3b82f6")); setSystemUrl(b.systemUrl || ""); setDays(b.daysOfWeek || [1, 2, 3, 4, 5, 6, 0]); setIsOneTime(!!b.isOneTime); setSpecificDate(b.specificDate || ""); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
+                <Button size="icon" variant="ghost" onClick={async () => { if (confirm("Удалить?")) { deleteBlock(b.id); setTimeout(() => forcePushToCloud(), 200); } }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
               </div>
-              <Button size="icon" variant="ghost" onClick={() => { setEditingId(b.id); setName(b.name); setStartTime(b.startTime||""); setEndTime(b.endTime||""); setColor(b.color || (b.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][b.colorIndex] : "#3b82f6")); setSystemUrl(b.systemUrl || ""); setDays(b.daysOfWeek || [1, 2, 3, 4, 5, 6, 0]); setIsOneTime(!!b.isOneTime); setSpecificDate(b.specificDate || ""); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
-              <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteBlock(b.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
-            </div>
           </div>
         ))}
         {blocks.length === 0 && <p className="text-center py-10 text-slate-600 italic">Нет блоков</p>}

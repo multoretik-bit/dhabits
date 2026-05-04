@@ -246,8 +246,16 @@ export default function Home() {
     setTaskTime("");
   };
 
-  const totalTrackedMinutes = useMemo(() => {
-    return (daySnapshots[dateStr] || []).reduce((acc, entry) => acc + entry.duration, 0);
+  const trackedStats = useMemo(() => {
+    const snapshots = daySnapshots[dateStr] || [];
+    const total = snapshots.reduce((acc, entry) => acc + entry.duration, 0);
+    const byCategory: Record<string, number> = {};
+    snapshots.forEach(s => {
+      if (s.category) {
+        byCategory[s.category] = (byCategory[s.category] || 0) + s.duration;
+      }
+    });
+    return { total, byCategory };
   }, [daySnapshots, dateStr]);
 
   // Current active block (only if looking at today)
@@ -495,10 +503,28 @@ export default function Home() {
                   <h2 className="text-xl font-black text-white tracking-tight">Слепок дня</h2>
                 </div>
 
-                <div className="mb-6 flex items-baseline gap-2 relative z-10">
-                  <span className="text-4xl font-black text-white">{totalTrackedMinutes}</span>
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">минут отслежено сегодня</span>
+                <div className="mb-4 flex items-baseline gap-2 relative z-10">
+                  <span className="text-4xl font-black text-white">{trackedStats.total}</span>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">минут отслежено</span>
                 </div>
+
+                {Object.keys(trackedStats.byCategory).length > 0 && (
+                  <div className="mb-6 space-y-2 relative z-10">
+                    {Object.entries(trackedStats.byCategory).sort((a, b) => b[1] - a[1]).map(([catId, duration]) => {
+                      const cat = CATEGORIES.find(c => c.id === catId);
+                      if (!cat) return null;
+                      return (
+                        <div key={catId} className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-xl border border-white/5">
+                          <div className="flex items-center gap-2">
+                            <span>{cat.icon}</span>
+                            <span className="text-xs font-bold text-slate-300">{cat.label}</span>
+                          </div>
+                          <span className="text-xs font-black" style={{ color: cat.color }}>{duration} мин</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
                 
                 <div className="flex flex-wrap gap-2 relative z-10">
                   {CATEGORIES.map(cat => (
