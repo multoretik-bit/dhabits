@@ -1,13 +1,25 @@
 import { useState, useEffect, useMemo } from "react";
-import { useApp, Habit, Task, HabitBlock, getCurrentBlock, getTodayDateString } from "@/contexts/AppContext";
-import { Clock, Check, Plus, Minus, ArrowUp, ArrowDown, LayoutGrid, ListTodo, ExternalLink, ListChecks, Sun } from "lucide-react";
+import { useApp, Habit, Task, HabitBlock, getTodayDateString, SnapshotEntry } from "@/contexts/AppContext";
+import { Clock, Check, Plus, Minus, ArrowUp, ArrowDown, LayoutGrid, ListTodo, ExternalLink, Calendar as CalendarIcon, Target, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import HabitRow from "@/components/HabitRow";
 import Calendar from "@/components/Calendar";
-import Timeline from "@/components/Timeline";
 import { formatDateToDateString, isSameDay } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
+import FormModal from "@/components/FormModal";
+import { FormInput } from "@/components/FormInputs";
+import { nanoid } from "nanoid";
+
+const CATEGORIES = [
+  { id: "work", label: "Работа", icon: "💼", color: "#ff0000" },
+  { id: "study", label: "Учёба", icon: "📚", color: "#ffff00" },
+  { id: "productive", label: "Продуктивное", icon: "🧠", color: "#8100eb" },
+  { id: "sport", label: "Спорт", icon: "🏃", color: "#0000ff" },
+  { id: "useless", label: "Бесполезное", icon: "😴", color: "#94a3b8" },
+  { id: "home", label: "Быт", icon: "🏠", color: "#06b6d4" },
+  { id: "rest", label: "Отдых", icon: "🧘", color: "#fe8181" },
+];
 
 function formatTime(t: string | undefined) {
   return t || "--:--";
@@ -50,16 +62,6 @@ function TaskRow({ task, dateStr, isCondensed }: { task: Task; dateStr: string; 
         }}
         onClick={() => completeTask(task.id, dateStr)}
       >
-        {!completed && task.coins && task.coins > 0 && !isCondensed && (
-          <div 
-            className="flex-shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl text-center"
-            style={{ backgroundColor: `${taskColor}25`, border: `1px solid ${taskColor}40` }}
-          >
-            <img src="/coin.png" alt="coin" className="w-3 h-3 object-contain mb-0.5" />
-            <span className="text-[9px] font-bold text-white leading-tight mt-0.5">{task.coins}</span>
-          </div>
-        )}
-
         <span 
           className={cn(
             "flex-shrink-0 flex items-center justify-center rounded-xl text-xl",
@@ -72,13 +74,20 @@ function TaskRow({ task, dateStr, isCondensed }: { task: Task; dateStr: string; 
         </span>
         
         <div className="flex-1 min-w-0">
-          <span className={cn(
-            "block font-bold leading-snug",
-            isCondensed ? "text-xs" : "text-sm",
-            completed ? "line-through text-slate-500" : "text-slate-100"
-          )}>
-            {task.title}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={cn(
+              "block font-bold leading-snug",
+              isCondensed ? "text-xs" : "text-sm",
+              completed ? "line-through text-slate-500" : "text-slate-100"
+            )}>
+              {task.title}
+            </span>
+            {task.time && !isCondensed && (
+              <span className="text-[10px] font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded-md">
+                {task.time}
+              </span>
+            )}
+          </div>
           {hasSubtasks && (
             <div className="flex items-center gap-2 mt-1">
                <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden max-w-[60px]">
@@ -153,88 +162,22 @@ function TaskRow({ task, dateStr, isCondensed }: { task: Task; dateStr: string; 
   );
 }
 
-function TaskFolderRow({ folder, tasks, dateStr }: { folder: any; tasks: Task[]; dateStr: string }) {
-  const { toggleTaskFolderCollapse } = useApp();
-  const completedCount = tasks.filter(t => !!(t.completedDates && t.completedDates[dateStr])).length;
-  const totalCount = tasks.length;
-  const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
-  const folderColor = folder.color || "#3b82f6";
-
-  return (
-    <div className="mb-6">
-      <div 
-        className="group relative glass-card rounded-[24px] p-4 overflow-hidden cursor-pointer hover:border-white/10 hover-lift transition-all"
-        onClick={() => toggleTaskFolderCollapse(folder.id)}
-      >
-        <div 
-          className="absolute top-0 left-0 w-1 h-full" 
-          style={{ backgroundColor: folderColor }} 
-        />
-        
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div 
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-2xl border transition-transform group-hover:scale-110"
-              style={{ backgroundColor: `${folderColor}15`, borderColor: `${folderColor}30` }}
-            >
-              {folder.emoji || "📁"}
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-white tracking-tight">{folder.name}</h3>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
-                {completedCount} из {totalCount} выполнено
-              </p>
-            </div>
-          </div>
-          <div className="text-right">
-             <span className="text-xs font-black text-blue-400" style={{ color: folderColor }}>{Math.round(progress)}%</span>
-          </div>
-        </div>
-
-        <div className="relative w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-white/5">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="absolute top-0 left-0 h-full rounded-full"
-            style={{ 
-              backgroundColor: folderColor,
-              boxShadow: `0 0 10px ${folderColor}40`
-            }}
-          />
-        </div>
-
-        <div className="absolute top-4 right-4 opacity-20 group-hover:opacity-40 transition-opacity">
-           {folder.collapsed ? <ArrowDown className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {!folder.collapsed && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="pt-3 pl-4 space-y-1 border-l-2 border-slate-800/30 ml-5">
-               {tasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} isCondensed={true} />)}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
 
 export default function Home() {
-  const { habits, tasks, taskFolders, blocks, wakeUpTimes, setWakeUpTime } = useApp();
+  const { habits, tasks, blocks, daySnapshots, addSnapshotEntry, addTask, updateTask } = useApp();
   const [, setLocation] = useLocation();
   const [now, setNow] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [wakeUpInput, setWakeUpInput] = useState("08:00");
+  
+  // Snapshot Modal state
+  const [showSnapshotModal, setShowSnapshotModal] = useState(false);
+  const [snapshotCat, setSnapshotCat] = useState("work");
+  const [snapshotDuration, setSnapshotDuration] = useState(15);
+  const [snapshotLabel, setSnapshotLabel] = useState("");
+
+  // Quick Task form state
+  const [taskTitle, setTaskTitle] = useState("");
+  const [taskTime, setTaskTime] = useState("");
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000);
@@ -242,447 +185,239 @@ export default function Home() {
   }, []);
 
   const dateStr = formatDateToDateString(selectedDate);
-  const isToday = isSameDay(selectedDate, now);
   const dayOfWeek = selectedDate.getDay();
   const currentMin = now.getHours() * 60 + now.getMinutes();
-  
-  // Logic for finding the currently active block (only if today is selected)
-  const activeBlock = useMemo(() => {
-    if (!isToday) return null;
-    const todayBlocks = blocks.filter(b => !b.daysOfWeek || b.daysOfWeek.length === 0 || b.daysOfWeek.includes(dayOfWeek));
-    return getCurrentBlock(todayBlocks, now);
-  }, [blocks, now, isToday, dayOfWeek]);
 
-  // Determine which block to show details for
-  const detailedBlock = useMemo(() => {
-    const todayBlocks = blocks.filter(b => !b.daysOfWeek || b.daysOfWeek.length === 0 || b.daysOfWeek.includes(dayOfWeek));
-    if (selectedBlockId) return todayBlocks.find(b => b.id === selectedBlockId);
-    return activeBlock;
-  }, [selectedBlockId, activeBlock, blocks, dayOfWeek]);
+  // Blocks for today
+  const todayBlocks = useMemo(() => {
+    return blocks.filter(b => b.isOneTime ? b.specificDate === dateStr : (!b.daysOfWeek || b.daysOfWeek.length === 0 || b.daysOfWeek.includes(dayOfWeek)))
+      .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+  }, [blocks, dateStr, dayOfWeek]);
 
-  let blockProgress = 0;
-  if (detailedBlock?.startTime && detailedBlock?.endTime && isSameDay(selectedDate, now)) {
-    const startM = timeToMinutes(detailedBlock.startTime);
-    const endM = timeToMinutes(detailedBlock.endTime);
-    if (endM > startM) {
-      blockProgress = Math.min(100, Math.max(0, ((currentMin - startM) / (endM - startM)) * 100));
-    }
-  }
-
-  const blockHabits = detailedBlock
-    ? habits.filter(h => h.blockId === detailedBlock.id && h.daysOfWeek.includes(dayOfWeek))
-    : [];
-  const blockIds = new Set(blocks.map(b => b.id));
-  const allDayHabits = habits.filter(
-    h => (!h.blockId || !blockIds.has(h.blockId)) && h.daysOfWeek.includes(dayOfWeek)
-  );
-
-  // New filtering for tasks including specific date
+  // Tasks for today
   const isTaskForDate = (t: Task) => {
     if (t.specificDate) return t.specificDate === dateStr;
     return t.daysOfWeek.length === 0 || t.daysOfWeek.includes(dayOfWeek);
   };
 
-  const blockTasks = detailedBlock
-    ? tasks.filter(t => t.blockId === detailedBlock.id && isTaskForDate(t))
-    : [];
-
-  const allDayTasks = tasks.filter(
-    t => t.isAllDay && isTaskForDate(t)
-  );
-
-  // Group allDayTasks by folder
-  const groupedTasks = useMemo(() => {
-    const foldersWithTasks: { folder: any; tasks: Task[] }[] = [];
-    const standaloneTasks: Task[] = [];
-
-    // Filter tasks for today
-    const activeTasks = tasks.filter(t => isTaskForDate(t));
-    
-    // Group active tasks
-    activeTasks.forEach(task => {
-      if (task.folderId && task.folderId !== "general") {
-        const folder = taskFolders.find(f => f.id === task.folderId);
-        if (folder) {
-          let folderGroup = foldersWithTasks.find(g => g.folder.id === folder.id);
-          if (!folderGroup) {
-            folderGroup = { folder, tasks: [] };
-            foldersWithTasks.push(folderGroup);
-          }
-          folderGroup.tasks.push(task);
-        } else {
-          standaloneTasks.push(task);
-        }
-      } else {
-        standaloneTasks.push(task);
-      }
+  const todayTasks = useMemo(() => {
+    return tasks.filter(isTaskForDate).sort((a, b) => {
+      if (!a.time && !b.time) return 0;
+      if (!a.time) return 1;
+      if (!b.time) return -1;
+      return timeToMinutes(a.time) - timeToMinutes(b.time);
     });
+  }, [tasks, dateStr, dayOfWeek]);
 
-    // Sort folders by global taskFolders order
-    foldersWithTasks.sort((a, b) => {
-       const idxA = taskFolders.findIndex(f => f.id === a.folder.id);
-       const idxB = taskFolders.findIndex(f => f.id === b.folder.id);
-       return idxA - idxB;
+  // Handle Snapshot Submit
+  const handleSnapshotSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!snapshotLabel) return;
+    const cat = CATEGORIES.find(c => c.id === snapshotCat);
+    addSnapshotEntry(dateStr, {
+      id: nanoid(),
+      startTime: currentMin - snapshotDuration, // default to ending now
+      duration: snapshotDuration,
+      label: snapshotLabel,
+      category: snapshotCat,
+      color: cat?.color || "#3b82f6"
     });
+    setShowSnapshotModal(false);
+    setSnapshotLabel("");
+    setSnapshotDuration(15);
+  };
 
-    return { foldersWithTasks, standaloneTasks };
-  }, [tasks, taskFolders, dateStr, dayOfWeek]);
+  const handleTaskSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!taskTitle) return;
+    addTask({
+      id: nanoid(),
+      title: taskTitle,
+      emoji: "📋",
+      color: "#6366f1",
+      daysOfWeek: [],
+      specificDate: dateStr,
+      time: taskTime || undefined,
+      isAllDay: !taskTime,
+      completedDates: {},
+      coins: 5,
+    });
+    setTaskTitle("");
+    setTaskTime("");
+  };
 
-  // Daily Completion Stats (Only Habits)
-  const dailyScheduledHabits = habits.filter(h => h.daysOfWeek.includes(dayOfWeek));
-  const dailyCompletedHabits = dailyScheduledHabits.filter(h => !!(h.completedDates && h.completedDates[dateStr]));
-  const completionPercentage = dailyScheduledHabits.length > 0 
-    ? (dailyCompletedHabits.length / dailyScheduledHabits.length) * 100 
-    : 0;
-
-  const blockColor = getBlockColor(detailedBlock);
+  // Get total tracked time today
+  const totalTrackedMinutes = useMemo(() => {
+    return (daySnapshots[dateStr] || []).reduce((acc, entry) => acc + entry.duration, 0);
+  }, [daySnapshots, dateStr]);
 
   return (
-    <div 
-      className="flex flex-col min-h-screen transition-all duration-700 relative overflow-hidden bg-background"
-    >
-      {/* Background Glow */}
-      {blockColor && (detailedBlock || activeBlock) && (
-        <div 
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-[500px] blur-[120px] opacity-20 pointer-events-none transition-all duration-1000"
-          style={{ background: `radial-gradient(circle, ${blockColor} 0%, transparent 70%)` }}
-        />
-      )}
-
+    <div className="flex flex-col min-h-screen transition-all duration-700 relative overflow-hidden bg-background">
       {/* Header with Calendar */}
       <div className="nav-blur pb-4 pt-2">
-        <Calendar selectedDate={selectedDate} onDateChange={(d) => {
-          setSelectedDate(d);
-          setSelectedBlockId(null);
-        }} />
+        <Calendar selectedDate={selectedDate} onDateChange={(d) => setSelectedDate(d)} />
       </div>
 
-      <div className="flex-1 flex flex-col items-center gap-6 p-4 sm:p-6 overflow-y-auto overflow-x-hidden">
-        {/* Block Switcher (Horizontal Chips) */}
-        <div className="w-full max-w-4xl px-2">
-          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 mask-fade-right">
-            <button
-              onClick={() => setSelectedBlockId(null)}
-              className={cn(
-                "flex-shrink-0 px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border",
-                !selectedBlockId 
-                  ? "bg-primary border-primary text-primary-foreground shadow-lg shadow-primary/20" 
-                  : "bg-card/40 border-border text-muted-foreground hover:text-foreground hover:bg-card/60"
-              )}
-            >
-              Сейчас
-            </button>
-            {blocks.filter(b => !b.daysOfWeek || b.daysOfWeek.length === 0 || b.daysOfWeek.includes(dayOfWeek)).map(b => (
-              <button
-                key={b.id}
-                onClick={() => setSelectedBlockId(b.id)}
-                className={cn(
-                  "flex-shrink-0 px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border flex items-center gap-2",
-                  selectedBlockId === b.id
-                    ? "text-primary-foreground shadow-lg"
-                    : "bg-card/40 border-border text-muted-foreground hover:text-foreground hover:bg-card/60"
-                )}
-                style={selectedBlockId === b.id ? { 
-                  backgroundColor: b.color || "#3b82f6", 
-                  borderColor: b.color || "#3b82f6",
-                  boxShadow: `0 8px 20px -6px ${b.color || "#3b82f6"}80`
-                } : {}}
-              >
-                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: b.color || "#fff" }} />
-                {b.name}
-                <span className="opacity-40 font-bold ml-1">{b.startTime}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Main column: Details */}
-        <div className="w-full max-w-4xl flex flex-col gap-6 relative z-10">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-20">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 mt-4">
           
-          {/* Wake-up Prompt or Minutes Info */}
-          {isToday && (
-            <AnimatePresence mode="wait">
-              {!wakeUpTimes[dateStr] ? (
-                <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="bg-blue-600/10 border border-blue-500/30 rounded-[32px] p-6 backdrop-blur-md shadow-xl flex flex-col items-center text-center gap-4"
-                >
-                  <Sun className="w-10 h-10 text-yellow-400 animate-pulse" />
-                  <div>
-                    <h2 className="text-xl font-black text-white">Во сколько вы проснулись?</h2>
-                    <p className="text-xs text-blue-300/70 font-bold uppercase tracking-widest mt-1">Начните свой слепок дня</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <input 
-                      type="time" 
-                      value={wakeUpInput}
-                      onChange={(e) => setWakeUpInput(e.target.value)}
-                      className="bg-slate-900/80 border border-white/10 rounded-xl px-4 py-2 text-white font-bold focus:outline-none focus:border-blue-500 transition-colors"
-                    />
-                    <button 
-                      onClick={() => setWakeUpTime(dateStr, wakeUpInput)}
-                      className="bg-blue-600 hover:bg-blue-500 text-white font-black px-6 py-2 rounded-xl transition-all shadow-lg active:scale-95"
-                    >
-                      Я встал!
-                    </button>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setLocation("/snapshot")}
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="group relative bg-slate-900/40 border border-white/5 rounded-[32px] p-6 backdrop-blur-md shadow-xl overflow-hidden text-left"
-                >
-                  <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Clock className="w-24 h-24 text-blue-400 rotate-12" />
-                  </div>
-                  
-                  <div className="relative z-10">
-                    <h3 className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em] mb-1">Слепок дня</h3>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-4xl font-black text-white leading-none">
-                        {(() => {
-                           const [h, m] = wakeUpTimes[dateStr].split(":").map(Number);
-                           const minutesSinceWake = h * 60 + m;
-                           const totalMins = 1440 - minutesSinceWake;
-                           return totalMins;
-                        })()}
-                      </span>
-                      <span className="text-xl font-bold text-slate-400">минут сегодня</span>
-                    </div>
-                    <p className="text-sm text-slate-500 font-bold mt-2 flex items-center gap-1.5">
-                      Нажмите, чтобы открыть ваш слепок <ExternalLink className="w-3 h-3" />
-                    </p>
-                  </div>
-
-                  {/* Tiny progress bar showing how much of 'today' has passed since waking up */}
-                  <div className="absolute bottom-0 left-0 w-full h-1 bg-white/5">
-                    <motion.div 
-                      className="h-full bg-blue-500" 
-                      initial={{ width: 0 }}
-                      animate={{ 
-                        width: `${(() => {
-                          const [h, m] = wakeUpTimes[dateStr].split(":").map(Number);
-                          const startM = h * 60 + m;
-                          const currentM = now.getHours() * 60 + now.getMinutes();
-                          const total = 1440 - startM;
-                          const elapsed = Math.max(0, currentM - startM);
-                          return Math.min(100, (elapsed / total) * 100);
-                        })()}%`
-                      }}
-                    />
-                  </div>
-                </motion.button>
-              )}
-            </AnimatePresence>
-          )}
-
-          {/* Daily Progress Counter */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-slate-900/40 border border-slate-800/60 rounded-[32px] p-5 backdrop-blur-md shadow-xl"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
-                  <ListChecks className="w-5 h-5 text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Прогресс дня</h3>
-                  <p className="text-sm font-black text-white">Привычки: {dailyCompletedHabits.length} из {dailyScheduledHabits.length}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-xl font-black text-blue-400">{Math.round(completionPercentage)}%</span>
-              </div>
+          {/* Left Column: Schedule (Расписание) */}
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-3">
+              <Clock className="w-5 h-5 text-blue-500" />
+              <h2 className="text-xl font-black text-white tracking-tight">Расписание</h2>
             </div>
             
-            <div className="relative w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-white/5">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${completionPercentage}%` }}
-                transition={{ duration: 1, ease: "easeOut" }}
-                className="absolute top-0 left-0 h-full rounded-full"
-                style={{ 
-                  background: 'linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)',
-                  boxShadow: '0 0 20px rgba(59, 130, 246, 0.4)'
-                }}
-              />
-            </div>
-          </motion.div>
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={detailedBlock?.id || "free-time"}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.3 }}
-              className="flex flex-col gap-6"
-            >
-              {detailedBlock ? (
-                <div 
-                  className="border rounded-[32px] p-6 shadow-2xl relative overflow-hidden border-white/5"
-                  style={{ 
-                    backgroundColor: blockColor ? `${blockColor}15` : 'rgba(30, 58, 138, 0.2)',
-                    borderColor: blockColor ? `${blockColor}30` : 'rgba(30, 58, 138, 0.3)'
-                  }}
-                >
-                  <div className="flex items-start justify-between mb-6">
-                    <div>
-                      <h1 className="text-3xl font-black text-white mb-2 tracking-tight">{detailedBlock.name}</h1>
-                      <div className="flex items-center gap-2 text-sm font-bold" style={{ color: blockColor || '#93c5fd' }}>
-                        <Clock className="w-4 h-4" />
-                        <span>{formatTime(detailedBlock.startTime)} — {formatTime(detailedBlock.endTime)}</span>
-                      </div>
+            <div className="space-y-4">
+              {todayBlocks.length > 0 ? todayBlocks.map(block => {
+                const blockColor = getBlockColor(block) || "#3b82f6";
+                const blockHabits = habits.filter(h => h.blockId === block.id && h.daysOfWeek.includes(dayOfWeek));
+                
+                return (
+                  <div key={block.id} className="glass-card rounded-[32px] p-5 shadow-sm border border-white/5 relative overflow-hidden"
+                    style={{ borderLeft: `4px solid ${blockColor}` }}
+                  >
+                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                      <LayoutGrid className="w-24 h-24" style={{ color: blockColor }} />
                     </div>
-                    {detailedBlock.systemUrl ? (
-                      <button
-                        onClick={() => window.open(detailedBlock.systemUrl, "_blank")}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 rounded-2xl border border-blue-500/30 transition-all font-bold text-xs shadow-lg group"
-                      >
-                        <ExternalLink className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                        <span>Система</span>
-                      </button>
-                    ) : detailedBlock.habits?.[0]?.emoji && (
-                      <div className="text-4xl p-3 bg-white/5 rounded-3xl backdrop-blur-sm shadow-inner overflow-hidden border border-white/5">
-                        {detailedBlock.habits[0].emoji}
+                    <div className="flex items-start justify-between mb-4 relative z-10">
+                      <div>
+                        <h3 className="text-xl font-black text-white mb-1">{block.name}</h3>
+                        <p className="text-xs font-bold" style={{ color: blockColor }}>
+                          {formatTime(block.startTime)} — {formatTime(block.endTime)}
+                        </p>
                       </div>
+                      {block.systemUrl && (
+                        <button onClick={() => window.open(block.systemUrl, "_blank")} className="p-2 bg-white/5 rounded-xl text-slate-400 hover:text-white transition-colors">
+                          <ExternalLink className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                    
+                    {blockHabits.length > 0 ? (
+                      <div className="space-y-2 mt-4 relative z-10">
+                        {blockHabits.map(h => <HabitRow key={h.id} habit={h} dateStr={dateStr} hideUnitTracker={true} />)}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500 italic mt-2">Нет привычек</p>
                     )}
                   </div>
-
-                  {blockProgress > 0 && isToday && (
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-xs font-black uppercase tracking-widest text-slate-400">
-                        <span>Block Progress</span>
-                        <span style={{ color: blockColor || '#fff' }}>{Math.round(blockProgress)}%</span>
-                      </div>
-                      <div className="w-full h-3 bg-slate-900/80 rounded-full overflow-hidden border border-white/5 relative">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${blockProgress}%` }}
-                          className="absolute top-0 left-0 h-full rounded-full"
-                          style={{ 
-                            background: blockColor 
-                              ? `linear-gradient(to right, ${blockColor}, #fff)` 
-                              : 'linear-gradient(to right, #2563eb, #22d3ee)' 
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                    {/* Block Habits */}
-                    <div>
-                      <div className="flex items-center gap-2 mb-4 opacity-60">
-                        <LayoutGrid className="w-3 h-3" />
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-100">Habits</h3>
-                      </div>
-                      <div className="space-y-2">
-                        {blockHabits.length > 0 ? (
-                          blockHabits.map(h => <HabitRow key={h.id} habit={h} dateStr={dateStr} hideUnitTracker={true} />)
-                        ) : (
-                          <div className="py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-600 bg-white/5 rounded-2xl border border-dashed border-white/5">Empty</div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Block Tasks */}
-                    <div>
-                      <div className="flex items-center gap-2 mb-4 opacity-60">
-                        <ListTodo className="w-3 h-3" />
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-100">Tasks</h3>
-                      </div>
-                      <div className="space-y-2">
-                        {blockTasks.length > 0 ? (
-                          blockTasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} />)
-                        ) : (
-                          <div className="py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-600 bg-white/5 rounded-2xl border border-dashed border-white/5">None</div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 text-center border rounded-[32px] border-white/5 bg-slate-900/10">
-                  <div className="w-20 h-20 rounded-full bg-slate-900 flex items-center justify-center text-4xl mb-6 shadow-2xl border border-white/5">
-                    🌊
-                  </div>
-                  <h2 className="text-3xl font-black text-slate-200 mb-2">Free Time</h2>
-                  <p className="text-sm text-slate-500 font-medium max-w-[280px]">Enjoy your rest or check off all-day tasks below</p>
+                );
+              }) : (
+                <div className="py-12 text-center border border-dashed border-white/10 rounded-3xl bg-white/5">
+                  <p className="text-slate-500 font-bold">На сегодня блоков нет</p>
                 </div>
               )}
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Only All-day Habits here now */}
-          {(allDayHabits.length > 0) && (
-            <div className="mt-8">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="h-[1px] flex-1 bg-white/5" />
-                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Daily Habits</h3>
-                <div className="h-[1px] flex-1 bg-white/5" />
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6">
-                {allDayHabits.map(h => <HabitRow key={h.id} habit={h} dateStr={dateStr} hideUnitTracker={true} />)}
-              </div>
             </div>
-          )}
+          </div>
 
-          {/* Dedicated Daily Tasks Section at the bottom */}
-          <div className="mt-12 pb-10">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
-                <ListTodo className="w-5 h-5 text-indigo-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-black text-white tracking-tight">Задачи на день</h2>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Личные цели и разовые дела</p>
-              </div>
-              <div className="h-[1px] flex-1 bg-gradient-to-r from-indigo-500/20 to-transparent ml-4" />
-            </div>
-
-            {groupedTasks.foldersWithTasks.length > 0 || groupedTasks.standaloneTasks.length > 0 ? (
-              <div className="space-y-4">
-                {/* Render Folders first */}
-                {groupedTasks.foldersWithTasks.map(group => (
-                  <TaskFolderRow 
-                    key={group.folder.id} 
-                    folder={group.folder} 
-                    tasks={group.tasks} 
-                    dateStr={dateStr} 
-                  />
-                ))}
-                
-                {/* Render Standalone Tasks */}
-                {groupedTasks.standaloneTasks.length > 0 && (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6">
-                    {groupedTasks.standaloneTasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} />)}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="py-12 flex flex-col items-center justify-center bg-slate-900/20 border border-dashed border-white/5 rounded-[32px] text-center">
-                <div className="w-12 h-12 rounded-full bg-slate-900 flex items-center justify-center text-xl mb-3 opacity-50">✨</div>
-                <p className="text-sm font-bold text-slate-600">На сегодня задач нет</p>
-                <button 
-                  onClick={() => setLocation("/add")}
-                  className="mt-4 text-[10px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors"
-                >
-                  + Добавить задачу
+          {/* Right Column: Snapshot & Tasks */}
+          <div className="flex flex-col gap-8">
+            
+            {/* Слепок дня (Snapshot Widget) */}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Target className="w-5 h-5 text-purple-500" />
+                  <h2 className="text-xl font-black text-white tracking-tight">Слепок дня</h2>
+                </div>
+                <button onClick={() => setLocation("/snapshot")} className="text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors">
+                  Полная статистика &rarr;
                 </button>
               </div>
-            )}
+
+              <div className="glass-card rounded-[32px] p-6 border border-white/5 bg-slate-900/40 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                   <Target className="w-32 h-32 text-purple-400 rotate-12" />
+                </div>
+                <div className="mb-4 flex items-baseline gap-2 relative z-10">
+                  <span className="text-3xl font-black text-white">{totalTrackedMinutes}</span>
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">минут отслежено сегодня</span>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 relative z-10">
+                  {CATEGORIES.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => { setSnapshotCat(cat.id); setShowSnapshotModal(true); }}
+                      className="px-3 py-2 rounded-xl border border-white/5 bg-black/20 hover:bg-white/10 transition-all flex items-center gap-2 text-xs font-bold text-slate-300"
+                    >
+                      <span>{cat.icon}</span> {cat.label} <Plus className="w-3 h-3 opacity-50" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Лента дел (Timeline of Tasks) */}
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ListTodo className="w-5 h-5 text-indigo-500" />
+                  <h2 className="text-xl font-black text-white tracking-tight">Лента дел</h2>
+                </div>
+              </div>
+
+              <div className="glass-card rounded-[32px] p-5 border border-white/5 bg-slate-900/40 flex flex-col h-full">
+                <div className="space-y-2 mb-6 flex-1 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
+                  {todayTasks.length > 0 ? todayTasks.map(task => (
+                    <TaskRow key={task.id} task={task} dateStr={dateStr} />
+                  )) : (
+                    <p className="text-xs text-slate-500 italic text-center py-4">Нет задач на сегодня</p>
+                  )}
+                </div>
+
+                <form onSubmit={handleTaskSubmit} className="flex gap-2 shrink-0 pt-4 border-t border-white/5">
+                  <input
+                    type="time"
+                    value={taskTime}
+                    onChange={e => setTaskTime(e.target.value)}
+                    className="w-24 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm font-bold"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Новая задача..."
+                    value={taskTitle}
+                    onChange={e => setTaskTitle(e.target.value)}
+                    className="flex-1 px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm font-bold"
+                  />
+                  <button type="submit" disabled={!taskTitle} className="px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl transition-colors shadow-lg shadow-indigo-600/20">
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </form>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
+
+      <FormModal title="Добавить время" isOpen={showSnapshotModal} onClose={() => setShowSnapshotModal(false)} onSubmit={handleSnapshotSubmit} submitText="Сохранить">
+         <div className="flex items-center gap-3 mb-6 p-4 bg-slate-900 rounded-2xl border border-white/5">
+           <span className="text-2xl">{CATEGORIES.find(c => c.id === snapshotCat)?.icon}</span>
+           <span className="font-bold text-white">{CATEGORIES.find(c => c.id === snapshotCat)?.label}</span>
+         </div>
+         <FormInput label="Что вы делали?" value={snapshotLabel} onChange={setSnapshotLabel} placeholder="Учил английский..." />
+         <div className="mt-4">
+           <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-2 pl-1">Длительность</label>
+           <div className="flex flex-wrap gap-2">
+             {[10, 15, 20, 30, 45, 60, 90, 120].map(dur => (
+               <button 
+                 key={dur} type="button"
+                 onClick={() => setSnapshotDuration(dur)}
+                 className={cn(
+                   "px-4 py-2 rounded-xl border font-black text-xs transition-all",
+                   snapshotDuration === dur 
+                     ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20" 
+                     : "bg-slate-950 border-white/5 text-slate-400 hover:border-white/10"
+                 )}
+               >
+                 {dur}м
+               </button>
+             ))}
+           </div>
+         </div>
+      </FormModal>
     </div>
   );
 }

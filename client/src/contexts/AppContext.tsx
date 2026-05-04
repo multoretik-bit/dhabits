@@ -62,6 +62,8 @@ export interface HabitBlock {
   color?: string;
   systemUrl?: string;
   daysOfWeek?: number[];
+  isOneTime?: boolean;
+  specificDate?: string;
 }
 
 export interface SubTask {
@@ -78,6 +80,7 @@ export interface Task {
   folderId?: string;
   daysOfWeek: number[]; // [] = every day
   specificDate?: string; // YYYY-MM-DD
+  time?: string; // HH:MM
   isAllDay: boolean;
   color: string;
   completedDates: Record<string, boolean>;
