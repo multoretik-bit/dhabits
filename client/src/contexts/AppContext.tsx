@@ -741,6 +741,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return !!(habit.completedDates && habit.completedDates[today]);
   };
 
+  const updateStorage = (updates: Partial<StorageData>) => {
+    const data = storage.getData();
+    const newData = { ...data, ...updates, lastUpdated: new Date().toISOString(), clientId: clientIdRef.current };
+    storage.saveData(newData);
+  };
+
   const saveAllData = (
     coinsValue: number,
     habitsValue: Habit[],
@@ -836,14 +842,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addCoins = (amount: number) => {
     const newCoins = Math.round((coins + amount) * 100) / 100;
     setCoins(newCoins);
-    saveAllData(newCoins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
+    updateStorage({ coins: newCoins });
   };
 
   const spendCoins = (amount: number): boolean => {
     if (coins < amount) return false;
     const newCoins = Math.round((coins - amount) * 100) / 100;
     setCoins(newCoins);
-    saveAllData(newCoins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
+    updateStorage({ coins: newCoins });
     return true;
   };
 
@@ -1177,7 +1183,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const deleteTask = (id: string) => {
     const newTasks = tasks.filter((t) => t.id !== id);
     setTasks(newTasks);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, newTasks, taskFolders, customColors);
+    updateStorage({ tasks: newTasks });
   };
 
   const completeTask = (id: string, dateStr?: string) => {
@@ -1187,10 +1193,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const isCompleted = !!(task.completedDates && task.completedDates[targetDate]);
 
     if (!isCompleted && task.isOneTime) {
+      const newTasks = tasks.filter(t => t.id !== id);
+      setTasks(newTasks);
       if (task.coins && task.coins > 0) {
-        addCoins(task.coins);
+        const newCoins = Math.round((coins + task.coins) * 100) / 100;
+        setCoins(newCoins);
+        updateStorage({ tasks: newTasks, coins: newCoins });
+      } else {
+        updateStorage({ tasks: newTasks });
       }
-      deleteTask(id);
       return;
     }
 

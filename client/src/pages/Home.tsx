@@ -8,6 +8,9 @@ import Calendar from "@/components/Calendar";
 import { formatDateToDateString, isSameDay } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 import FormModal from "@/components/FormModal";
+import EmojiPicker from "@/components/EmojiPicker";
+import AdvancedColorPicker from "@/components/AdvancedColorPicker";
+import { FormCheckbox } from "@/components/FormInputs";
 import { FormInput } from "@/components/FormInputs";
 import { nanoid } from "nanoid";
 
@@ -20,6 +23,36 @@ const CATEGORIES = [
   { id: "home", label: "Быт", icon: "🏠", color: "#06b6d4" },
   { id: "rest", label: "Отдых", icon: "🧘", color: "#fe8181" },
 ];
+const DAYS_OF_WEEK = [
+  { id: 1, label: "Пн" },
+  { id: 2, label: "Вт" },
+  { id: 3, label: "Ср" },
+  { id: 4, label: "Чт" },
+  { id: 5, label: "Пт" },
+  { id: 6, label: "Сб" },
+  { id: 0, label: "Вс" },
+];
+
+function DayPicker({ value, onChange }: { value: number[]; onChange: (v: number[]) => void }) {
+  const toggle = (id: number) =>
+    onChange(value.includes(id) ? value.filter((d) => d !== id) : [...value, id]);
+  return (
+    <div className="flex flex-wrap gap-2">
+      {DAYS_OF_WEEK.map((d) => (
+        <button
+          key={d.id}
+          type="button"
+          onClick={() => toggle(d.id)}
+          className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors
+            ${value.includes(d.id) ? "bg-accent text-accent-foreground" : "bg-secondary text-muted-foreground hover:bg-secondary/80"}`}
+        >
+          {d.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 
 function formatTime(t: string | undefined) {
   return t || "--:--";
@@ -175,8 +208,18 @@ export default function Home() {
   const [snapshotLabel, setSnapshotLabel] = useState("");
 
   // Quick Task form state
+  // Quick Task form state (now full task state)
+  const [showTaskModal, setShowTaskModal] = useState(false);
   const [taskTitle, setTaskTitle] = useState("");
+  const [taskEmoji, setTaskEmoji] = useState("📋");
+  const [taskColor, setTaskColor] = useState("#3b82f6");
+  const [taskBlockId, setTaskBlockId] = useState("");
+  const [taskDays, setTaskDays] = useState<number[]>([]);
+  const [taskIsAllDay, setTaskIsAllDay] = useState(true);
+  const [taskCoins, setTaskCoins] = useState("5");
+  const [taskIsOneTime, setTaskIsOneTime] = useState(false);
   const [taskTime, setTaskTime] = useState("");
+  const [dayTab, setDayTab] = useState<'habits' | 'tasks'>('habits');
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000);
@@ -229,22 +272,61 @@ export default function Home() {
 
   const handleTaskSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!taskTitle) return;
+    if (!taskTitle.trim()) return;
     addTask({
       id: nanoid(),
       title: taskTitle,
-      emoji: "📋",
-      color: "#6366f1",
-      daysOfWeek: [],
+      emoji: taskEmoji,
+      color: taskColor,
+      blockId: taskBlockId || undefined,
+      daysOfWeek: taskDays,
       specificDate: dateStr,
       time: taskTime || undefined,
-      isAllDay: !taskTime,
+      isAllDay: taskIsAllDay,
       completedDates: {},
-      coins: 5,
+      coins: Number(taskCoins),
+      isOneTime: taskIsOneTime
     });
     setTaskTitle("");
     setTaskTime("");
+    setTaskEmoji("📋");
+    setTaskColor("#3b82f6");
+    setTaskBlockId("");
+    setTaskDays([]);
+    setTaskIsAllDay(true);
+    setTaskCoins("5");
+    setTaskIsOneTime(false);
+    setShowTaskModal(false);
   };
+  
+  const TaskForm = () => (
+    <>
+      <FormInput label="Название задачи" value={taskTitle} onChange={setTaskTitle} placeholder="например, Выпить воду" />
+      <EmojiPicker label="Эмодзи" value={taskEmoji} onChange={setTaskEmoji} />
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Цвет</label>
+        <AdvancedColorPicker value={taskColor} onChange={setTaskColor} />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Блок (опционально)</label>
+        <select value={taskBlockId} onChange={(e) => setTaskBlockId(e.target.value)}
+          className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-accent">
+          <option value="">— Без блока —</option>
+          {blocks.map((b) => <option key={b.id} value={b.id}>{b.name}{b.startTime ? ` (${b.startTime}–${b.endTime})` : ""}</option>)}
+        </select>
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Дни недели (пусто = каждый день)</label>
+        <DayPicker value={taskDays} onChange={setTaskDays} />
+      </div>
+      <FormInput label="Время (опционально)" value={taskTime} onChange={setTaskTime} type="time" />
+      <FormCheckbox label="Задача на весь день (показывать без привязки к блоку)" checked={taskIsAllDay} onChange={setTaskIsAllDay} />
+      <FormInput label="Монет за выполнение" value={taskCoins} onChange={setTaskCoins} type="number" />
+      <div className="pt-2 border-t border-border mt-2">
+        <FormCheckbox label="Одноразовая (исчезнет после выполнения)" checked={taskIsOneTime} onChange={setTaskIsOneTime} />
+      </div>
+    </>
+  );
 
   const trackedStats = useMemo(() => {
     const snapshots = daySnapshots[dateStr] || [];
@@ -414,18 +496,24 @@ export default function Home() {
               )}
             </AnimatePresence>
 
-            {/* All-day habits below the block */}
-            {allDayHabits.length > 0 && (
-              <div className="w-full max-w-4xl mt-8">
-                <div className="flex items-center gap-2 mb-4 opacity-60 px-2">
-                  <LayoutGrid className="w-5 h-5 text-indigo-400" />
-                  <h3 className="text-sm font-black uppercase tracking-[0.2em] text-slate-100">Привычки на весь день</h3>
-                </div>
-                <div className="space-y-3">
-                  {allDayHabits.map(h => <HabitRow key={h.id} habit={h} dateStr={dateStr} hideUnitTracker={true} />)}
-                </div>
-              </div>
-            )}
+            {/* All-day habits and tasks below the block */}
+            <div className="w-full max-w-4xl mt-8">
+               <div className="flex gap-2 mb-6 bg-slate-900/40 p-1 rounded-xl w-fit">
+                 <button onClick={() => setDayTab('habits')} className={`px-4 py-2 rounded-lg text-sm font-bold ${dayTab === 'habits' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>Привычки на день</button>
+                 <button onClick={() => setDayTab('tasks')} className={`px-4 py-2 rounded-lg text-sm font-bold ${dayTab === 'tasks' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>Задачи на день</button>
+               </div>
+               
+               {dayTab === 'habits' && (
+                  <div className="space-y-3">
+                    {allDayHabits.length > 0 ? allDayHabits.map(h => <HabitRow key={h.id} habit={h} dateStr={dateStr} hideUnitTracker={true} />) : <div className="py-6 text-center text-xs uppercase tracking-widest font-bold text-slate-500 bg-black/20 rounded-2xl border border-dashed border-white/5">Нет привычек на весь день</div>}
+                  </div>
+               )}
+               {dayTab === 'tasks' && (
+                  <div className="space-y-3">
+                    {todayTasks.filter(t => !t.blockId).length > 0 ? todayTasks.filter(t => !t.blockId).map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} />) : <div className="py-6 text-center text-xs uppercase tracking-widest font-bold text-slate-500 bg-black/20 rounded-2xl border border-dashed border-white/5">Нет задач на весь день</div>}
+                  </div>
+               )}
+            </div>
           </div>
         )}
 
@@ -567,37 +655,28 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-2 mb-6 flex-1 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
-                  {todayTasks.length > 0 ? todayTasks.map(task => (
+                  {tasks.length > 0 ? tasks.map(task => (
                     <TaskRow key={task.id} task={task} dateStr={dateStr} />
                   )) : (
-                    <p className="text-xs text-slate-500 italic text-center py-8">Нет задач на сегодня</p>
+                    <p className="text-xs text-slate-500 italic text-center py-8">Нет задач</p>
                   )}
                 </div>
 
-                <form onSubmit={handleTaskSubmit} className="flex gap-2 shrink-0 pt-4 border-t border-white/5">
-                  <input
-                    type="time"
-                    value={taskTime}
-                    onChange={e => setTaskTime(e.target.value)}
-                    className="w-24 px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm font-bold"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Новая задача..."
-                    value={taskTitle}
-                    onChange={e => setTaskTitle(e.target.value)}
-                    className="flex-1 px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 text-sm font-bold"
-                  />
-                  <button type="submit" disabled={!taskTitle} className="px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-xl transition-colors shadow-lg shadow-indigo-600/20">
-                    <Plus className="w-5 h-5" />
+                <div className="pt-4 border-t border-white/5">
+                  <button onClick={() => setShowTaskModal(true)} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors shadow-lg shadow-indigo-600/20 font-bold flex items-center justify-center gap-2">
+                    <Plus className="w-5 h-5" /> Создать задачу
                   </button>
-                </form>
+                </div>
               </div>
             </div>
 
           </motion.div>
         )}
       </div>
+
+      <FormModal title="Новая задача" isOpen={showTaskModal} onClose={() => setShowTaskModal(false)} onSubmit={handleTaskSubmit} submitText="Создать">
+        <TaskForm />
+      </FormModal>
 
       <FormModal title="Добавить время" isOpen={showSnapshotModal} onClose={() => setShowSnapshotModal(false)} onSubmit={handleSnapshotSubmit} submitText="Сохранить">
          <div className="flex items-center gap-3 mb-6 p-4 bg-slate-900 rounded-2xl border border-white/5">
