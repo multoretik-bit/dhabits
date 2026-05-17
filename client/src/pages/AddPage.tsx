@@ -7,6 +7,7 @@ import { FormInput, FormCheckbox } from "@/components/FormInputs";
 import EmojiPicker from "@/components/EmojiPicker";
 import AdvancedColorPicker from "@/components/AdvancedColorPicker";
 import HabitUnitTracker from "@/components/HabitUnitTracker";
+import TaskCalendarFeed from "@/components/TaskCalendarFeed";
 import { nanoid } from "nanoid";
 
 const DAYS_OF_WEEK = [
@@ -233,6 +234,7 @@ function TasksTab() {
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
   const toggleName = (id: string) => setExpandedItems(p => ({...p, [id]: !p[id]}));
+  const [viewMode, setViewMode] = useState<'folders' | 'calendar'>('calendar');
 
   const [title, setTitle] = useState(""); const [emoji, setEmoji] = useState("📋");
   const [color, setColor] = useState("#3b82f6");
@@ -335,16 +337,26 @@ function TasksTab() {
 
   return (
     <div className="space-y-4 pb-20">
-      <div className="flex gap-2 justify-end mb-4">
-        <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-white/10 text-muted-foreground hover:bg-white/5 hover:text-foreground rounded-xl">
-          <FolderPlus className="w-4 h-4 mr-2" /> Большая задача
-        </Button>
-        <Button onClick={() => setShowCreate(true)} className="premium-gradient text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 active:scale-[0.98]">
-          <Plus className="w-4 h-4 mr-2" /> Задача
-        </Button>
+      <div className="flex gap-2 justify-between mb-4">
+        <div className="flex gap-1 bg-slate-900/50 p-1 rounded-xl">
+           <Button variant="ghost" onClick={() => setViewMode('folders')} className={`h-8 px-3 text-xs rounded-lg ${viewMode === 'folders' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>Папки</Button>
+           <Button variant="ghost" onClick={() => setViewMode('calendar')} className={`h-8 px-3 text-xs rounded-lg ${viewMode === 'calendar' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>Календарь</Button>
+        </div>
+        
+        <div className="flex gap-2">
+          {viewMode === 'folders' && (
+            <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-white/10 text-muted-foreground hover:bg-white/5 hover:text-foreground rounded-xl">
+              <FolderPlus className="w-4 h-4 mr-2" /> Большая задача
+            </Button>
+          )}
+          <Button onClick={() => setShowCreate(true)} className="premium-gradient text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 active:scale-[0.98]">
+            <Plus className="w-4 h-4 mr-2" /> Задача
+          </Button>
+        </div>
       </div>
 
-      <div className="space-y-5">
+      {viewMode === 'folders' ? (
+        <div className="space-y-5">
         {taskFolders.map(f => {
           const fTasks = tasks.filter(t => t.folderId === f.id || (!t.folderId && f.id === "general"));
           return (
@@ -419,7 +431,31 @@ function TasksTab() {
             </div>
           );
         })}
-      </div>
+        </div>
+      ) : (
+        <div className="mt-4">
+          <TaskCalendarFeed 
+            onCreateTask={(dateStr) => {
+              setSpecificDate(dateStr);
+              setDays([]);
+              setIsOneTime(true);
+              setShowCreate(true);
+            }} 
+            onEditTask={(t) => {
+              setEditingId(t.id); setTitle(t.title); setEmoji(t.emoji); setColor(t.color || "#3b82f6"); 
+              setBlockId(t.blockId || ""); setDays(t.daysOfWeek || []); setFolderId(t.folderId || "general");
+              setCoins(String(t.coins || 5)); setIsOneTime(!!t.isOneTime);
+              setSpecificDate(t.specificDate || ""); setTime(t.time || "");
+              setSubtasks(t.subtasks || []);
+              setShowEdit(true); 
+            }}
+            onDeleteTask={(t) => {
+              if (confirm("Удалить?")) deleteTask(t.id);
+            }}
+            daysCount={30} 
+          />
+        </div>
+      )}
       <FormModal title="Новая задача" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (title) { addTask({ id: nanoid(), title, emoji, color, blockId: blockId || undefined, folderId: folderId || "general", daysOfWeek: days, specificDate: specificDate || undefined, time: time || undefined, isAllDay: !time, completedDates: {}, coins: Number(coins), isOneTime, subtasks: subtasks.filter(s => s.title.trim() !== "") }); setShowCreate(false); resetForm(); } }} submitText="Создать">{taskFormContent}</FormModal>
       <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && title) { updateTask(editingId, { title, emoji, color, blockId: blockId || undefined, folderId: folderId || "general", daysOfWeek: days, specificDate: specificDate || undefined, time: time || undefined, isAllDay: !time, coins: Number(coins), isOneTime, subtasks: subtasks.filter(s => s.title.trim() !== "") }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{taskFormContent}</FormModal>
       <FormModal title="Новая большая задача" isOpen={showCreateFolder} onClose={() => { setShowCreateFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (folderName) { addTaskFolder({ id: nanoid(), name: folderName, emoji: folderEmoji, color: folderColor, collapsed: false }); setShowCreateFolder(false); setFolderName(""); } }} submitText="Создать">{folderFormContent}</FormModal>

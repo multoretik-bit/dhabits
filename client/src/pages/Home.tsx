@@ -5,6 +5,8 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import HabitRow from "@/components/HabitRow";
 import Calendar from "@/components/Calendar";
+import TaskRow from "@/components/TaskRow";
+import TaskCalendarFeed from "@/components/TaskCalendarFeed";
 import { formatDateToDateString, isSameDay } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 import FormModal from "@/components/FormModal";
@@ -71,129 +73,7 @@ function getBlockColor(b: HabitBlock | null | undefined): string | null {
   return null;
 }
 
-function TaskRow({ task, dateStr, isCondensed }: { task: Task; dateStr: string; isCondensed?: boolean }) {
-  const { completeTask, moveTaskUp, moveTaskDown, toggleSubtask } = useApp();
-  const [expanded, setExpanded] = useState(false);
-  const completed = !!(task.completedDates && task.completedDates[dateStr]);
-  const taskColor = task.color || "#3b82f6";
-  
-  const hasSubtasks = task.subtasks && task.subtasks.length > 0;
-  const completedSubtasks = task.subtasks?.filter(s => s.completed).length || 0;
-  const totalSubtasks = task.subtasks?.length || 0;
 
-  return (
-    <div className={cn("mb-3", isCondensed && "mb-2")}>
-      <div
-        className={cn(
-          "w-full flex items-center gap-3 p-3 rounded-2xl transition-all text-left overflow-hidden cursor-pointer hover-lift shadow-sm",
-          completed ? "opacity-60 bg-slate-900/40 border border-white/5" : "glass-card hover:border-blue-500/30",
-          isCondensed && "p-2 rounded-xl"
-        )}
-        style={{ 
-          borderLeft: completed ? `3px solid ${taskColor}44` : `3px solid ${taskColor}`,
-          background: completed ? "rgba(15,23,42,0.4)" : `linear-gradient(135deg, ${taskColor}12 0%, rgba(15,23,42,0.6) 100%)`
-        }}
-        onClick={() => completeTask(task.id, dateStr)}
-      >
-        <span 
-          className={cn(
-            "flex-shrink-0 flex items-center justify-center rounded-xl text-xl",
-            isCondensed ? "w-8 h-8 text-lg" : "w-10 h-10",
-            completed ? "bg-slate-800" : `${taskColor}22`
-          )}
-          style={{ backgroundColor: completed ? "#1e293b" : `${taskColor}22` }}
-        >
-          {completed ? <Check className="w-4 h-4 text-slate-500" /> : (task.emoji || "📋")}
-        </span>
-        
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={cn(
-              "block font-bold leading-snug",
-              isCondensed ? "text-xs" : "text-sm",
-              completed ? "line-through text-slate-500" : "text-slate-100"
-            )}>
-              {task.title}
-            </span>
-            {task.time && !isCondensed && (
-              <span className="text-[10px] font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded-md">
-                {task.time}
-              </span>
-            )}
-          </div>
-          {hasSubtasks && (
-            <div className="flex items-center gap-2 mt-1">
-               <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden max-w-[60px]">
-                  <div 
-                    className="h-full bg-blue-500/50 transition-all duration-500" 
-                    style={{ width: `${(completedSubtasks / totalSubtasks) * 100}%` }}
-                  />
-               </div>
-               <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">
-                 {completedSubtasks}/{totalSubtasks}
-               </span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          {hasSubtasks && (
-            <button 
-              onClick={() => setExpanded(!expanded)}
-              className="p-1.5 hover:bg-slate-700/50 rounded-lg text-slate-500 hover:text-blue-400 transition-colors"
-            >
-              <ListTodo className={cn("w-4 h-4 transition-transform", expanded && "text-blue-400")} />
-            </button>
-          )}
-          {!completed && !isCondensed && (
-            <div className="flex flex-col gap-0.5">
-              <button onClick={() => moveTaskUp(task.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
-                <ArrowUp className="w-3 h-3" />
-              </button>
-              <button onClick={() => moveTaskDown(task.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
-                <ArrowDown className="w-3 h-3" />
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {expanded && hasSubtasks && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <div className={cn("pt-2 pb-1 pr-4 flex flex-col gap-2", isCondensed ? "pl-10" : "pl-12")}>
-              {task.subtasks?.map(st => (
-                <div 
-                  key={st.id} 
-                  className="flex items-center gap-3 p-2 rounded-xl bg-slate-900/40 border border-white/5 cursor-pointer hover:bg-slate-800/40 transition-colors"
-                  onClick={() => toggleSubtask(task.id, st.id)}
-                >
-                  <div className={cn(
-                    "w-4 h-4 rounded border flex items-center justify-center transition-colors",
-                    st.completed ? "bg-blue-600 border-blue-600" : "border-slate-700 bg-slate-950"
-                  )}>
-                    {st.completed && <Check className="w-3 h-3 text-white" />}
-                  </div>
-                  <span className={cn(
-                    "text-xs font-medium",
-                    st.completed ? "text-slate-500 line-through" : "text-slate-300"
-                  )}>
-                    {st.title}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 export default function Home() {
   const { habits, tasks, blocks, daySnapshots, addSnapshotEntry, addTask } = useApp();
@@ -218,6 +98,7 @@ export default function Home() {
   const [taskIsAllDay, setTaskIsAllDay] = useState(true);
   const [taskCoins, setTaskCoins] = useState("5");
   const [taskIsOneTime, setTaskIsOneTime] = useState(false);
+  const [taskSpecificDate, setTaskSpecificDate] = useState("");
   const [taskTime, setTaskTime] = useState("");
   const [dayTab, setDayTab] = useState<'habits' | 'tasks'>('habits');
 
@@ -280,7 +161,7 @@ export default function Home() {
       color: taskColor,
       blockId: taskBlockId || undefined,
       daysOfWeek: taskDays,
-      specificDate: dateStr,
+      specificDate: taskSpecificDate || undefined,
       time: taskTime || undefined,
       isAllDay: taskIsAllDay,
       completedDates: {},
@@ -296,7 +177,15 @@ export default function Home() {
     setTaskIsAllDay(true);
     setTaskCoins("5");
     setTaskIsOneTime(false);
+    setTaskSpecificDate("");
     setShowTaskModal(false);
+  };
+
+  const openTaskModalForDate = (dateToSet: string) => {
+    setTaskSpecificDate(dateToSet);
+    setTaskDays([]);
+    setTaskIsOneTime(true); // By default when picking specific date, make it one-time
+    setShowTaskModal(true);
   };
   
   const TaskForm = () => (
@@ -318,6 +207,15 @@ export default function Home() {
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">Дни недели (пусто = каждый день)</label>
         <DayPicker value={taskDays} onChange={setTaskDays} />
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-foreground">Конкретная дата (опционально)</label>
+        <input 
+          type="date" 
+          value={taskSpecificDate} 
+          onChange={(e) => setTaskSpecificDate(e.target.value)} 
+          className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-accent" 
+        />
       </div>
       <FormInput label="Время (опционально)" value={taskTime} onChange={setTaskTime} type="time" />
       <FormCheckbox label="Задача на весь день (показывать без привязки к блоку)" checked={taskIsAllDay} onChange={setTaskIsAllDay} />
@@ -648,24 +546,19 @@ export default function Home() {
               </div>
 
               {/* Лента дел (Timeline of Tasks) */}
-              <div className="glass-card rounded-[32px] p-5 border border-white/5 bg-slate-900/40 flex flex-col h-full">
-                <div className="flex items-center gap-2 mb-6 px-2">
-                  <ListTodo className="w-5 h-5 text-indigo-400" />
-                  <h2 className="text-xl font-black text-white tracking-tight">Лента дел</h2>
-                </div>
-
-                <div className="space-y-2 mb-6 flex-1 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
-                  {tasks.length > 0 ? tasks.map(task => (
-                    <TaskRow key={task.id} task={task} dateStr={dateStr} />
-                  )) : (
-                    <p className="text-xs text-slate-500 italic text-center py-8">Нет задач</p>
-                  )}
-                </div>
-
-                <div className="pt-4 border-t border-white/5">
-                  <button onClick={() => setShowTaskModal(true)} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors shadow-lg shadow-indigo-600/20 font-bold flex items-center justify-center gap-2">
-                    <Plus className="w-5 h-5" /> Создать задачу
+              <div className="flex flex-col h-full mt-4 lg:mt-0 relative z-10">
+                <div className="flex items-center justify-between mb-6 px-2 bg-slate-900/60 py-3 rounded-2xl border border-white/5 backdrop-blur-md sticky top-0 z-20 shadow-lg">
+                  <div className="flex items-center gap-2">
+                    <ListTodo className="w-5 h-5 text-indigo-400" />
+                    <h2 className="text-xl font-black text-white tracking-tight">Календарь задач</h2>
+                  </div>
+                  <button onClick={() => openTaskModalForDate(dateStr)} className="p-2 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 rounded-xl transition-colors font-bold flex items-center justify-center gap-1 text-xs uppercase tracking-widest">
+                    <Plus className="w-4 h-4" /> Добавить
                   </button>
+                </div>
+
+                <div className="flex-1">
+                  <TaskCalendarFeed onCreateTask={openTaskModalForDate} daysCount={30} />
                 </div>
               </div>
             </div>
