@@ -49,7 +49,7 @@ export default function MainLayout({ children, onSignOut }: MainLayoutProps) {
 
         <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
           <div className="flex items-center gap-1.5 sm:gap-2 bg-blue-950/40 border border-blue-900/30 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full shadow-inner overflow-hidden max-w-[100px] sm:max-w-none">
-            <CoinDisplay amount={coins} size="sm" showLabel={false} />
+            <CoinDisplay amount={coins} size="sm" />
             <div className="relative flex items-center justify-center flex-shrink-0">
               <Cloud className={`w-3 h-3 sm:w-3.5 sm:h-3.5 transition-all duration-300 ${
                 !isOnline ? "text-red-500 opacity-100" :
