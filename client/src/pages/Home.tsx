@@ -5,6 +5,7 @@ import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import HabitRow from "@/components/HabitRow";
 import Calendar from "@/components/Calendar";
+import SmallMonthCalendar from "@/components/SmallMonthCalendar";
 import TaskRow from "@/components/TaskRow";
 import TaskCalendarFeed from "@/components/TaskCalendarFeed";
 import { formatDateToDateString, isSameDay } from "@/lib/dateUtils";
@@ -81,13 +82,6 @@ export default function Home() {
   const [now, setNow] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   
-  // Snapshot Modal state
-  const [showSnapshotModal, setShowSnapshotModal] = useState(false);
-  const [snapshotCat, setSnapshotCat] = useState("work");
-  const [snapshotDuration, setSnapshotDuration] = useState(15);
-  const [snapshotLabel, setSnapshotLabel] = useState("");
-
-  // Quick Task form state
   // Quick Task form state (now full task state)
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [taskTitle, setTaskTitle] = useState("");
@@ -132,24 +126,6 @@ export default function Home() {
       return timeToMinutes(a.time) - timeToMinutes(b.time);
     });
   }, [tasks, dateStr, dayOfWeek]);
-
-  // Handle Snapshot Submit
-  const handleSnapshotSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!snapshotLabel) return;
-    const cat = CATEGORIES.find(c => c.id === snapshotCat);
-    addSnapshotEntry(dateStr, {
-      id: nanoid(),
-      startTime: currentMin - snapshotDuration, // default to ending now
-      duration: snapshotDuration,
-      label: snapshotLabel,
-      category: snapshotCat,
-      color: cat?.color || "#3b82f6"
-    });
-    setShowSnapshotModal(false);
-    setSnapshotLabel("");
-    setSnapshotDuration(15);
-  };
 
   const handleTaskSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,18 +201,6 @@ export default function Home() {
       </div>
     </>
   );
-
-  const trackedStats = useMemo(() => {
-    const snapshots = daySnapshots[dateStr] || [];
-    const total = snapshots.reduce((acc, entry) => acc + entry.duration, 0);
-    const byCategory: Record<string, number> = {};
-    snapshots.forEach(s => {
-      if (s.category) {
-        byCategory[s.category] = (byCategory[s.category] || 0) + s.duration;
-      }
-    });
-    return { total, byCategory };
-  }, [daySnapshots, dateStr]);
 
   // Current active block (only if looking at today)
   const activeBlock = isToday ? getCurrentBlock(todayBlocks, now) : null;
@@ -506,77 +470,35 @@ export default function Home() {
               <div className="absolute bottom-0 -left-[11px] w-5 h-5 rounded-full bg-slate-900 border-4 border-slate-700 shadow-lg" />
             </div>
 
-            <div className="lg:col-span-5 flex flex-col gap-8">
+            <div className="lg:col-span-5 flex flex-col gap-8 sticky top-6">
               
-              {/* Слепок дня (Snapshot Widget) */}
-              <div className="glass-card rounded-[32px] p-8 border border-white/5 bg-slate-900/40 relative">
-                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                   <Target className="w-32 h-32 text-purple-400 rotate-12" />
-                </div>
-                
-                <div className="flex items-center gap-2 mb-6">
-                  <Target className="w-5 h-5 text-purple-400" />
-                  <h2 className="text-xl font-black text-white tracking-tight">Слепок дня</h2>
-                </div>
-
-                <div className="max-h-[600px] overflow-y-auto pr-2 no-scrollbar space-y-6">
-                  <div className="flex items-baseline gap-2 relative z-10">
-                    <span className="text-4xl font-black text-white">{trackedStats.total}</span>
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">минут отслежено</span>
-                  </div>
-
-                  {Object.keys(trackedStats.byCategory).length > 0 && (
-                    <div className="space-y-2 relative z-10">
-                      {Object.entries(trackedStats.byCategory).sort((a, b) => b[1] - a[1]).map(([catId, duration]) => {
-                        const cat = CATEGORIES.find(c => c.id === catId);
-                        if (!cat) return null;
-                        return (
-                          <div key={catId} className="flex items-center justify-between bg-black/20 px-3 py-2 rounded-xl border border-white/5">
-                            <div className="flex items-center gap-2">
-                              <span>{cat.icon}</span>
-                              <span className="text-xs font-bold text-slate-300">{cat.label}</span>
-                            </div>
-                            <span className="text-xs font-black" style={{ color: cat.color }}>{duration} мин</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  
-                  <div className="grid grid-cols-2 gap-2 relative z-10 pb-4">
-                    {CATEGORIES.map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => { setSnapshotCat(cat.id); setShowSnapshotModal(true); }}
-                        className="px-3 py-3 rounded-2xl border border-white/5 bg-black/40 hover:bg-white/10 transition-all flex items-center justify-between gap-2 text-xs font-bold text-slate-300 hover:scale-[1.02] active:scale-[0.98]"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span>{cat.icon}</span>
-                          <span>{cat.label}</span>
-                        </div>
-                        <Plus className="w-4 h-4 opacity-30" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Лента дел (Timeline of Tasks) */}
-              <div className="flex flex-col h-full mt-4 lg:mt-0 relative z-10">
-                <div className="flex items-center justify-between mb-6 px-2 bg-slate-900/60 py-3 rounded-2xl border border-white/5 backdrop-blur-md sticky top-0 z-20 shadow-lg">
+              {/* Compact Task Calendar */}
+              <div className="glass-card rounded-[32px] p-6 border border-white/5 bg-slate-900/40 relative flex flex-col h-[600px]">
+                <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <ListTodo className="w-5 h-5 text-indigo-400" />
-                    <h2 className="text-xl font-black text-white tracking-tight">Календарь задач</h2>
+                    <h2 className="text-xl font-black text-white tracking-tight">
+                      Задачи на {selectedDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+                    </h2>
                   </div>
                   <button onClick={() => openTaskModalForDate(dateStr)} className="p-2 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 rounded-xl transition-colors font-bold flex items-center justify-center gap-1 text-xs uppercase tracking-widest">
-                    <Plus className="w-4 h-4" /> Добавить
+                    <Plus className="w-4 h-4" />
                   </button>
                 </div>
+                
+                <div className="flex-1 overflow-y-auto mb-6 space-y-2 pr-2 custom-scrollbar">
+                  {todayTasks.length > 0 ? (
+                    todayTasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} isCondensed />)
+                  ) : (
+                    <div className="py-6 text-center text-xs uppercase tracking-widest font-bold text-slate-500 bg-black/20 rounded-2xl border border-dashed border-white/5">Нет задач</div>
+                  )}
+                </div>
 
-                <div className="flex-1">
-                  <TaskCalendarFeed onCreateTask={openTaskModalForDate} daysCount={30} />
+                <div className="mt-auto pt-4 border-t border-white/5">
+                  <SmallMonthCalendar selectedDate={selectedDate} onSelectDate={(d) => setSelectedDate(d)} />
                 </div>
               </div>
+
             </div>
 
           </motion.div>
@@ -585,33 +507,6 @@ export default function Home() {
 
       <FormModal title="Новая задача" isOpen={showTaskModal} onClose={() => setShowTaskModal(false)} onSubmit={handleTaskSubmit} submitText="Создать">
         <TaskForm />
-      </FormModal>
-
-      <FormModal title="Добавить время" isOpen={showSnapshotModal} onClose={() => setShowSnapshotModal(false)} onSubmit={handleSnapshotSubmit} submitText="Сохранить">
-         <div className="flex items-center gap-3 mb-6 p-4 bg-slate-900 rounded-2xl border border-white/5">
-           <span className="text-2xl">{CATEGORIES.find(c => c.id === snapshotCat)?.icon}</span>
-           <span className="font-bold text-white">{CATEGORIES.find(c => c.id === snapshotCat)?.label}</span>
-         </div>
-         <FormInput label="Что вы делали?" value={snapshotLabel} onChange={setSnapshotLabel} placeholder="Учил английский..." />
-         <div className="mt-4">
-           <label className="block text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mb-2 pl-1">Длительность</label>
-           <div className="flex flex-wrap gap-2">
-             {[10, 15, 20, 30, 45, 60, 90, 120].map(dur => (
-               <button 
-                 key={dur} type="button"
-                 onClick={() => setSnapshotDuration(dur)}
-                 className={cn(
-                   "px-4 py-2 rounded-xl border font-black text-xs transition-all",
-                   snapshotDuration === dur 
-                     ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20" 
-                     : "bg-slate-950 border-white/5 text-slate-400 hover:border-white/10"
-                 )}
-               >
-                 {dur}м
-               </button>
-             ))}
-           </div>
-         </div>
       </FormModal>
     </div>
   );
