@@ -39,6 +39,7 @@ function Router({ onSignOut }: { onSignOut: () => void }) {
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [offlineMode, setOfflineMode] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -66,11 +67,11 @@ function App() {
     </div>
   );
 
-  if (!user) {
+  if (!user && !offlineMode) {
     return (
       <ThemeProvider defaultTheme="dark">
         <Toaster />
-        <AuthPage onLogin={() => {}} />
+        <AuthPage onLogin={() => setOfflineMode(true)} />
       </ThemeProvider>
     );
   }

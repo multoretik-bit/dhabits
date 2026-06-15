@@ -1,16 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Mail, Loader2, CheckCircle2, Inbox, Lock, Key, FlaskConical } from "lucide-react";
+import { Mail, Loader2, CheckCircle2, Inbox, Lock, Key, FlaskConical, User as UserIcon } from "lucide-react";
 
 export default function AuthPage({ onLogin }: { onLogin: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [step, setStep] = useState<"email" | "password" | "signup" | "sent">("email");
   const [loading, setLoading] = useState(false);
+  const [hintEmail, setHintEmail] = useState("");
+
+  useEffect(() => {
+    try {
+      const tokenStr = localStorage.getItem("sb-areunmxglcyllqtyfcqk-auth-token");
+      if (tokenStr) {
+        const token = JSON.parse(tokenStr);
+        if (token?.user?.email) {
+          setHintEmail(token.user.email);
+        }
+      }
+    } catch (e) {}
+  }, []);
 
   const handleSendLink = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +86,7 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
 
   // Skip auth for emergency login
   const handleSkip = () => {
-    toast.success("Вход пропущен для теста");
+    toast.success("Вход выполнен в локальном режиме");
     onLogin();
   };
 
@@ -99,6 +112,18 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
           {/* Subtle glow inside card */}
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-600/8 blur-[60px] rounded-full pointer-events-none" />
           
+          {hintEmail && step !== "sent" && (
+            <div className="mb-6 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-center relative z-10">
+              <p className="text-sm text-indigo-200">
+                <span className="opacity-70">Возможно, ваш аккаунт:</span><br/>
+                <strong className="font-bold text-white">{hintEmail}</strong>
+              </p>
+              <button type="button" onClick={() => setEmail(hintEmail)} className="mt-2 text-xs text-indigo-400 hover:text-indigo-300 font-bold underline underline-offset-4">
+                Использовать этот email
+              </button>
+            </div>
+          )}
+
           {step === "email" && (
             <form onSubmit={handleSendLink} className="space-y-5 relative z-10">
               <div className="space-y-2">
@@ -239,13 +264,13 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
            <Button 
             onClick={handleSkip} 
             variant="ghost" 
-            className="text-slate-500 hover:text-white hover:bg-white/5 rounded-xl gap-2"
+            className="text-slate-500 hover:text-white hover:bg-white/5 rounded-xl gap-2 w-full"
            >
-             <FlaskConical className="w-4 h-4" /> 
-             Пропустить вход (Тест дизайна)
+             <UserIcon className="w-4 h-4" /> 
+             Продолжить без пароля (Офлайн)
            </Button>
-           <p className="text-[10px] text-slate-600 mt-2 px-6 italic">
-             Используй если письма не приходят, чтобы увидеть как выглядят монетки и огоньки
+           <p className="text-[10px] text-slate-600 mt-2 px-6">
+             Вы сможете пользоваться своими данными из локального хранилища браузера.
            </p>
         </div>
       </div>
