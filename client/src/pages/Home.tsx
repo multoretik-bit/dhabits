@@ -100,7 +100,7 @@ export default function Home() {
   const [taskIsOneTime, setTaskIsOneTime] = useState(false);
   const [taskSpecificDate, setTaskSpecificDate] = useState("");
   const [taskTime, setTaskTime] = useState("");
-  const [dayTab, setDayTab] = useState<'habits' | 'tasks'>('habits');
+  const [dayTab, setDayTab] = useState<'habits' | 'tasks' | 'plans'>('habits');
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000);
@@ -395,10 +395,10 @@ export default function Home() {
             </AnimatePresence>
 
             {/* All-day habits and tasks below the block */}
-            <div className="w-full max-w-4xl mt-8">
                <div className="flex gap-2 mb-6 bg-slate-900/40 p-1 rounded-xl w-fit">
                  <button onClick={() => setDayTab('habits')} className={`px-4 py-2 rounded-lg text-sm font-bold ${dayTab === 'habits' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>Привычки на день</button>
                  <button onClick={() => setDayTab('tasks')} className={`px-4 py-2 rounded-lg text-sm font-bold ${dayTab === 'tasks' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>Задачи на день</button>
+                 <button onClick={() => setDayTab('plans')} className={`px-4 py-2 rounded-lg text-sm font-bold ${dayTab === 'plans' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>Планы</button>
                </div>
                
                {dayTab === 'habits' && (
@@ -409,6 +409,22 @@ export default function Home() {
                {dayTab === 'tasks' && (
                   <div className="space-y-3">
                     {todayTasks.filter(t => !t.blockId).length > 0 ? todayTasks.filter(t => !t.blockId).map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} />) : <div className="py-6 text-center text-xs uppercase tracking-widest font-bold text-slate-500 bg-black/20 rounded-2xl border border-dashed border-white/5">Нет задач на весь день</div>}
+                  </div>
+               )}
+               {dayTab === 'plans' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {blocks.filter(b => b.systemUrl).length > 0 ? blocks.filter(b => b.systemUrl).map(b => {
+                      const bColor = getBlockColor(b) || "#3b82f6";
+                      return (
+                        <a key={b.id} href={b.systemUrl} target="_blank" rel="noopener noreferrer" className="glass-card rounded-[24px] p-5 shadow-sm border border-white/5 transition-all hover:-translate-y-1 hover:shadow-xl group" style={{ borderLeft: `4px solid ${bColor}` }}>
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-lg font-black text-white">{b.name}</h3>
+                            <ExternalLink className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" style={{ color: bColor }} />
+                          </div>
+                          <p className="text-xs text-slate-400 uppercase tracking-widest font-bold">Перейти к плану</p>
+                        </a>
+                      );
+                    }) : <div className="py-6 text-center text-xs uppercase tracking-widest font-bold text-slate-500 bg-black/20 rounded-2xl border border-dashed border-white/5 col-span-full">Нет планов</div>}
                   </div>
                )}
             </div>

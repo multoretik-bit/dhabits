@@ -644,7 +644,7 @@ function BlocksTab() {
         <label className="text-sm font-medium text-slate-300">Цвет блока</label>
         <AdvancedColorPicker value={color} onChange={setColor} />
       </div>
-      <FormInput label="Система (URL — например, ссылка на сайт)" value={systemUrl} onChange={setSystemUrl} placeholder="https://my-education-site.com" />
+      <FormInput label="План (URL — например, ссылка на сайт)" value={systemUrl} onChange={setSystemUrl} placeholder="https://my-education-site.com" />
     </>
   );
 
@@ -665,7 +665,7 @@ function BlocksTab() {
               <p className={`font-bold text-sm text-slate-200 ${expandedItems[b.id] ? "" : "truncate"}`}>{b.name}</p>
               <p className="text-[10px] text-slate-500 font-medium tracking-wide">
                 {b.startTime} - {b.endTime} · {b.isOneTime ? `Дата: ${b.specificDate}` : (!b.daysOfWeek || b.daysOfWeek.length === 7 || b.daysOfWeek.length === 0) ? "Каждый день" : DAYS_OF_WEEK.filter(d => b.daysOfWeek?.includes(d.id)).map(d => d.label).join(", ")}
-                {b.systemUrl && <span className="ml-2 text-blue-400">🔗 Система</span>}
+                {b.systemUrl && <span className="ml-2 text-blue-400">🔗 План</span>}
               </p>
             </div>
               <div className="flex gap-1">
