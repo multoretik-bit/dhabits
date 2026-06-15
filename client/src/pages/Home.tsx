@@ -359,6 +359,7 @@ export default function Home() {
             </AnimatePresence>
 
             {/* All-day habits and tasks below the block */}
+            <div className="w-full max-w-4xl mt-8">
                <div className="flex gap-2 mb-6 bg-slate-900/40 p-1 rounded-xl w-fit">
                  <button onClick={() => setDayTab('habits')} className={`px-4 py-2 rounded-lg text-sm font-bold ${dayTab === 'habits' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>Привычки на день</button>
                  <button onClick={() => setDayTab('tasks')} className={`px-4 py-2 rounded-lg text-sm font-bold ${dayTab === 'tasks' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>Задачи на день</button>
