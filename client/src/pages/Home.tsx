@@ -285,11 +285,18 @@ export default function Home() {
                         <span>{formatTime(activeBlock.startTime)} — {formatTime(activeBlock.endTime)}</span>
                       </div>
                     </div>
-                    {activeBlock.systemUrl && (
-                      <button onClick={() => window.open(activeBlock.systemUrl, "_blank")} className="p-3 bg-white/5 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors shadow-lg border border-white/5">
-                        <ExternalLink className="w-6 h-6" />
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {activeBlock.systemUrl && (
+                        <button onClick={() => window.open(activeBlock.systemUrl, "_blank")} className="p-3 bg-white/5 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors shadow-lg border border-white/5" title="План">
+                          <ExternalLink className="w-6 h-6" />
+                        </button>
+                      )}
+                      {activeBlock.plans?.map(plan => (
+                        <button key={plan.id} onClick={() => window.open(plan.url, "_blank")} className="p-3 bg-white/5 rounded-2xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors shadow-lg border border-white/5" title={plan.name}>
+                          <ExternalLink className="w-6 h-6" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {blockProgress > 0 && isToday && (
@@ -378,17 +385,24 @@ export default function Home() {
                )}
                {dayTab === 'plans' && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {blocks.filter(b => b.systemUrl).length > 0 ? blocks.filter(b => b.systemUrl).map(b => {
+                    {blocks.filter(b => b.systemUrl || (b.plans && b.plans.length > 0)).length > 0 ? blocks.filter(b => b.systemUrl || (b.plans && b.plans.length > 0)).flatMap(b => {
                       const bColor = getBlockColor(b) || "#3b82f6";
-                      return (
-                        <a key={b.id} href={b.systemUrl} target="_blank" rel="noopener noreferrer" className="glass-card rounded-[24px] p-5 shadow-sm border border-white/5 transition-all hover:-translate-y-1 hover:shadow-xl group" style={{ borderLeft: `4px solid ${bColor}` }}>
+                      const renderPlanCard = (url: string, name: string, id: string) => (
+                        <a key={id} href={url} target="_blank" rel="noopener noreferrer" className="glass-card rounded-[24px] p-5 shadow-sm border border-white/5 transition-all hover:-translate-y-1 hover:shadow-xl group" style={{ borderLeft: `4px solid ${bColor}` }}>
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-black text-white">{b.name}</h3>
+                            <h3 className="text-lg font-black text-white">{name}</h3>
                             <ExternalLink className="w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity" style={{ color: bColor }} />
                           </div>
-                          <p className="text-xs text-slate-400 uppercase tracking-widest font-bold">Перейти к плану</p>
+                          <p className="text-xs text-slate-400 uppercase tracking-widest font-bold">{b.name}</p>
                         </a>
                       );
+                      
+                      const cards = [];
+                      if (b.systemUrl) cards.push(renderPlanCard(b.systemUrl, "План", b.id + "_legacy"));
+                      if (b.plans) {
+                        b.plans.forEach(p => cards.push(renderPlanCard(p.url, p.name || "План", p.id)));
+                      }
+                      return cards;
                     }) : <div className="py-6 text-center text-xs uppercase tracking-widest font-bold text-slate-500 bg-black/20 rounded-2xl border border-dashed border-white/5 col-span-full">Нет планов</div>}
                   </div>
                )}
@@ -444,11 +458,18 @@ export default function Home() {
                               {formatTime(block.startTime)} — {formatTime(block.endTime)}
                             </p>
                           </div>
-                          {block.systemUrl && (
-                            <button onClick={() => window.open(block.systemUrl, "_blank")} className="p-2 bg-white/5 rounded-xl text-slate-400 hover:text-white transition-colors">
-                              <ExternalLink className="w-4 h-4" />
-                            </button>
-                          )}
+                          <div className="flex items-center gap-1">
+                            {block.systemUrl && (
+                              <button onClick={() => window.open(block.systemUrl, "_blank")} className="p-2 bg-white/5 rounded-xl text-slate-400 hover:text-white transition-colors" title="План">
+                                <ExternalLink className="w-4 h-4" />
+                              </button>
+                            )}
+                            {block.plans?.map(plan => (
+                              <button key={plan.id} onClick={() => window.open(plan.url, "_blank")} className="p-2 bg-white/5 rounded-xl text-slate-400 hover:text-white transition-colors" title={plan.name}>
+                                <ExternalLink className="w-4 h-4" />
+                              </button>
+                            ))}
+                          </div>
                         </div>
                         
                         {blockHabits.length > 0 ? (

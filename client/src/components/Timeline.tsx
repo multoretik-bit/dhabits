@@ -100,7 +100,7 @@ export default function Timeline({ blocks, selectedDate, onBlockClick, activeBlo
                       <div className="flex flex-col">
                         <div className="flex items-center gap-1.5 mb-1">
                           <span className="text-sm font-black text-white leading-tight truncate">{b.name}</span>
-                          {b.systemUrl && <LinkIcon className="w-3 h-3 text-blue-400 shrink-0" />}
+                          {(b.systemUrl || (b.plans && b.plans.length > 0)) && <LinkIcon className="w-3 h-3 text-blue-400 shrink-0" />}
                         </div>
                         <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-tight">
                           {formatTime(slot.start)} — {formatTime(slot.end)}

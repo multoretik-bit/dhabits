@@ -61,7 +61,8 @@ export interface HabitBlock {
   endTime?: string;   // "HH:MM"
   colorIndex?: number;
   color?: string;
-  systemUrl?: string;
+  systemUrl?: string; // Legacy field for a single plan
+  plans?: { id: string; name: string; url: string }[];
   daysOfWeek?: number[];
   isOneTime?: boolean;
   specificDate?: string;
