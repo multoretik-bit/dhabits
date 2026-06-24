@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Target, ArrowUp, ArrowDown, LayoutGrid, ListTodo } from "lucide-react";
+import { ChevronDown, ChevronUp, Target, ArrowUp, ArrowDown, LayoutGrid, ListTodo, Trash2 } from "lucide-react";
 import { useApp, Goal, getTodayDateString, HabitFolder, Habit } from "@/contexts/AppContext";
 import FormModal from "@/components/FormModal";
 import { FormInput } from "@/components/FormInputs";
@@ -19,7 +19,7 @@ function UnifiedCoinBadge({ coins, color, label }: { coins: number; color: strin
 }
 
 export default function GoalsPage() {
-  const { goals, goalFolders, habits, habitFolders, updateGoal, toggleGoalFolderCollapse, toggleHabitFolderCollapse, moveGoalUp, moveGoalDown, moveGoalFolderUp, moveGoalFolderDown } = useApp();
+  const { goals, goalFolders, habits, habitFolders, updateGoal, deleteGoal, deleteGoalFolder, toggleGoalFolderCollapse, toggleHabitFolderCollapse, moveGoalUp, moveGoalDown, moveGoalFolderUp, moveGoalFolderDown } = useApp();
   const [activeTab, setActiveTab] = useState<'goals' | 'habits'>('goals');
 
   // Progress update state
@@ -124,6 +124,16 @@ export default function GoalsPage() {
                     <Target className="w-5 h-5" />
                     <span className="text-[8px] font-bold uppercase">Шаг</span>
                   </Button>
+
+                  {/* Delete button */}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => { e.stopPropagation(); if (confirm("Удалить цель навсегда?")) deleteGoal(goal.id); }}
+                    className="h-9 w-9 flex items-center justify-center text-red-400/60 hover:text-red-400 hover:bg-red-400/10 rounded-xl"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                   
                   <div className="flex flex-col gap-1 pr-1" onClick={(e) => e.stopPropagation()}>
                     <button onClick={() => moveGoalUp(goal.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
@@ -201,6 +211,7 @@ export default function GoalsPage() {
               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                   <Button size="icon" variant="ghost" onClick={() => moveGoalFolderUp(folder.id)} className="w-8 h-8 text-slate-500 hover:text-blue-400"><ArrowUp className="w-4 h-4" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => moveGoalFolderDown(folder.id)} className="w-8 h-8 text-slate-500 hover:text-blue-400"><ArrowDown className="w-4 h-4" /></Button>
+                  <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить папку навсегда?")) { goals.filter((g: Goal) => g.folder === folder.id).forEach((g: Goal) => updateGoal(g.id, { folder: "general" })); deleteGoalFolder(folder.id); } }} className="w-8 h-8 text-red-400/60 hover:text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
                 <div className="text-slate-500 ml-2">
                   {folder.collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                 </div>
