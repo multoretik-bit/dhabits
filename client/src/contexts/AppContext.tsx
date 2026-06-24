@@ -993,10 +993,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAllData(coins, habits, blocks, habitFolders, newGoals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
   };
 
-  const deleteGoal = (id: string) => {
+  const deleteGoal = async (id: string) => {
     const newGoals = goals.filter((g) => g.id !== id);
     setGoals(newGoals);
-    saveAllData(coins, habits, blocks, habitFolders, newGoals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
+    const newData = storage.getData();
+    const updatedData = { ...newData, goals: newGoals, lastUpdated: new Date().toISOString(), clientId: clientIdRef.current };
+    storage.saveData(updatedData);
+    // Immediately push to cloud to prevent overwrite
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await syncSave(session.user.id, updatedData);
+        toast.success("\u0426\u0435\u043b\u044c \u0443\u0434\u0430\u043b\u0435\u043d\u0430");
+      }
+    } catch (err) {
+      console.error("deleteGoal sync error:", err);
+    }
   };
 
   const addGoalFolder = (folder: GoalFolder) => {
