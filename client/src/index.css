@@ -94,8 +94,9 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Inter', sans-serif;
     @apply font-semibold tracking-tight;
+    font-feature-settings: "ss01" 1, "cv11" 1;
   }
 
   /* Smooth custom scrollbar */
@@ -116,9 +117,10 @@
 
 @layer components {
   .glass-card {
-    @apply bg-slate-900/40 backdrop-blur-xl border border-white/5 shadow-2xl;
+    @apply bg-slate-900/50 backdrop-blur-2xl border border-white/[0.06] shadow-2xl;
+    background-image: linear-gradient(160deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0) 45%);
   }
-  
+
   .glass-morphism {
     background: rgba(15, 23, 42, 0.6);
     backdrop-filter: blur(12px);
@@ -127,7 +129,7 @@
   }
 
   .premium-gradient {
-    background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
   }
 
   .text-gradient {

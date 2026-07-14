@@ -223,8 +223,8 @@ export default function Home() {
     <div className="flex flex-col min-h-screen transition-all duration-700 relative overflow-hidden bg-background">
       {/* Background Glow */}
       {view === 'current' && activeBlockColor && activeBlock && (
-        <div 
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-[500px] blur-[120px] opacity-20 pointer-events-none transition-all duration-1000"
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-[500px] blur-[140px] opacity-[0.12] pointer-events-none transition-all duration-1000"
           style={{ background: `radial-gradient(circle, ${activeBlockColor} 0%, transparent 70%)` }}
         />
       )}
@@ -267,10 +267,10 @@ export default function Home() {
                   initial={{ opacity: 0, y: 20, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="w-full glass-card rounded-[40px] p-8 shadow-2xl relative overflow-hidden"
-                  style={{ 
-                    borderLeft: `6px solid ${activeBlockColor}`,
-                    background: `linear-gradient(135deg, ${activeBlockColor}15 0%, rgba(15,23,42,0.6) 100%)`
+                  className="w-full glass-card-lg rounded-[32px] p-8 shadow-2xl relative overflow-hidden"
+                  style={{
+                    borderLeft: `3px solid ${activeBlockColor}`,
+                    background: `linear-gradient(135deg, ${activeBlockColor}0d 0%, rgba(15,23,42,0.55) 100%)`
                   }}
                 >
                   <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
@@ -305,14 +305,15 @@ export default function Home() {
                         <span>Прогресс блока</span>
                         <span style={{ color: activeBlockColor }}>{Math.round(blockProgress)}%</span>
                       </div>
-                      <div className="w-full h-4 bg-slate-950 rounded-full overflow-hidden border border-white/5 relative shadow-inner">
+                      <div className="w-full h-3 bg-black/30 rounded-full overflow-hidden border border-white/5 relative shadow-inner">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${blockProgress}%` }}
+                          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                           className="absolute top-0 left-0 h-full rounded-full"
-                          style={{ 
-                            background: `linear-gradient(to right, ${activeBlockColor}, #fff)`,
-                            boxShadow: `0 0 20px ${activeBlockColor}50`
+                          style={{
+                            background: `linear-gradient(to right, ${activeBlockColor}99, ${activeBlockColor})`,
+                            boxShadow: `0 0 16px ${activeBlockColor}60`
                           }}
                         />
                       </div>
