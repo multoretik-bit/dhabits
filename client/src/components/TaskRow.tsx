@@ -3,32 +3,62 @@ import { useApp, Task } from "@/contexts/AppContext";
 import { Check, ListTodo, ArrowUp, ArrowDown, Edit2, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { spring } from "@/lib/motion";
+import CompletionBurst from "./CompletionBurst";
 
 export default function TaskRow({ task, dateStr, isCondensed, onEdit, onDelete }: { task: Task; dateStr: string; isCondensed?: boolean; onEdit?: () => void; onDelete?: () => void }) {
   const { completeTask, moveTaskUp, moveTaskDown, toggleSubtask } = useApp();
   const [expanded, setExpanded] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
   const completed = !!(task.completedDates && task.completedDates[dateStr]);
   const taskColor = task.color || "#3b82f6";
-  
+
   const hasSubtasks = task.subtasks && task.subtasks.length > 0;
   const completedSubtasks = task.subtasks?.filter(s => s.completed).length || 0;
   const totalSubtasks = task.subtasks?.length || 0;
+
+  const handleComplete = () => {
+    if (!completed && task.coins) {
+      setCelebrate(true);
+      setTimeout(() => setCelebrate(false), 600);
+    }
+    completeTask(task.id, dateStr);
+  };
 
   return (
     <div className={cn("mb-3", isCondensed && "mb-2")}>
       <div
         className={cn(
-          "w-full flex items-center gap-3 p-3 rounded-2xl transition-all text-left overflow-hidden cursor-pointer hover-lift shadow-sm",
+          "relative w-full flex items-center gap-3 p-3 rounded-2xl transition-all text-left overflow-hidden cursor-pointer hover-lift shadow-sm",
           completed ? "opacity-60 bg-slate-900/40 border border-white/5" : "glass-card hover:border-blue-500/30",
           isCondensed && "p-2 rounded-xl"
         )}
-        style={{ 
+        style={{
           borderLeft: completed ? `3px solid ${taskColor}44` : `3px solid ${taskColor}`,
           background: completed ? "rgba(15,23,42,0.4)" : `linear-gradient(135deg, ${taskColor}12 0%, rgba(15,23,42,0.6) 100%)`
         }}
-        onClick={() => completeTask(task.id, dateStr)}
+        onClick={handleComplete}
       >
-        <span 
+        <CompletionBurst show={celebrate} color={taskColor} />
+        <AnimatePresence>
+          {celebrate && !!task.coins && (
+            <motion.span
+              initial={{ opacity: 0, y: 0, scale: 0.8 }}
+              animate={{ opacity: 1, y: -24, scale: 1.1 }}
+              exit={{ opacity: 0, y: -36 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="absolute left-12 top-1 z-20 text-sm font-black pointer-events-none"
+              style={{ color: "var(--coin)" }}
+            >
+              +{task.coins}
+            </motion.span>
+          )}
+        </AnimatePresence>
+        <motion.span
+          key={completed ? "done" : "pending"}
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={spring.bouncy}
           className={cn(
             "flex-shrink-0 flex items-center justify-center rounded-xl text-xl",
             isCondensed ? "w-8 h-8 text-lg" : "w-10 h-10",
@@ -37,8 +67,8 @@ export default function TaskRow({ task, dateStr, isCondensed, onEdit, onDelete }
           style={{ backgroundColor: completed ? "#1e293b" : `${taskColor}22` }}
         >
           {completed ? <Check className="w-4 h-4 text-slate-500" /> : (task.emoji || "📋")}
-        </span>
-        
+        </motion.span>
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className={cn(

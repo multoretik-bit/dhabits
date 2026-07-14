@@ -1,13 +1,20 @@
 import { useState } from "react";
 import { useApp, Habit } from "@/contexts/AppContext";
 import { Check, ArrowUp, ArrowDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import HabitUnitTracker from "./HabitUnitTracker";
+import CompletionBurst from "./CompletionBurst";
+import { spring } from "@/lib/motion";
 
 // Flame streak display
 export function StreakFlames({ streak }: { streak: number }) {
   if (streak === 0) return null;
+  const hot = streak >= 3;
   return (
-    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 w-fit">
+    <div
+      className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/20 w-fit ${hot ? "animate-pulse" : ""}`}
+      style={hot ? { boxShadow: "0 0 10px rgba(245,158,11,0.35)" } : undefined}
+    >
       <span className="text-[12px]">🔥</span>
       <span className="text-[11px] font-bold text-orange-400">{streak}</span>
     </div>
@@ -24,10 +31,21 @@ export default function HabitRow({ habit, dateStr, hideUnitTracker }: HabitRowPr
   const { completeHabit, moveHabitUp, moveHabitDown } = useApp();
   const completed = !!(habit.completedDates && habit.completedDates[dateStr]);
   const [expanded, setExpanded] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
+
+  const handleComplete = () => {
+    if (!completed) {
+      setCelebrate(true);
+      setTimeout(() => setCelebrate(false), 600);
+    }
+    completeHabit(habit.id, dateStr);
+  };
 
   return (
-    <div
-      className={`w-full flex flex-col rounded-2xl transition-all mb-2 overflow-hidden
+    <motion.div
+      layout
+      transition={spring.soft}
+      className={`relative w-full flex flex-col rounded-2xl transition-colors mb-2 overflow-hidden
         ${completed
           ? "opacity-60 bg-slate-900/30 border border-white/5"
           : "bg-slate-900/40 backdrop-blur-sm border border-white/5 shadow-sm hover:border-white/10"
@@ -39,12 +57,29 @@ export default function HabitRow({ habit, dateStr, hideUnitTracker }: HabitRowPr
           : `linear-gradient(135deg, ${habit.color}10 0%, rgba(15,23,42,0.5) 100%)`,
       }}
     >
+      <CompletionBurst show={celebrate} color={habit.color} />
+
+      <AnimatePresence>
+        {celebrate && (
+          <motion.span
+            initial={{ opacity: 0, y: 0, scale: 0.8 }}
+            animate={{ opacity: 1, y: -28, scale: 1.1 }}
+            exit={{ opacity: 0, y: -40 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="absolute left-12 top-2 z-20 text-sm font-black pointer-events-none"
+            style={{ color: "var(--coin)" }}
+          >
+            +{habit.coinsPerComplete}
+          </motion.span>
+        )}
+      </AnimatePresence>
+
       <button
-        onClick={() => completeHabit(habit.id, dateStr)}
+        onClick={handleComplete}
         className="flex items-center gap-2 p-3 text-left w-full"
       >
         {/* Status Indicator */}
-        <div 
+        <div
           className="w-1.5 h-10 rounded-full shrink-0"
           style={{
              backgroundColor: habit.status === 'implemented' ? '#22c55e' : habit.status === 'implementing' ? '#eab308' : '#ef4444',
@@ -63,12 +98,16 @@ export default function HabitRow({ habit, dateStr, hideUnitTracker }: HabitRowPr
         </div>
 
         {/* Emoji */}
-        <span
+        <motion.span
+          key={completed ? "done" : "pending"}
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={spring.bouncy}
           className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl text-lg"
           style={{ backgroundColor: completed ? "#1e293b" : `${habit.color}22` }}
         >
           {completed ? <Check className="w-4 h-4 text-slate-500" /> : habit.emoji}
-        </span>
+        </motion.span>
 
         {/* Name + streak */}
         <div className="flex-1 min-w-0">
@@ -100,6 +139,6 @@ export default function HabitRow({ habit, dateStr, hideUnitTracker }: HabitRowPr
           <HabitUnitTracker habit={habit} />
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

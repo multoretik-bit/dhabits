@@ -1,4 +1,5 @@
 import React from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useApp, ShopItem } from "@/contexts/AppContext";
 
 interface CharacterDisplayProps {
@@ -8,6 +9,7 @@ interface CharacterDisplayProps {
 
 const CharacterDisplay: React.FC<CharacterDisplayProps> = ({ width = 150, height = 200 }) => {
   const { characterState, shopItems } = useApp();
+  const reduceMotion = useReducedMotion();
   
   const renderItem = (item?: ShopItem, isPet?: boolean) => {
     if (!item) return null;
@@ -51,7 +53,14 @@ const CharacterDisplay: React.FC<CharacterDisplayProps> = ({ width = 150, height
 
   return (
     <div className="relative" style={{ width: `${width}px`, height: `${height}px` }}>
-      <svg width={width} height={height} viewBox="0 0 100 150" style={{ position: "relative", display: "block" }}>
+      <motion.svg
+        width={width}
+        height={height}
+        viewBox="0 0 100 150"
+        style={{ position: "relative", display: "block" }}
+        animate={reduceMotion ? undefined : { y: [0, -6, 0] }}
+        transition={reduceMotion ? undefined : { duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      >
         {/* Background Layer */}
         {renderItem(equippedItems.background)}
 
@@ -79,7 +88,7 @@ const CharacterDisplay: React.FC<CharacterDisplayProps> = ({ width = 150, height
               {renderItem(equippedItems.pet, true)}
            </g>
         )}
-      </svg>
+      </motion.svg>
     </div>
   );
 };
