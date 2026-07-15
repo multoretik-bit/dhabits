@@ -668,8 +668,8 @@ export default function ShopPage() {
         )}
       </AnimatePresence>
 
-      <FormModal title="Добавить предмет" isOpen={showCreateItem} onClose={() => { setShowCreateItem(false); resetItemForm(); }} onSubmit={handleCreateItem} submitText="Добавить"><ItemForm /></FormModal>
-      <FormModal title="Изменить предмет" isOpen={showEditItem} onClose={() => { setShowEditItem(false); setEditingItemId(null); resetItemForm(); }} onSubmit={handleEditItem} submitText="Сохранить"><ItemForm /></FormModal>
+      <FormModal title="Добавить предмет" isOpen={showCreateItem} onClose={() => { setShowCreateItem(false); resetItemForm(); }} onSubmit={handleCreateItem} submitText="Добавить">{ItemForm()}</FormModal>
+      <FormModal title="Изменить предмет" isOpen={showEditItem} onClose={() => { setShowEditItem(false); setEditingItemId(null); resetItemForm(); }} onSubmit={handleEditItem} submitText="Сохранить">{ItemForm()}</FormModal>
       <FormModal title="Новая папка" isOpen={showCreateFolder} onClose={() => { setShowCreateFolder(false); setFolderName(""); }} onSubmit={handleCreateFolder} submitText="Создать"><FormInput label="Название папки" value={folderName} onChange={setFolderName} /></FormModal>
     </div>
   );

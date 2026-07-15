@@ -164,44 +164,6 @@ export default function Home() {
     setShowTaskModal(true);
   };
   
-  const TaskForm = () => (
-    <>
-      <FormInput label="Название задачи" value={taskTitle} onChange={setTaskTitle} placeholder="например, Выпить воду" />
-      <EmojiPicker label="Эмодзи" value={taskEmoji} onChange={setTaskEmoji} />
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">Цвет</label>
-        <AdvancedColorPicker value={taskColor} onChange={setTaskColor} />
-      </div>
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">Блок (опционально)</label>
-        <select value={taskBlockId} onChange={(e) => setTaskBlockId(e.target.value)}
-          className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-accent">
-          <option value="">— Без блока —</option>
-          {blocks.map((b) => <option key={b.id} value={b.id}>{b.name}{b.startTime ? ` (${b.startTime}–${b.endTime})` : ""}</option>)}
-        </select>
-      </div>
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">Дни недели (пусто = каждый день)</label>
-        <DayPicker value={taskDays} onChange={setTaskDays} />
-      </div>
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">Конкретная дата (опционально)</label>
-        <input 
-          type="date" 
-          value={taskSpecificDate} 
-          onChange={(e) => setTaskSpecificDate(e.target.value)} 
-          className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-accent" 
-        />
-      </div>
-      <FormInput label="Время (опционально)" value={taskTime} onChange={setTaskTime} type="time" />
-      <FormCheckbox label="Задача на весь день (показывать без привязки к блоку)" checked={taskIsAllDay} onChange={setTaskIsAllDay} />
-      <FormInput label="Монет за выполнение" value={taskCoins} onChange={setTaskCoins} type="number" />
-      <div className="pt-2 border-t border-border mt-2">
-        <FormCheckbox label="Одноразовая (исчезнет после выполнения)" checked={taskIsOneTime} onChange={setTaskIsOneTime} />
-      </div>
-    </>
-  );
-
   // Current active block (only if looking at today)
   const activeBlock = isToday ? getCurrentBlock(todayBlocks, now) : null;
   const activeBlockColor = getBlockColor(activeBlock) || "#3b82f6";
@@ -529,7 +491,39 @@ export default function Home() {
       </div>
 
       <FormModal title="Новая задача" isOpen={showTaskModal} onClose={() => setShowTaskModal(false)} onSubmit={handleTaskSubmit} submitText="Создать">
-        <TaskForm />
+        <FormInput label="Название задачи" value={taskTitle} onChange={setTaskTitle} placeholder="например, Выпить воду" />
+        <EmojiPicker label="Эмодзи" value={taskEmoji} onChange={setTaskEmoji} />
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Цвет</label>
+          <AdvancedColorPicker value={taskColor} onChange={setTaskColor} />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Блок (опционально)</label>
+          <select value={taskBlockId} onChange={(e) => setTaskBlockId(e.target.value)}
+            className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-accent">
+            <option value="">— Без блока —</option>
+            {blocks.map((b) => <option key={b.id} value={b.id}>{b.name}{b.startTime ? ` (${b.startTime}–${b.endTime})` : ""}</option>)}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Дни недели (пусто = каждый день)</label>
+          <DayPicker value={taskDays} onChange={setTaskDays} />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Конкретная дата (опционально)</label>
+          <input
+            type="date"
+            value={taskSpecificDate}
+            onChange={(e) => setTaskSpecificDate(e.target.value)}
+            className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+        </div>
+        <FormInput label="Время (опционально)" value={taskTime} onChange={setTaskTime} type="time" />
+        <FormCheckbox label="Задача на весь день (показывать без привязки к блоку)" checked={taskIsAllDay} onChange={setTaskIsAllDay} />
+        <FormInput label="Монет за выполнение" value={taskCoins} onChange={setTaskCoins} type="number" />
+        <div className="pt-2 border-t border-border mt-2">
+          <FormCheckbox label="Одноразовая (исчезнет после выполнения)" checked={taskIsOneTime} onChange={setTaskIsOneTime} />
+        </div>
       </FormModal>
     </div>
   );

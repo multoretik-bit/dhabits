@@ -280,20 +280,20 @@ function HabitsTab() {
         )}
       </div>
 
-      <FormModal title="Новая привычка" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={handleCreate} submitText="Создать"><HabitForm /></FormModal>
-      <FormModal title="Редактировать привычку" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={handleEdit} submitText="Сохранить"><HabitForm /></FormModal>
+      <FormModal title="Новая привычка" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={handleCreate} submitText="Создать">{HabitForm()}</FormModal>
+      <FormModal title="Редактировать привычку" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={handleEdit} submitText="Сохранить">{HabitForm()}</FormModal>
       <FormModal title="Новая папка" isOpen={showCreateFolder} onClose={() => { setShowCreateFolder(false); setFolderName(""); }} onSubmit={(e) => {
         e.preventDefault();
         if (!folderName.trim()) return;
         addHabitFolder({ id: nanoid(), name: folderName, emoji: folderEmoji, color: folderColor, collapsed: false });
         setFolderName(""); setShowCreateFolder(false);
-      }} submitText="Создать"><FolderForm /></FormModal>
+      }} submitText="Создать">{FolderForm()}</FormModal>
       <FormModal title="Редактировать папку" isOpen={showEditFolder} onClose={() => { setShowEditFolder(false); setEditingFolderId(null); setFolderName(""); }} onSubmit={(e) => {
         e.preventDefault();
         if (!editingFolderId || !folderName.trim()) return;
         updateHabitFolder(editingFolderId, { name: folderName, color: folderColor, emoji: folderEmoji });
         setShowEditFolder(false); setEditingFolderId(null);
-      }} submitText="Сохранить"><FolderForm /></FormModal>
+      }} submitText="Сохранить">{FolderForm()}</FormModal>
     </>
   );
 }
@@ -411,8 +411,8 @@ function TasksTab() {
         })}
       </div>
 
-      <FormModal title="Новая задача" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={handleCreate} submitText="Создать"><TaskForm /></FormModal>
-      <FormModal title="Редактировать задачу" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={handleEdit} submitText="Сохранить"><TaskForm /></FormModal>
+      <FormModal title="Новая задача" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={handleCreate} submitText="Создать">{TaskForm()}</FormModal>
+      <FormModal title="Редактировать задачу" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={handleEdit} submitText="Сохранить">{TaskForm()}</FormModal>
     </>
   );
 }
@@ -525,8 +525,8 @@ function BlocksTab() {
         ))}
       </div>
 
-      <FormModal title="Новый блок" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={handleCreate} submitText="Создать"><BlockForm /></FormModal>
-      <FormModal title="Редактировать блок" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={handleEdit} submitText="Сохранить"><BlockForm /></FormModal>
+      <FormModal title="Новый блок" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={handleCreate} submitText="Создать">{BlockForm()}</FormModal>
+      <FormModal title="Редактировать блок" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={handleEdit} submitText="Сохранить">{BlockForm()}</FormModal>
     </>
   );
 }
