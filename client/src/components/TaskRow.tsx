@@ -30,12 +30,12 @@ export default function TaskRow({ task, dateStr, isCondensed, onEdit, onDelete }
       <div
         className={cn(
           "relative w-full flex items-center gap-3 p-3 rounded-2xl transition-all text-left overflow-hidden cursor-pointer hover-lift shadow-sm",
-          completed ? "opacity-60 bg-slate-900/40 border border-white/5" : "glass-card hover:border-blue-500/30",
+          completed ? "opacity-60 border border-orange-200/5" : "glass-card hover:border-orange-300/25",
           isCondensed && "p-2 rounded-xl"
         )}
         style={{
           borderLeft: completed ? `3px solid ${taskColor}44` : `3px solid ${taskColor}`,
-          background: completed ? "rgba(15,23,42,0.4)" : `linear-gradient(135deg, ${taskColor}12 0%, rgba(15,23,42,0.6) 100%)`
+          background: completed ? "rgba(36,26,48,0.5)" : `linear-gradient(135deg, ${taskColor}14 0%, rgba(36,26,48,0.65) 100%)`
         }}
         onClick={handleComplete}
       >
@@ -88,7 +88,7 @@ export default function TaskRow({ task, dateStr, isCondensed, onEdit, onDelete }
             <div className="flex items-center gap-2 mt-1">
                <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden max-w-[60px]">
                   <div 
-                    className="h-full bg-blue-500/50 transition-all duration-500" 
+                    className="h-full bg-emerald-500/60 transition-all duration-500" 
                     style={{ width: `${(completedSubtasks / totalSubtasks) * 100}%` }}
                   />
                </div>
@@ -103,28 +103,28 @@ export default function TaskRow({ task, dateStr, isCondensed, onEdit, onDelete }
           {hasSubtasks && (
             <button 
               onClick={() => setExpanded(!expanded)}
-              className="p-1.5 hover:bg-slate-700/50 rounded-lg text-slate-500 hover:text-blue-400 transition-colors"
+              className="p-1.5 hover:bg-white/5 rounded-lg text-slate-500 hover:text-orange-300 transition-colors"
             >
-              <ListTodo className={cn("w-4 h-4 transition-transform", expanded && "text-blue-400")} />
+              <ListTodo className={cn("w-4 h-4 transition-transform", expanded && "text-orange-300")} />
             </button>
           )}
           {!completed && !isCondensed && (
             <div className="flex flex-col gap-0.5">
-              <button onClick={(e) => { e.stopPropagation(); moveTaskUp(task.id); }} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
+              <button onClick={(e) => { e.stopPropagation(); moveTaskUp(task.id); }} className="p-1 hover:bg-white/5 rounded text-slate-500 hover:text-orange-300 transition-colors">
                 <ArrowUp className="w-3 h-3" />
               </button>
-              <button onClick={(e) => { e.stopPropagation(); moveTaskDown(task.id); }} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
+              <button onClick={(e) => { e.stopPropagation(); moveTaskDown(task.id); }} className="p-1 hover:bg-white/5 rounded text-slate-500 hover:text-orange-300 transition-colors">
                 <ArrowDown className="w-3 h-3" />
               </button>
             </div>
           )}
           {onEdit && (
-            <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-1.5 hover:bg-slate-700/50 rounded-lg text-slate-500 hover:text-blue-400 transition-colors ml-1">
+            <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="p-1.5 hover:bg-white/5 rounded-lg text-slate-500 hover:text-orange-300 transition-colors ml-1">
               <Edit2 className="w-3.5 h-3.5" />
             </button>
           )}
           {onDelete && (
-            <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-1.5 hover:bg-slate-700/50 rounded-lg text-slate-500 hover:text-red-400 transition-colors">
+            <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-1.5 hover:bg-white/5 rounded-lg text-slate-500 hover:text-red-400 transition-colors">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           )}
@@ -143,12 +143,12 @@ export default function TaskRow({ task, dateStr, isCondensed, onEdit, onDelete }
               {task.subtasks?.map(st => (
                 <div 
                   key={st.id} 
-                  className="flex items-center gap-3 p-2 rounded-xl bg-slate-900/40 border border-white/5 cursor-pointer hover:bg-slate-800/40 transition-colors"
+                  className="flex items-center gap-3 p-2 rounded-xl bg-white/5 border border-orange-200/5 cursor-pointer hover:bg-white/10 transition-colors"
                   onClick={() => toggleSubtask(task.id, st.id)}
                 >
                   <div className={cn(
                     "w-4 h-4 rounded border flex items-center justify-center transition-colors",
-                    st.completed ? "bg-blue-600 border-blue-600" : "border-slate-700 bg-slate-950"
+                    st.completed ? "bg-emerald-500 border-emerald-500" : "border-white/10 bg-black/20"
                   )}>
                     {st.completed && <Check className="w-3 h-3 text-white" />}
                   </div>

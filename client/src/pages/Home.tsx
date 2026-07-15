@@ -235,11 +235,11 @@ export default function Home() {
         
         {view === 'current' ? (
           <div className="px-6 flex justify-center">
-            <button 
+            <button
               onClick={() => setView('schedule')}
-              className="bg-slate-900 border border-white/10 hover:bg-slate-800 hover:border-white/20 transition-all text-white font-black uppercase tracking-widest text-xs px-6 py-3 rounded-2xl shadow-lg flex items-center gap-2"
+              className="bg-secondary/70 border border-orange-300/10 hover:bg-secondary hover:border-orange-300/20 transition-all text-white font-bold uppercase tracking-wide text-xs px-6 py-3 rounded-2xl shadow-lg flex items-center gap-2 active:scale-95"
             >
-              <Clock className="w-4 h-4 text-blue-400" /> Расписание
+              <Clock className="w-4 h-4 text-orange-300" /> Расписание
             </button>
           </div>
         ) : (
@@ -270,7 +270,7 @@ export default function Home() {
                   className="w-full glass-card-lg rounded-[32px] p-8 shadow-2xl relative overflow-hidden"
                   style={{
                     borderLeft: `3px solid ${activeBlockColor}`,
-                    background: `linear-gradient(135deg, ${activeBlockColor}0d 0%, rgba(15,23,42,0.55) 100%)`
+                    background: `linear-gradient(135deg, ${activeBlockColor}12 0%, rgba(36,26,48,0.55) 100%)`
                   }}
                 >
                   <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
@@ -357,7 +357,7 @@ export default function Home() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="flex flex-col items-center justify-center py-32 text-center"
                 >
-                  <div className="w-24 h-24 rounded-full bg-slate-900 flex items-center justify-center text-5xl mb-6 shadow-2xl border border-white/5">
+                  <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center text-5xl mb-6 shadow-2xl border border-orange-200/10">
                     🌊
                   </div>
                   <h2 className="text-4xl font-black text-slate-200 mb-2 tracking-tight">Свободное время</h2>
@@ -368,10 +368,10 @@ export default function Home() {
 
             {/* All-day habits and tasks below the block */}
             <div className="w-full max-w-4xl mt-8">
-               <div className="flex gap-2 mb-6 bg-slate-900/40 p-1 rounded-xl w-fit">
-                 <button onClick={() => setDayTab('habits')} className={`px-4 py-2 rounded-lg text-sm font-bold ${dayTab === 'habits' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>Привычки на день</button>
-                 <button onClick={() => setDayTab('tasks')} className={`px-4 py-2 rounded-lg text-sm font-bold ${dayTab === 'tasks' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>Задачи на день</button>
-                 <button onClick={() => setDayTab('plans')} className={`px-4 py-2 rounded-lg text-sm font-bold ${dayTab === 'plans' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white'}`}>Планы</button>
+               <div className="flex gap-2 mb-6 bg-white/5 p-1 rounded-xl w-fit">
+                 <button onClick={() => setDayTab('habits')} className={`px-4 py-2 rounded-lg text-sm font-bold ${dayTab === 'habits' ? 'bg-orange-500/20 text-white' : 'text-slate-400 hover:text-white'}`}>Привычки на день</button>
+                 <button onClick={() => setDayTab('tasks')} className={`px-4 py-2 rounded-lg text-sm font-bold ${dayTab === 'tasks' ? 'bg-orange-500/20 text-white' : 'text-slate-400 hover:text-white'}`}>Задачи на день</button>
+                 <button onClick={() => setDayTab('plans')} className={`px-4 py-2 rounded-lg text-sm font-bold ${dayTab === 'plans' ? 'bg-orange-500/20 text-white' : 'text-slate-400 hover:text-white'}`}>Планы</button>
                </div>
                
                {dayTab === 'habits' && (
@@ -419,8 +419,8 @@ export default function Home() {
           >
             
             {/* Left Column: Timeline of Blocks */}
-            <div className="lg:col-span-7 relative pl-6 sm:pl-8 border-l-2 border-slate-800/60 pb-12">
-              <div className="absolute top-0 -left-[11px] w-5 h-5 rounded-full bg-slate-900 border-4 border-slate-700 shadow-lg" />
+            <div className="lg:col-span-7 relative pl-6 sm:pl-8 border-l-2 border-orange-200/10 pb-12">
+              <div className="absolute top-0 -left-[11px] w-5 h-5 rounded-full bg-white/5 border-4 border-orange-200/10 shadow-lg" />
               
               {todayBlocks.length > 0 ? todayBlocks.map((block, idx) => {
                 const blockColor = getBlockColor(block) || "#3b82f6";
@@ -435,8 +435,8 @@ export default function Home() {
                   <div key={block.id}>
                     {hasGap && (
                       <div className="flex flex-col items-center justify-center opacity-50 transition-all" style={{ height: `${Math.max(60, gapMinutes)}px` }}>
-                        <div className="w-px h-full bg-slate-800 border-l border-dashed border-slate-700" />
-                        <span className="absolute text-[10px] font-black uppercase tracking-widest text-slate-500 bg-slate-950 px-3 py-1 rounded-full border border-slate-800 -translate-x-[11px] sm:-translate-x-[15px]">
+                        <div className="w-px h-full bg-orange-200/10 border-l border-dashed border-orange-200/15" />
+                        <span className="absolute text-[10px] font-black uppercase tracking-widest text-slate-500 bg-black/30 px-3 py-1 rounded-full border border-orange-200/10 -translate-x-[11px] sm:-translate-x-[15px]">
                           {gapMinutes >= 60 ? `${Math.floor(gapMinutes/60)}ч ${gapMinutes%60}м` : `${gapMinutes}м`} перерыв
                         </span>
                       </div>
@@ -445,11 +445,11 @@ export default function Home() {
                     <div className="relative mb-8 group">
                       {/* Timeline dot */}
                       <div 
-                        className="absolute top-6 -left-[35px] sm:-left-[43px] w-4 h-4 rounded-full border-2 bg-slate-950 z-10 transition-transform group-hover:scale-125"
+                        className="absolute top-6 -left-[35px] sm:-left-[43px] w-4 h-4 rounded-full border-2 bg-black/30 z-10 transition-transform group-hover:scale-125"
                         style={{ borderColor: blockColor }}
                       />
                       
-                      <div className="glass-card rounded-[32px] p-5 shadow-sm border border-white/5 transition-all hover:bg-slate-900/60"
+                      <div className="glass-card rounded-[32px] p-5 shadow-sm border border-orange-200/5 transition-all hover:-translate-y-0.5"
                         style={{ borderLeft: `4px solid ${blockColor}` }}
                       >
                         <div className="flex items-start justify-between mb-4">
@@ -490,26 +490,26 @@ export default function Home() {
                 </div>
               )}
               
-              <div className="absolute bottom-0 -left-[11px] w-5 h-5 rounded-full bg-slate-900 border-4 border-slate-700 shadow-lg" />
+              <div className="absolute bottom-0 -left-[11px] w-5 h-5 rounded-full bg-white/5 border-4 border-orange-200/10 shadow-lg" />
             </div>
 
             <div className="lg:col-span-5 flex flex-col gap-8 sticky top-6">
               
               {/* Compact Task Calendar */}
-              <div className="glass-card rounded-[32px] p-6 border border-white/5 bg-slate-900/40 relative flex flex-col h-[600px]">
-                <div className="flex items-center justify-between mb-6">
+              <div className="glass-card rounded-[32px] p-6 relative flex flex-col h-[840px]">
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <ListTodo className="w-5 h-5 text-indigo-400" />
-                    <h2 className="text-xl font-black text-white tracking-tight">
+                    <ListTodo className="w-5 h-5 text-orange-300" />
+                    <h2 className="text-xl font-bold text-white tracking-tight">
                       Задачи на {selectedDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
                     </h2>
                   </div>
-                  <button onClick={() => openTaskModalForDate(dateStr)} className="p-2 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 rounded-xl transition-colors font-bold flex items-center justify-center gap-1 text-xs uppercase tracking-widest">
+                  <button onClick={() => openTaskModalForDate(dateStr)} className="p-2 bg-orange-500/15 hover:bg-orange-500/25 text-orange-300 rounded-xl transition-colors font-bold flex items-center justify-center gap-1 text-xs uppercase tracking-wide active:scale-90">
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
-                
-                <div className="flex-1 overflow-y-auto mb-6 space-y-2 pr-2 custom-scrollbar">
+
+                <div className="flex-1 min-h-[220px] overflow-y-auto mb-4 space-y-2 pr-2 custom-scrollbar">
                   {todayTasks.length > 0 ? (
                     todayTasks.map(t => <TaskRow key={t.id} task={t} dateStr={dateStr} isCondensed />)
                   ) : (

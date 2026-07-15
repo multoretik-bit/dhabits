@@ -33,9 +33,9 @@ export default function TaskCalendarFeed({ onCreateTask, onEditTask, onDeleteTas
         });
 
         return (
-          <div key={dateStr} className="glass-card rounded-[24px] p-4 bg-slate-900/40 border border-white/5 flex flex-col relative overflow-hidden transition-all hover:bg-slate-800/40">
+          <div key={dateStr} className="glass-card rounded-[24px] p-4 flex flex-col relative overflow-hidden transition-all hover:-translate-y-0.5">
             {isToday && (
-              <div className="absolute top-0 right-0 px-4 py-1.5 bg-blue-600/20 text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-bl-2xl border-b border-l border-white/5 shadow-sm">
+              <div className="absolute top-0 right-0 px-4 py-1.5 bg-orange-500/15 text-orange-300 text-[10px] font-bold uppercase tracking-wide rounded-bl-2xl border-b border-l border-orange-300/10 shadow-sm">
                 Сегодня
               </div>
             )}

@@ -1193,10 +1193,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, newTasks, taskFolders, customColors);
   };
 
-  const deleteTask = (id: string) => {
+  const deleteTask = async (id: string) => {
     const newTasks = tasks.filter((t) => t.id !== id);
     setTasks(newTasks);
-    updateStorage({ tasks: newTasks });
+    const newData = storage.getData();
+    const updatedData = { ...newData, tasks: newTasks, lastUpdated: new Date().toISOString(), clientId: clientIdRef.current };
+    storage.saveData(updatedData);
+    // Immediately push to cloud to prevent overwrite
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await syncSave(session.user.id, updatedData);
+      }
+    } catch (err) {
+      console.error("deleteTask sync error:", err);
+    }
   };
 
   const completeTask = (id: string, dateStr?: string) => {

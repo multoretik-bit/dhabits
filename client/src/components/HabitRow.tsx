@@ -47,14 +47,14 @@ export default function HabitRow({ habit, dateStr, hideUnitTracker }: HabitRowPr
       transition={spring.soft}
       className={`relative w-full flex flex-col rounded-2xl transition-colors mb-2 overflow-hidden
         ${completed
-          ? "opacity-60 bg-slate-900/30 border border-white/5"
-          : "bg-slate-900/40 backdrop-blur-sm border border-white/5 shadow-sm hover:border-white/10"
+          ? "opacity-60 border border-orange-200/5"
+          : "backdrop-blur-sm border border-orange-200/5 shadow-sm hover:border-orange-300/20"
         }`}
       style={{
         borderLeft: `3px solid ${completed ? habit.color + '44' : habit.color}`,
         background: completed
-          ? "rgba(15,23,42,0.4)"
-          : `linear-gradient(135deg, ${habit.color}10 0%, rgba(15,23,42,0.5) 100%)`,
+          ? "rgba(36,26,48,0.5)"
+          : `linear-gradient(135deg, ${habit.color}14 0%, rgba(36,26,48,0.6) 100%)`,
       }}
     >
       <CompletionBurst show={celebrate} color={habit.color} />
@@ -104,7 +104,7 @@ export default function HabitRow({ habit, dateStr, hideUnitTracker }: HabitRowPr
           animate={{ scale: 1, opacity: 1 }}
           transition={spring.bouncy}
           className="flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-xl text-lg"
-          style={{ backgroundColor: completed ? "#1e293b" : `${habit.color}22` }}
+          style={{ backgroundColor: completed ? "#2f2240" : `${habit.color}22` }}
         >
           {completed ? <Check className="w-4 h-4 text-slate-500" /> : habit.emoji}
         </motion.span>
@@ -123,10 +123,10 @@ export default function HabitRow({ habit, dateStr, hideUnitTracker }: HabitRowPr
         {/* Reorder controls */}
         {!completed && (
           <div className="flex flex-col gap-1 pr-1" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => moveHabitUp(habit.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
+            <button onClick={() => moveHabitUp(habit.id)} className="p-1 hover:bg-white/5 rounded text-slate-500 hover:text-orange-300 transition-colors">
               <ArrowUp className="w-3 h-3" />
             </button>
-            <button onClick={() => moveHabitDown(habit.id)} className="p-1 hover:bg-slate-700/50 rounded text-slate-500 hover:text-blue-400 transition-colors">
+            <button onClick={() => moveHabitDown(habit.id)} className="p-1 hover:bg-white/5 rounded text-slate-500 hover:text-orange-300 transition-colors">
               <ArrowDown className="w-3 h-3" />
             </button>
           </div>
