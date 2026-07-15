@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Edit2, ShoppingCart, FolderPlus, Package, User, Home, Car, Star, Clock, Info } from "lucide-react";
-import { useApp, ShopItem, ShopFolder, getTodayDateString } from "@/contexts/AppContext";
+import { useApp, ShopItem, ShopFolder, getTodayDateString, getNextCharacterLevelCost } from "@/contexts/AppContext";
 import FormModal from "@/components/FormModal";
 import { FormInput, FormSelect, FormTextArea } from "@/components/FormInputs";
 import EmojiPicker from "@/components/EmojiPicker";
@@ -29,6 +29,14 @@ const ITEM_SLOTS = [
   { value: "vehicle", label: "Транспорт" },
 ];
 
+function isImageAsset(path?: string): boolean {
+  return !!path && /\.(png|svg|jpe?g|webp)$/i.test(path);
+}
+
+function isInlineSvgMarkup(path?: string): boolean {
+  return !!path && path.trim().startsWith("<");
+}
+
 function getCategoryIcon(category: string) {
   switch (category) {
     case "reward": return <Star className="w-4 h-4 text-yellow-500" />;
@@ -44,8 +52,16 @@ export default function ShopPage() {
   const {
     coins, shopItems, shopFolders, characterState,
     addShopItem, updateShopItem, deleteShopItem, purchaseItem,
-    addShopFolder, equipItem, unequipItem,
+    addShopFolder, equipItem, unequipItem, levelUpCharacter,
   } = useApp();
+
+  const characterLevel = characterState.level || 0;
+  const nextLevelCost = getNextCharacterLevelCost(characterLevel);
+
+  const handleLevelUp = () => {
+    const success = levelUpCharacter();
+    if (!success) alert("Недостаточно монет!");
+  };
 
   const [activeTab, setActiveTab] = useState<"shop" | "inventory" | "character">("shop");
   const [activeCategory, setActiveCategory] = useState<"all" | "reward" | "clothing" | "background" | "vehicle" | "pets" | "character">("all");
@@ -328,8 +344,10 @@ export default function ShopPage() {
                     <RarityBadge rarity={item.rarity || "common"} showIcon={false} className="opacity-80 scale-75 origin-bottom-right" />
                   </div>
                   
-                  {item.assetPath && item.assetPath.endsWith('.png') ? (
+                  {isImageAsset(item.assetPath) ? (
                     <img src={item.assetPath} alt={item.name} className="w-20 h-20 object-contain mt-4 mb-2 filter drop-shadow-md" />
+                  ) : isInlineSvgMarkup(item.assetPath) ? (
+                    <svg viewBox="0 0 100 150" className="w-20 h-20 mt-4 mb-2 filter drop-shadow-md" dangerouslySetInnerHTML={{ __html: item.assetPath! }} />
                   ) : (
                     <div className="text-5xl mt-4 mb-2 filter drop-shadow-md">{item.emoji}</div>
                   )}
@@ -443,8 +461,10 @@ export default function ShopPage() {
                       <RarityBadge rarity={item.rarity || "common"} showIcon={false} />
                     </div>
 
-                    {item.assetPath && item.assetPath.endsWith('.png') ? (
+                    {isImageAsset(item.assetPath) ? (
                       <img src={item.assetPath} alt={item.name} className="w-20 h-20 object-contain my-2 filter drop-shadow-md" />
+                    ) : isInlineSvgMarkup(item.assetPath) ? (
+                      <svg viewBox="0 0 100 150" className="w-20 h-20 my-2 filter drop-shadow-md" dangerouslySetInnerHTML={{ __html: item.assetPath! }} />
                     ) : (
                       <div className="text-5xl my-2 filter drop-shadow-md">{item.emoji}</div>
                     )}
@@ -481,8 +501,31 @@ export default function ShopPage() {
             <div className="absolute top-0 w-full h-1/2 bg-indigo-600/10 blur-[50px] pointer-events-none" />
             <h3 className="font-extrabold text-white text-lg mb-4 z-10">Ваш Персонаж</h3>
             <div className="bg-black/20 p-5 rounded-2xl border border-white/5 z-10">
-              <CharacterDisplay width={120} height={180} />
+              <CharacterDisplay width={120} height={180} level={characterLevel} showLevelBadge />
             </div>
+          </div>
+
+          {/* Character Level Up */}
+          <div className="glass-card rounded-3xl p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Уровень персонажа</p>
+                <p className="text-2xl font-black text-white">{characterLevel}</p>
+              </div>
+              <Button
+                onClick={handleLevelUp}
+                disabled={coins < nextLevelCost}
+                className={`h-14 px-5 rounded-2xl font-black gap-2 transition-all ${
+                  coins >= nextLevelCost
+                    ? "bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:scale-105 shadow-lg shadow-indigo-900/40"
+                    : "bg-slate-800 text-slate-500"
+                }`}
+              >
+                <img src="/coin.png" alt="coin" className="w-5 h-5 object-contain" />
+                Прокачать за {nextLevelCost}
+              </Button>
+            </div>
+            <p className="text-xs text-slate-500">Каждый следующий уровень стоит на 5 монет дороже. Прокачивайте персонажа бесконечно!</p>
           </div>
 
           <div className="space-y-4 pt-2">
@@ -497,7 +540,13 @@ export default function ShopPage() {
                   return (
                     <div key={slot} className="flex items-center justify-between p-3.5 bg-slate-900/50 border border-slate-800/80 rounded-2xl shadow-sm">
                       <div className="flex items-center gap-3">
-                        <span className="text-3xl filter drop-shadow-sm">{item.emoji}</span>
+                        {isImageAsset(item.assetPath) ? (
+                          <img src={item.assetPath} alt={item.name} className="w-9 h-9 object-contain filter drop-shadow-sm" />
+                        ) : isInlineSvgMarkup(item.assetPath) ? (
+                          <svg viewBox="0 0 100 150" className="w-9 h-9 filter drop-shadow-sm" dangerouslySetInnerHTML={{ __html: item.assetPath! }} />
+                        ) : (
+                          <span className="text-3xl filter drop-shadow-sm">{item.emoji}</span>
+                        )}
                         <div>
                           <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{ITEM_SLOTS.find(s=>s.value===slot)?.label}</p>
                           <p className="text-sm font-bold text-slate-200">{item.name}</p>
@@ -538,8 +587,10 @@ export default function ShopPage() {
                 <RarityBadge rarity={selectedItem.rarity || "common"} className="mb-6 scale-110" />
                 
                 <div className="relative mb-8">
-                  {selectedItem.assetPath && selectedItem.assetPath.endsWith('.png') ? (
+                  {isImageAsset(selectedItem.assetPath) ? (
                     <img src={selectedItem.assetPath} alt={selectedItem.name} className="w-40 h-40 object-contain filter drop-shadow-2xl" />
+                  ) : isInlineSvgMarkup(selectedItem.assetPath) ? (
+                    <svg viewBox="0 0 100 150" className="w-40 h-40 filter drop-shadow-2xl" dangerouslySetInnerHTML={{ __html: selectedItem.assetPath! }} />
                   ) : (
                     <div className="text-8xl filter drop-shadow-2xl">{selectedItem.emoji}</div>
                   )}

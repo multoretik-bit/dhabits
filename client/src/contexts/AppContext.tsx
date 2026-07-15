@@ -220,6 +220,11 @@ export interface CharacterState {
   background?: string;
   vehicle?: string;
   pet?: string;
+  level?: number;
+}
+
+export function getNextCharacterLevelCost(currentLevel: number): number {
+  return (currentLevel + 1) * 5;
 }
 
 export interface SnapshotEntry {
@@ -289,6 +294,7 @@ interface AppContextType {
   deleteShopFolder: (id: string) => void;
   equipItem: (itemId: string) => void;
   unequipItem: (slot: keyof CharacterState) => void;
+  levelUpCharacter: () => boolean;
   exportBackup: () => void;
   importBackup: (file: File) => Promise<boolean>;
   addProgressToHabit: (habitId: string, amount: number) => void;
@@ -1090,6 +1096,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, newCharacterState, tasks, taskFolders, customColors);
   };
 
+  const levelUpCharacter = (): boolean => {
+    const currentLevel = characterState.level || 0;
+    const cost = getNextCharacterLevelCost(currentLevel);
+    if (coins < cost) return false;
+    const newCoins = Math.round((coins - cost) * 100) / 100;
+    const newCharacterState = { ...characterState, level: currentLevel + 1 };
+    setCoins(newCoins);
+    setCharacterState(newCharacterState);
+    saveAllData(newCoins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, newCharacterState, tasks, taskFolders, customColors);
+    return true;
+  };
+
   const exportBackup = () => {
     const blob = storage.exportBackup();
     const url = URL.createObjectURL(blob);
@@ -1578,6 +1596,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         characterState,
         equipItem,
         unequipItem,
+        levelUpCharacter,
         moveHabitUp,
         moveHabitDown,
         moveHabitFolderUp,

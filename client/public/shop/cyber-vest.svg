@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="glowVest" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="vestBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="105" r="85" fill="url(#glowVest)"/>
+  <!-- head/neck hint -->
+  <circle cx="100" cy="50" r="22" fill="#1E293B"/>
+  <rect x="90" y="66" width="20" height="16" fill="#1E293B"/>
+  <!-- torso -->
+  <path d="M60 84 Q100 72 140 84 L148 168 Q100 182 52 168 Z" fill="url(#vestBody)"/>
+  <!-- vest panels -->
+  <path d="M74 90 L96 84 L96 160 L70 154 Z" fill="#1E293B" stroke="#3B82F6" stroke-width="2"/>
+  <path d="M126 90 L104 84 L104 160 L130 154 Z" fill="#1E293B" stroke="#3B82F6" stroke-width="2"/>
+  <!-- glow lines -->
+  <rect x="96" y="90" width="8" height="66" fill="#3B82F6" opacity="0.85"/>
+  <circle cx="100" cy="120" r="10" fill="#0B1220" stroke="#3B82F6" stroke-width="3"/>
+  <circle cx="100" cy="120" r="4" fill="#60A5FA"/>
+  <!-- shoulders -->
+  <ellipse cx="58" cy="90" rx="14" ry="12" fill="#1E293B"/>
+  <ellipse cx="142" cy="90" rx="14" ry="12" fill="#1E293B"/>
+  <rect x="50" y="96" width="14" height="10" fill="#3B82F6" opacity="0.7" rx="3"/>
+  <rect x="136" y="96" width="14" height="10" fill="#3B82F6" opacity="0.7" rx="3"/>
+</svg>

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="glowCastle" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="skyCastle" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1E1B4B"/>
+      <stop offset="100%" stop-color="#4338CA"/>
+    </linearGradient>
+    <linearGradient id="stoneCastle" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9CA3AF"/>
+      <stop offset="100%" stop-color="#4B5563"/>
+    </linearGradient>
+    <linearGradient id="towerCastle" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#B0B7C2"/>
+      <stop offset="100%" stop-color="#5B6472"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="200" height="200" rx="0" fill="url(#skyCastle)"/>
+  <circle cx="150" cy="40" r="16" fill="#FDE68A" opacity="0.9"/>
+  <circle cx="100" cy="105" r="90" fill="url(#glowCastle)"/>
+  <circle cx="40" cy="35" r="1.6" fill="#F5F3FF"/>
+  <circle cx="70" cy="25" r="1.4" fill="#F5F3FF"/>
+  <circle cx="180" cy="70" r="1.4" fill="#F5F3FF"/>
+  <!-- hill -->
+  <ellipse cx="100" cy="185" rx="110" ry="30" fill="#166534"/>
+  <!-- towers -->
+  <rect x="30" y="95" width="26" height="80" fill="url(#towerCastle)"/>
+  <polygon points="24,95 43,72 62,95" fill="#7F1D1D"/>
+  <rect x="144" y="95" width="26" height="80" fill="url(#towerCastle)"/>
+  <polygon points="138,95 157,72 176,95" fill="#7F1D1D"/>
+  <!-- main keep -->
+  <rect x="58" y="110" width="84" height="65" fill="url(#stoneCastle)"/>
+  <rect x="58" y="98" width="10" height="12" fill="url(#stoneCastle)"/>
+  <rect x="76" y="98" width="10" height="12" fill="url(#stoneCastle)"/>
+  <rect x="94" y="98" width="10" height="12" fill="url(#stoneCastle)"/>
+  <rect x="112" y="98" width="10" height="12" fill="url(#stoneCastle)"/>
+  <rect x="130" y="98" width="10" height="12" fill="url(#stoneCastle)"/>
+  <!-- gate -->
+  <path d="M90 175 L90 148 Q100 136 110 148 L110 175 Z" fill="#2A1B0F"/>
+  <!-- windows -->
+  <rect x="38" y="115" width="8" height="12" rx="4" fill="#FDE68A"/>
+  <rect x="152" y="115" width="8" height="12" rx="4" fill="#FDE68A"/>
+  <rect x="70" y="122" width="8" height="12" rx="4" fill="#FDE68A"/>
+  <rect x="122" y="122" width="8" height="12" rx="4" fill="#FDE68A"/>
+  <!-- flags -->
+  <rect x="42" y="66" width="2" height="14" fill="#3F3F46"/>
+  <polygon points="44,66 58,71 44,76" fill="#F59E0B"/>
+  <rect x="156" y="66" width="2" height="14" fill="#3F3F46"/>
+  <polygon points="158,66 172,71 158,76" fill="#F59E0B"/>
+</svg>

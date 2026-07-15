@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="glowZenith" cx="50%" cy="52%" r="65%">
+      <stop offset="0%" stop-color="#F97316" stop-opacity="0.5"/>
+      <stop offset="55%" stop-color="#FBBF24" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#F97316" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bodyZenith" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFE7B0"/>
+      <stop offset="100%" stop-color="#D4900A"/>
+    </linearGradient>
+    <linearGradient id="wingZenith" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#FFF3D6"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="95" fill="url(#glowZenith)"/>
+  <!-- aura ring -->
+  <circle cx="100" cy="105" r="72" fill="none" stroke="#FBBF24" stroke-width="2" opacity="0.5"/>
+  <!-- sparkles -->
+  <path d="M30 40 L33 48 L41 51 L33 54 L30 62 L27 54 L19 51 L27 48 Z" fill="#FFE7B0"/>
+  <path d="M172 60 L174 66 L180 68 L174 70 L172 76 L170 70 L164 68 L170 66 Z" fill="#FFE7B0"/>
+  <path d="M160 140 L162 145 L167 147 L162 149 L160 154 L158 149 L153 147 L158 145 Z" fill="#FFE7B0"/>
+  <!-- wings -->
+  <path d="M50 96 L10 68 L14 108 L26 128 L52 122 Z" fill="url(#wingZenith)"/>
+  <path d="M150 96 L190 68 L186 108 L174 128 L148 122 Z" fill="url(#wingZenith)"/>
+  <!-- legs -->
+  <rect x="52" y="140" width="16" height="32" rx="6" fill="#B87A0A"/>
+  <rect x="132" y="140" width="16" height="32" rx="6" fill="#B87A0A"/>
+  <rect x="56" y="136" width="12" height="24" rx="6" fill="url(#wingZenith)"/>
+  <rect x="132" y="136" width="12" height="24" rx="6" fill="url(#wingZenith)"/>
+  <!-- tail -->
+  <path d="M150 108 Q184 92 176 62" stroke="url(#wingZenith)" stroke-width="8" fill="none" stroke-linecap="round"/>
+  <circle cx="176" cy="60" r="7" fill="#FFF3D6"/>
+  <!-- body -->
+  <rect x="44" y="90" width="112" height="56" rx="26" fill="url(#bodyZenith)"/>
+  <circle cx="100" cy="118" r="15" fill="#8A5A05" stroke="#FFF3D6" stroke-width="3"/>
+  <circle cx="100" cy="118" r="7" fill="#FFF3D6"/>
+  <!-- head -->
+  <rect x="28" y="60" width="68" height="50" rx="22" fill="url(#bodyZenith)"/>
+  <path d="M40 62 L28 40" stroke="url(#wingZenith)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M86 62 L98 40" stroke="url(#wingZenith)" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="27" cy="38" r="5" fill="#FFF3D6"/>
+  <circle cx="99" cy="38" r="5" fill="#FFF3D6"/>
+  <rect x="38" y="78" width="46" height="15" rx="7" fill="#7A4E04"/>
+  <rect x="44" y="82" width="15" height="7" rx="3.5" fill="#FFE7B0"/>
+  <rect x="65" y="82" width="15" height="7" rx="3.5" fill="#FFE7B0"/>
+</svg>

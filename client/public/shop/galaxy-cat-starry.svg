@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="glowStarry" cx="50%" cy="55%" r="55%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#38BDF8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="furStarry" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3B4A6B"/>
+      <stop offset="100%" stop-color="#1E2745"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="105" r="82" fill="url(#glowStarry)"/>
+  <circle cx="60" cy="50" r="1.6" fill="#E0F2FE"/>
+  <circle cx="140" cy="46" r="1.6" fill="#E0F2FE"/>
+  <circle cx="150" cy="90" r="1.4" fill="#E0F2FE"/>
+  <circle cx="50" cy="90" r="1.4" fill="#E0F2FE"/>
+  <!-- tail -->
+  <path d="M138 140 Q168 140 164 108" stroke="url(#furStarry)" stroke-width="12" fill="none" stroke-linecap="round"/>
+  <!-- body -->
+  <ellipse cx="100" cy="140" rx="46" ry="30" fill="url(#furStarry)"/>
+  <!-- head -->
+  <circle cx="100" cy="95" r="40" fill="url(#furStarry)"/>
+  <!-- ears -->
+  <path d="M66 68 L58 32 L92 58 Z" fill="url(#furStarry)"/>
+  <path d="M134 68 L142 32 L108 58 Z" fill="url(#furStarry)"/>
+  <path d="M70 62 L65 42 L84 58 Z" fill="#38BDF8" opacity="0.6"/>
+  <path d="M130 62 L135 42 L116 58 Z" fill="#38BDF8" opacity="0.6"/>
+  <!-- face -->
+  <circle cx="84" cy="94" r="6" fill="#E0F2FE"/>
+  <circle cx="116" cy="94" r="6" fill="#E0F2FE"/>
+  <circle cx="84" cy="94" r="3" fill="#0B1220"/>
+  <circle cx="116" cy="94" r="3" fill="#0B1220"/>
+  <path d="M100 100 L96 106 L104 106 Z" fill="#F472B6"/>
+  <path d="M92 112 Q100 118 108 112" stroke="#E0F2FE" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M60 100 L34 96 M60 106 L34 108 M140 100 L166 96 M140 106 L166 108" stroke="#E0F2FE" stroke-width="1.5" opacity="0.7"/>
+</svg>

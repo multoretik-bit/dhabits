@@ -1,43 +1,55 @@
-import React from "react";
+import React, { useId } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { useApp, ShopItem } from "@/contexts/AppContext";
 
 interface CharacterDisplayProps {
   width?: number;
   height?: number;
+  level?: number;
+  showLevelBadge?: boolean;
 }
 
-const CharacterDisplay: React.FC<CharacterDisplayProps> = ({ width = 150, height = 200 }) => {
+function getAuraColor(level: number): string | null {
+  if (level >= 20) return "#F472B6";
+  if (level >= 10) return "#FBBF24";
+  if (level >= 5) return "#CBD5E1";
+  if (level >= 1) return "#CD7F32";
+  return null;
+}
+
+const CharacterDisplay: React.FC<CharacterDisplayProps> = ({ width = 150, height = 200, level = 0, showLevelBadge = false }) => {
   const { characterState, shopItems } = useApp();
   const reduceMotion = useReducedMotion();
+  const uid = useId().replace(/:/g, "");
+  const auraColor = getAuraColor(level);
   
   const renderItem = (item?: ShopItem, isPet?: boolean) => {
     if (!item) return null;
-    
-    // PNG Image support
-    if (item.assetPath && item.assetPath.endsWith('.png')) {
+
+    // Image file support (PNG/SVG/JPG/WEBP files served from /public)
+    if (item.assetPath && /\.(png|svg|jpe?g|webp)$/i.test(item.assetPath)) {
       return (
-        <image 
-          href={item.assetPath} 
-          x={isPet ? "-50" : "0"} y={isPet ? "-50" : "0"} 
-          width={isPet ? "100" : "100"} height={isPet ? "100" : "150"} 
+        <image
+          href={item.assetPath}
+          x={isPet ? "-50" : "0"} y={isPet ? "-50" : "0"}
+          width={isPet ? "100" : "100"} height={isPet ? "100" : "150"}
           preserveAspectRatio="xMidYMid meet"
         />
       );
     }
-    
-    // SVG Asset support
+
+    // Inline SVG markup support (legacy clothing items)
     if (item.assetPath) {
       return <g dangerouslySetInnerHTML={{ __html: item.assetPath }} />;
     }
-    
+
     // Emoji Fallback
     return (
-      <text 
-        x={isPet ? "0" : "50"} 
-        y={isPet ? "0" : "75"} 
-        fontSize={isPet ? "45" : "25"} 
-        textAnchor="middle" 
+      <text
+        x={isPet ? "0" : "50"}
+        y={isPet ? "0" : "75"}
+        fontSize={isPet ? "45" : "25"}
+        textAnchor="middle"
         dominantBaseline="middle"
       >
         {item.emoji}
@@ -57,23 +69,82 @@ const CharacterDisplay: React.FC<CharacterDisplayProps> = ({ width = 150, height
         width={width}
         height={height}
         viewBox="0 0 100 150"
-        style={{ position: "relative", display: "block" }}
+        style={{ position: "relative", display: "block", overflow: "visible" }}
         animate={reduceMotion ? undefined : { y: [0, -6, 0] }}
         transition={reduceMotion ? undefined : { duration: 4, repeat: Infinity, ease: "easeInOut" }}
       >
+        <defs>
+          <linearGradient id={`skin-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#F3C99B" />
+            <stop offset="100%" stopColor="#E0AD78" />
+          </linearGradient>
+          <linearGradient id={`shirt-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#818CF8" />
+            <stop offset="100%" stopColor="#4F46E5" />
+          </linearGradient>
+          <linearGradient id={`pants-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#475569" />
+            <stop offset="100%" stopColor="#334155" />
+          </linearGradient>
+          <linearGradient id={`hair-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#6B4A32" />
+            <stop offset="100%" stopColor="#4A3020" />
+          </linearGradient>
+        </defs>
+
         {/* Background Layer */}
         {renderItem(equippedItems.background)}
 
         {/* Vehicle (behind character) */}
         {renderItem(equippedItems.vehicle)}
 
+        {/* Level aura */}
+        {auraColor && (
+          <circle cx="50" cy="88" r="58" fill="none" stroke={auraColor} strokeWidth="2" opacity="0.45" />
+        )}
+
         {/* Base character */}
-        <circle cx="50" cy="25" r="20" fill="#E0B98D" />
-        <rect x="40" y="45" width="20" height="50" fill="#E0B98D" />
-        <rect x="25" y="45" width="15" height="40" fill="#E0B98D" transform="rotate(-10 32.5 65)" />
-        <rect x="60" y="45" width="15" height="40" fill="#E0B98D" transform="rotate(10 67.5 65)" />
-        <rect x="40" y="95" width="15" height="50" fill="#E0B98D" />
-        <rect x="45" y="95" width="15" height="50" fill="#E0B98D" />
+        <g>
+          {/* back arms (behind torso) */}
+          <rect x="23" y="52" width="12" height="38" rx="6" fill={`url(#skin-${uid})`} transform="rotate(-8 29 71)" />
+          <rect x="65" y="52" width="12" height="38" rx="6" fill={`url(#skin-${uid})`} transform="rotate(8 71 71)" />
+          <circle cx="27" cy="90" r="6" fill={`url(#skin-${uid})`} />
+          <circle cx="73" cy="90" r="6" fill={`url(#skin-${uid})`} />
+
+          {/* legs */}
+          <rect x="37" y="94" width="12" height="42" rx="6" fill={`url(#pants-${uid})`} />
+          <rect x="51" y="94" width="12" height="42" rx="6" fill={`url(#pants-${uid})`} />
+          <ellipse cx="42" cy="140" rx="9" ry="5" fill="#1E293B" />
+          <ellipse cx="58" cy="140" rx="9" ry="5" fill="#1E293B" />
+
+          {/* torso (default outfit shown when nothing equipped in body slot) */}
+          <rect x="31" y="48" width="38" height="46" rx="14" fill={`url(#shirt-${uid})`} />
+          <path d="M31 58 Q50 66 69 58" stroke="#3730A3" strokeWidth="2" fill="none" opacity="0.4" />
+
+          {/* neck */}
+          <rect x="44" y="38" width="12" height="10" rx="4" fill={`url(#skin-${uid})`} />
+
+          {/* head */}
+          <circle cx="50" cy="26" r="18" fill={`url(#skin-${uid})`} />
+          <circle cx="35" cy="27" r="3.2" fill={`url(#skin-${uid})`} />
+          <circle cx="65" cy="27" r="3.2" fill={`url(#skin-${uid})`} />
+
+          {/* hair */}
+          <path d="M31 24 Q31 6 50 6 Q69 6 69 24 Q69 14 50 14 Q31 14 31 24 Z" fill={`url(#hair-${uid})`} />
+          <path d="M31 22 Q28 30 32 36" stroke={`url(#hair-${uid})`} strokeWidth="5" fill="none" strokeLinecap="round" />
+          <path d="M69 22 Q72 30 68 36" stroke={`url(#hair-${uid})`} strokeWidth="5" fill="none" strokeLinecap="round" />
+
+          {/* face */}
+          <circle cx="43" cy="27" r="2.1" fill="#3B2A1A" />
+          <circle cx="57" cy="27" r="2.1" fill="#3B2A1A" />
+          <path d="M43 35 Q50 40 57 35" stroke="#8A5A3A" strokeWidth="2" fill="none" strokeLinecap="round" />
+
+          {/* front arms (in front of torso) */}
+          <rect x="20" y="50" width="12" height="36" rx="6" fill={`url(#skin-${uid})`} transform="rotate(-14 26 68)" />
+          <rect x="68" y="50" width="12" height="36" rx="6" fill={`url(#skin-${uid})`} transform="rotate(14 74 68)" />
+          <circle cx="23" cy="86" r="6.5" fill={`url(#skin-${uid})`} />
+          <circle cx="77" cy="86" r="6.5" fill={`url(#skin-${uid})`} />
+        </g>
 
         {/* Clothing Layers */}
         {renderItem(equippedItems.head)}
@@ -89,6 +160,19 @@ const CharacterDisplay: React.FC<CharacterDisplayProps> = ({ width = 150, height
            </g>
         )}
       </motion.svg>
+
+      {showLevelBadge && level > 0 && (
+        <div
+          className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md border"
+          style={{
+            background: auraColor ? `${auraColor}22` : "rgba(99,102,241,0.15)",
+            borderColor: auraColor ? `${auraColor}66` : "rgba(99,102,241,0.4)",
+            color: auraColor || "#818CF8",
+          }}
+        >
+          Ур. {level}
+        </div>
+      )}
     </div>
   );
 };

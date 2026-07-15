@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="glowPrime" cx="50%" cy="55%" r="62%">
+      <stop offset="0%" stop-color="#A855F7" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#A855F7" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bodyPrime" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2E1065"/>
+      <stop offset="100%" stop-color="#120633"/>
+    </linearGradient>
+    <linearGradient id="edgePrime" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#C084FC"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="105" r="90" fill="url(#glowPrime)"/>
+  <circle cx="40" cy="60" r="2.5" fill="#E9D5FF"/>
+  <circle cx="164" cy="50" r="2" fill="#E9D5FF"/>
+  <circle cx="172" cy="130" r="2.5" fill="#E9D5FF"/>
+  <!-- wing panels -->
+  <path d="M52 100 L20 82 L28 118 L52 122 Z" fill="url(#edgePrime)" opacity="0.85"/>
+  <path d="M148 100 L180 82 L172 118 L148 122 Z" fill="url(#edgePrime)" opacity="0.85"/>
+  <!-- legs -->
+  <rect x="52" y="140" width="15" height="30" rx="6" fill="#1B0742"/>
+  <rect x="133" y="140" width="15" height="30" rx="6" fill="#1B0742"/>
+  <rect x="56" y="136" width="10" height="22" rx="5" fill="url(#edgePrime)"/>
+  <rect x="134" y="136" width="10" height="22" rx="5" fill="url(#edgePrime)"/>
+  <!-- tail -->
+  <path d="M150 108 Q180 96 174 70" stroke="url(#edgePrime)" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <circle cx="174" cy="68" r="6" fill="#C084FC"/>
+  <!-- body -->
+  <rect x="46" y="92" width="108" height="54" rx="24" fill="url(#bodyPrime)"/>
+  <circle cx="100" cy="119" r="13" fill="#0B0420" stroke="url(#edgePrime)" stroke-width="3"/>
+  <circle cx="100" cy="119" r="6" fill="#C084FC"/>
+  <!-- head -->
+  <rect x="30" y="64" width="64" height="48" rx="20" fill="url(#bodyPrime)"/>
+  <path d="M20 68 L4 52" stroke="url(#edgePrime)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M100 68 L116 52" stroke="url(#edgePrime)" stroke-width="6" stroke-linecap="round"/>
+  <rect x="40" y="80" width="44" height="14" rx="7" fill="#0B0420"/>
+  <rect x="46" y="84" width="14" height="6" rx="3" fill="#C084FC"/>
+  <rect x="66" y="84" width="14" height="6" rx="3" fill="#C084FC"/>
+</svg>

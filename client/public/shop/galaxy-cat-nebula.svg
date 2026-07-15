@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="glowNebula" cx="50%" cy="55%" r="58%">
+      <stop offset="0%" stop-color="#818CF8" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#818CF8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="furNebula" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#C084FC"/>
+      <stop offset="50%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#4338CA"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="105" r="85" fill="url(#glowNebula)"/>
+  <circle cx="55" cy="48" r="1.8" fill="#F5F3FF"/>
+  <circle cx="146" cy="42" r="1.8" fill="#F5F3FF"/>
+  <circle cx="158" cy="88" r="1.5" fill="#F5F3FF"/>
+  <circle cx="42" cy="92" r="1.5" fill="#F5F3FF"/>
+  <circle cx="100" cy="30" r="1.5" fill="#F5F3FF"/>
+  <path d="M136 142 Q170 144 168 106" stroke="url(#furNebula)" stroke-width="13" fill="none" stroke-linecap="round"/>
+  <ellipse cx="100" cy="141" rx="48" ry="31" fill="url(#furNebula)"/>
+  <circle cx="100" cy="95" r="41" fill="url(#furNebula)"/>
+  <path d="M65 67 L56 30 L92 57 Z" fill="url(#furNebula)"/>
+  <path d="M135 67 L144 30 L108 57 Z" fill="url(#furNebula)"/>
+  <path d="M69 61 L63 40 L84 57 Z" fill="#F5F3FF" opacity="0.55"/>
+  <path d="M131 61 L137 40 L116 57 Z" fill="#F5F3FF" opacity="0.55"/>
+  <circle cx="84" cy="94" r="7" fill="#F5F3FF"/>
+  <circle cx="116" cy="94" r="7" fill="#F5F3FF"/>
+  <circle cx="84" cy="94" r="3.4" fill="#312E81"/>
+  <circle cx="116" cy="94" r="3.4" fill="#312E81"/>
+  <path d="M100 101 L96 107 L104 107 Z" fill="#F472B6"/>
+  <path d="M91 113 Q100 120 109 113" stroke="#F5F3FF" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M58 101 L30 96 M58 108 L30 110 M142 101 L170 96 M142 108 L170 110" stroke="#F5F3FF" stroke-width="1.6" opacity="0.75"/>
+  <path d="M70 130 Q100 145 130 130" stroke="#F5F3FF" stroke-width="2" opacity="0.35" fill="none"/>
+</svg>
