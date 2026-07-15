@@ -72,14 +72,14 @@ export default function TaskRow({ task, dateStr, isCondensed, onEdit, onDelete }
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className={cn(
-              "block font-bold leading-snug",
+              "block font-bold leading-snug truncate min-w-0",
               isCondensed ? "text-xs" : "text-sm",
               completed ? "line-through text-slate-500" : "text-slate-100"
             )}>
               {task.title}
             </span>
-            {task.time && !isCondensed && (
-              <span className="text-[10px] font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded-md">
+            {task.time && (
+              <span className="text-[10px] font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded-md shrink-0">
                 {task.time}
               </span>
             )}
