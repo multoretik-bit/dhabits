@@ -225,7 +225,7 @@ function HabitsTab() {
                               className="flex-shrink-0 flex flex-col items-center justify-center w-10 h-10 rounded-xl text-center"
                               style={{ backgroundColor: `${h.color}25`, border: `1px solid ${h.color}40` }}
                             >
-                              <img src="/illustrations/reward-coin-v2.png" alt="Монета" className="w-3 h-3 object-contain mb-0.5" />
+                              <img src="/illustrations/reward-coin-v3.svg" alt="Монета" className="w-3 h-3 object-contain mb-0.5" />
                               <span className="text-[9px] font-bold text-white leading-tight mt-1">{h.coinsPerComplete}</span>
                             </div>
 
@@ -396,7 +396,7 @@ function TasksTab() {
                   {block ? `${block.name}` : "На весь день"}
                   {t.coins ? (
                     <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
-                      {' · '}<img src="/illustrations/reward-coin-v2.png" alt="Монета" className="w-2.5 h-2.5 object-contain inline-block -translate-y-0.5" /> {t.coins}
+                      {' · '}<img src="/illustrations/reward-coin-v3.svg" alt="Монета" className="w-2.5 h-2.5 object-contain inline-block -translate-y-0.5" /> {t.coins}
                     </span>
                   ) : ''}
                   {t.isOneTime ? ' · Одноразовая' : ''}

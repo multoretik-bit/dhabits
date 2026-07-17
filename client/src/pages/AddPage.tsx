@@ -42,7 +42,7 @@ function UnifiedCoinBadge({ coins, color, label }: { coins: number; color: strin
       className="flex-shrink-0 flex flex-col items-center justify-center w-12 h-12 rounded-xl text-center shadow-sm"
       style={{ backgroundColor: `${color}25`, border: `1px solid ${color}40` }}
     >
-      <img src="/illustrations/reward-coin-v2.png" alt="Монета" className="w-3.5 h-3.5 object-contain mb-0.5" />
+      <img src="/illustrations/reward-coin-v3.svg" alt="Монета" className="w-3.5 h-3.5 object-contain mb-0.5" />
       <span className="text-[10px] font-bold text-white leading-tight mt-0.5">{coins}{label ? `/${label}` : ''}</span>
     </div>
   );
@@ -404,7 +404,7 @@ function TasksTab() {
                           {blocks.find(b => b.id === t.blockId)?.name || 'На весь день'}
                           {t.coins ? (
                             <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
-                              {' · '}<img src="/illustrations/reward-coin-v2.png" alt="Монета" className="w-2.5 h-2.5 object-contain inline-block -translate-y-0.5" /> {t.coins}
+                              {' · '}<img src="/illustrations/reward-coin-v3.svg" alt="Монета" className="w-2.5 h-2.5 object-contain inline-block -translate-y-0.5" /> {t.coins}
                             </span>
                           ) : ''}
                         </p>

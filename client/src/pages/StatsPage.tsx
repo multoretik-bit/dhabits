@@ -57,7 +57,7 @@ export default function StatsPage() {
         </div>
         <div className="glass-card rounded-2xl p-5 text-center flex flex-col items-center justify-center">
           <div className="flex items-center justify-center gap-2 text-4xl font-black text-yellow-500 mb-1">
-            <img src="/illustrations/reward-coin-v2.png" alt="Монета" className="w-8 h-8 object-contain" /> {coins}
+            <img src="/illustrations/reward-coin-v3.svg" alt="Монета" className="w-8 h-8 object-contain" /> {coins}
           </div>
           <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">Всего Монет</div>
         </div>

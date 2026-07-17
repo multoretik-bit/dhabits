@@ -13,7 +13,7 @@ import AuthPage from "./pages/AuthPage";
 
 const AddPage = lazy(() => import("./pages/AddPage"));
 const GoalsPage = lazy(() => import("./pages/GoalsPage"));
-const ShopPage = lazy(() => import("./pages/ShopPage"));
+const ProfilePage = lazy(() => import("./pages/ShopPage"));
 const StatsPage = lazy(() => import("./pages/StatsPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const IdentityPage = lazy(() => import("./pages/IdentityPage"));
@@ -31,7 +31,8 @@ function Router({ onSignOut }: { onSignOut: () => void }) {
           <Route path="/" component={Home} />
           <Route path="/add" component={AddPage} />
           <Route path="/goals" component={GoalsPage} />
-          <Route path="/shop" component={ShopPage} />
+          <Route path="/profile" component={ProfilePage} />
+          <Route path="/shop" component={ProfilePage} />
           <Route path="/stats" component={StatsPage} />
           <Route path="/settings" component={SettingsPage} />
           <Route path="/identity" component={IdentityPage} />

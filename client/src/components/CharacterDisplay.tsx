@@ -22,6 +22,15 @@ const CharacterDisplay: React.FC<CharacterDisplayProps> = ({ width = 150, height
   const reduceMotion = useReducedMotion();
   const uid = useId().replace(/:/g, "");
   const auraColor = getAuraColor(level);
+  const appearance = characterState.appearance || {};
+  const skinTop = appearance.skin || "#F3C99B";
+  const skinBottom = appearance.skin ? `color-mix(in srgb, ${appearance.skin} 76%, #8B5E3C)` : "#E0AD78";
+  const shirtTop = appearance.shirt || "#818CF8";
+  const shirtBottom = appearance.shirt ? `color-mix(in srgb, ${appearance.shirt} 70%, #1E1B4B)` : "#4F46E5";
+  const pantsTop = appearance.pants || "#475569";
+  const pantsBottom = appearance.pants ? `color-mix(in srgb, ${appearance.pants} 68%, #111827)` : "#334155";
+  const hairTop = appearance.hair || "#6B4A32";
+  const hairBottom = appearance.hair ? `color-mix(in srgb, ${appearance.hair} 72%, #20140E)` : "#4A3020";
   
   const renderItem = (item?: ShopItem, isPet?: boolean) => {
     if (!item) return null;
@@ -75,20 +84,20 @@ const CharacterDisplay: React.FC<CharacterDisplayProps> = ({ width = 150, height
       >
         <defs>
           <linearGradient id={`skin-${uid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#F3C99B" />
-            <stop offset="100%" stopColor="#E0AD78" />
+            <stop offset="0%" stopColor={skinTop} />
+            <stop offset="100%" stopColor={skinBottom} />
           </linearGradient>
           <linearGradient id={`shirt-${uid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#818CF8" />
-            <stop offset="100%" stopColor="#4F46E5" />
+            <stop offset="0%" stopColor={shirtTop} />
+            <stop offset="100%" stopColor={shirtBottom} />
           </linearGradient>
           <linearGradient id={`pants-${uid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#475569" />
-            <stop offset="100%" stopColor="#334155" />
+            <stop offset="0%" stopColor={pantsTop} />
+            <stop offset="100%" stopColor={pantsBottom} />
           </linearGradient>
           <linearGradient id={`hair-${uid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6B4A32" />
-            <stop offset="100%" stopColor="#4A3020" />
+            <stop offset="0%" stopColor={hairTop} />
+            <stop offset="100%" stopColor={hairBottom} />
           </linearGradient>
         </defs>
 

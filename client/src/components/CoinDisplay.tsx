@@ -19,8 +19,8 @@ export default function CoinDisplay({ amount, size = "md", showLabel = true }: C
   };
   return (
     <div className={`coin-display flex items-center ${sizeClasses[size]} font-semibold`}>
-      <img src="/illustrations/reward-coin-v2.png" alt="Монета" className={`${iconSizes[size]} object-contain`} />
-      {showLabel && <span className="text-foreground">{formatCoins(amount)}</span>}
+      <img src="/illustrations/reward-coin-v3.svg" alt="Монета" className={`${iconSizes[size]} object-contain`} />
+      {showLabel && <span className="coin-value">{formatCoins(amount)}</span>}
     </div>
   );
 }

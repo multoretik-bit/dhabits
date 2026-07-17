@@ -9,7 +9,6 @@ import {
   Moon,
   Plus,
   Settings,
-  ShoppingBag,
   Sun,
   Target,
   UserRound,
@@ -28,7 +27,7 @@ const navItems = [
   { path: "/", label: "Сегодня", description: "Фокус дня", icon: Home },
   { path: "/goals", label: "Саморазвитие", description: "Цели и привычки", icon: Target },
   { path: "/add", label: "Добавить", description: "Управление", icon: Plus },
-  { path: "/shop", label: "Магазин", description: "Награды", icon: ShoppingBag },
+  { path: "/profile", label: "Профиль", description: "Состояние и награды", icon: UserRound },
 ] as const;
 
 function NavLink({ path, label, description, icon: Icon, compact = false }: (typeof navItems)[number] & { compact?: boolean }) {
