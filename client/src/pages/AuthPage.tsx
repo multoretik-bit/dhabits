@@ -91,13 +91,13 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="auth-shell min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Ambient background blobs */}
       <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[400px] h-[400px] bg-violet-600/10 rounded-full blur-[120px] pointer-events-none" />
 
-      <div className="w-full max-w-sm relative z-10">
-        <div className="text-center mb-10">
+      <div className="auth-panel w-full max-w-sm relative z-10">
+        <div className="auth-brand text-center mb-10">
           <div className="flex flex-col items-center gap-5 mb-3">
             <div className="relative">
               <div className="absolute inset-0 bg-indigo-500/30 blur-2xl rounded-full scale-150" />
@@ -108,7 +108,7 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
           <p className="text-muted-foreground text-sm">Войдите, чтобы синхронизировать данные</p>
         </div>
 
-        <div className="glass-morphism rounded-3xl p-7 shadow-2xl relative overflow-hidden">
+        <div className="auth-card glass-morphism rounded-3xl p-7 shadow-2xl relative overflow-hidden">
           {/* Subtle glow inside card */}
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-600/8 blur-[60px] rounded-full pointer-events-none" />
           
@@ -260,7 +260,7 @@ export default function AuthPage({ onLogin }: { onLogin: () => void }) {
         </div>
 
         {/* Emergency SKIP Button for testing design */}
-        <div className="mt-8 text-center pt-8 border-t border-white/5">
+        <div className="auth-offline mt-8 text-center pt-8 border-t border-white/5">
            <Button 
             onClick={handleSkip} 
             variant="ghost" 

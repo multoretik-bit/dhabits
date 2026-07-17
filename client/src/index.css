@@ -587,40 +587,124 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
 }
 
 @media (max-width: 640px) {
+  body { min-width: 0; }
+  .app-shell { padding-bottom: calc(70px + env(safe-area-inset-bottom)); }
+  .app-topbar { height: 58px; gap: 5px; padding-inline: 9px; }
   .balance-pill { padding-inline: 9px; }
-  .app-topbar .icon-button { width: 38px; height: 38px; border-radius: 12px; }
-  .week-calendar { padding: 12px; border-radius: 20px; }
+  .app-topbar .icon-button { width: 36px; height: 36px; border-radius: 11px; }
+  .page-shell { padding: 16px 12px 52px; }
+  .page-heading { gap: 12px; margin-bottom: 18px; }
+  .page-title { font-size: clamp(28px, 9vw, 36px); }
+  .page-description { margin-top: 6px; font-size: 12px; line-height: 1.5; }
+  .page-actions { gap: 6px; }
+  .app-surface { border-radius: 20px; }
+  .week-calendar { padding: 11px; border-radius: 20px; }
+  .week-calendar-head { padding-bottom: 8px; }
+  .week-calendar-head h2 { font-size: 14px; }
   .week-days { gap: 3px; }
-  .week-day { min-height: 55px; border-radius: 14px; }
-  .page-shell { padding-top: 20px; }
+  .week-day { min-height: 52px; border-radius: 13px; }
+  .week-day span { font-size: 8px; letter-spacing: .06em; }
+  .week-day strong { font-size: 14px; }
+  .week-day.is-selected::before { right: 4px; top: -7px; font-size: 14px; }
   .segmented-control { width: 100%; }
-  .segment-button { flex: 1; padding-inline: 10px; }
+  .segment-button { min-width: 0; flex: 1; padding-inline: 8px; }
   .segment-button span:not(.segment-count) { max-width: 90px; overflow: hidden; text-overflow: ellipsis; }
+  .growth-page > .segmented-control { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; }
+  .growth-page > .segmented-control .segment-button { gap: 4px; padding-inline: 5px; font-size: 10px; }
+  .growth-page > .segmented-control .segment-count { min-width: 17px; height: 17px; padding-inline: 4px; font-size: 8px; }
   .focus-columns, .focus-summary, .metric-grid { grid-template-columns: 1fr; }
-  .focus-card { min-height: 0; padding: 20px 16px; }
+  .focus-layout, .schedule-layout { gap: 12px; }
+  .focus-card { min-height: 0; padding: 18px 14px; border-radius: 22px; }
   .focus-card-head h2 { font-size: 28px; }
   .focus-companion { display: none; }
   .focus-card-head h2, .timeline-progress { width: 100%; max-width: 100%; }
-  .focus-columns > div { padding: 12px; }
+  .focus-columns { gap: 10px; }
+  .focus-columns > div { max-height: none; padding: 11px; border-radius: 17px; }
+  .progress-card, .daily-habits-card, .quick-card { padding: 14px; }
+  .habit-row-main, .task-row { gap: 8px; padding: 8px; }
+  .home-page .reorder-controls { display: none; }
+  .task-reward { min-width: 40px; padding: 4px 6px; }
+  .task-reward img { width: 17px; height: 17px; }
   .reward-card > img { width: 148px; height: 148px; right: -18px; }
   .growth-overview, .growth-folder-body { grid-template-columns: 1fr; }
-  .schedule-block { padding: 13px; border-radius: 19px; }
+  .growth-folder-head { padding-inline: 12px; }
+  .growth-folder-body { padding: 9px; }
+  .schedule-timeline, .schedule-tasks { padding: 14px; }
+  .schedule-block { padding: 12px; border-radius: 18px; }
   .schedule-block-head { grid-template-columns: 1fr auto; }
   .schedule-time { grid-column: 1 / -1; justify-self: start; min-width: 0; }
+  .schedule-block-head { gap: 9px; }
+  .schedule-block-actions { gap: 4px; }
+  .schedule-block-actions > img { width: 54px; height: 48px; }
+  .schedule-block-column { padding: 9px; }
   .schedule-block-body { grid-template-columns: 1fr; }
+  .management-tabs { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px !important; overflow: visible !important; }
+  .management-tabs > button { min-width: 0; padding: 9px 6px; font-size: 12px; }
+  .management-toolbar { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 7px !important; }
+  .management-toolbar > button, .management-create-actions > button { width: 100%; min-width: 0; padding-inline: 8px; }
+  .management-toolbar-split { grid-template-columns: 1fr; }
+  .management-view-switch, .management-create-actions { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .management-view-switch > button { width: 100%; padding-inline: 6px; }
+  .management-folder-head { min-width: 0; gap: 8px; padding: 10px 11px !important; }
+  .management-folder-head > div:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .management-item-row { min-width: 0; flex-wrap: wrap; gap: 8px !important; padding: 10px !important; }
+  .management-item-actions { width: 100%; justify-content: flex-end; padding-top: 6px; border-top: 1px solid color-mix(in srgb, var(--border) 65%, transparent); }
+  .management-coin-badge { width: 42px; height: 42px; }
+  .form-modal-backdrop { align-items: end; padding: 0; }
+  .form-modal { max-height: 92dvh; border-radius: 22px 22px 0 0; }
+  .form-modal-head { padding: 14px 16px; }
+  .form-modal-body { min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 13px; padding: 16px; overflow-x: hidden; }
+  .form-modal-body > *, .form-modal-body .flex { min-width: 0; max-width: 100%; }
+  .form-modal-body .flex > .w-full, .form-modal-body .flex > .flex-1 { min-width: 0; width: auto; }
+  .form-modal .grid-cols-2 { grid-template-columns: 1fr; }
+  .form-modal-actions { position: sticky; bottom: -16px; min-width: 0; width: 100%; margin: 0 0 -16px; padding: 12px 0 calc(12px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--popover) 94%, transparent); backdrop-filter: blur(18px); }
+  .form-modal-actions > button { min-width: 0; width: 100%; }
   .identity-values-grid, .identity-systems-grid { grid-template-columns: 1fr; }
   .identity-system-card.is-expanded { grid-column: auto; }
   .identity-add-row { align-items: stretch; flex-direction: column; }
   .identity-hero-card { align-items: flex-start; padding: 16px; }
   .identity-hero-card::after { display: none; }
   .profile-character-card, .profile-wheel-card { padding: 16px; border-radius: 22px; }
+  .profile-character-stage { min-height: 315px; }
   .profile-wheel-body { grid-template-columns: 1fr; }
   .profile-sphere-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profile-attributes { padding: 14px; }
   .profile-attribute-grid { grid-template-columns: 1fr; }
   .profile-item-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profile-item-card { gap: 8px; padding: 9px; border-radius: 16px; }
   .profile-item-preview { min-height: 125px; }
   .profile-item-preview > img, .profile-item-preview > svg { height: 110px; }
-  .profile-section-head { align-items: flex-start; }
+  .profile-section-head { align-items: flex-start; flex-wrap: wrap; }
+  .auth-shell { justify-content: flex-start; min-height: 100dvh; padding: 24px 12px; overflow-y: auto; }
+  .auth-panel { max-width: 380px; }
+  .auth-brand { margin-bottom: 24px; }
+  .auth-brand img { width: 64px; height: 64px; }
+  .auth-brand h1 { font-size: 30px; }
+  .auth-card { padding: 20px !important; border-radius: 22px; }
+  .auth-offline { margin-top: 20px; padding-top: 20px; }
+}
+
+@media (max-width: 360px) {
+  .app-topbar { gap: 3px; padding-inline: 6px; }
+  .app-topbar .icon-button { width: 33px; height: 33px; }
+  .balance-pill { min-height: 35px; gap: 4px; padding: 5px 7px; border-radius: 12px; }
+  .page-title { font-size: 27px; }
+  .page-eyebrow { font-size: 9px; }
+  .page-description { font-size: 11px; }
+  .growth-page > .segmented-control .segment-button { font-size: 9px; }
+  .growth-page > .segmented-control .segment-button > svg { display: none; }
+  .focus-card-head h2 { font-size: 25px; }
+  .focus-time { font-size: 12px; }
+  .profile-character-stage { min-height: 295px; transform: scale(.9); margin-block: -12px; }
+  .profile-level-row { align-items: stretch; flex-direction: column; }
+  .profile-level-row .app-button { width: 100%; }
+  .profile-sphere-list { grid-template-columns: 1fr; }
+  .profile-item-grid { grid-template-columns: 1fr; }
+  .profile-item-preview { min-height: 150px; }
+  .management-folder-head { flex-wrap: wrap; }
+  .management-folder-head > div:last-child { width: 100%; justify-content: flex-end; }
+  .management-create-actions > button { font-size: 10px; }
+  .form-modal-actions { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
