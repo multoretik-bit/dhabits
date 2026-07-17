@@ -11,7 +11,6 @@ import { supabase } from "./lib/supabase";
 import Home from "./pages/Home";
 import AuthPage from "./pages/AuthPage";
 
-const AddPage = lazy(() => import("./pages/AddPage"));
 const GoalsPage = lazy(() => import("./pages/GoalsPage"));
 const ProfilePage = lazy(() => import("./pages/ShopPage"));
 const StatsPage = lazy(() => import("./pages/StatsPage"));
@@ -29,7 +28,7 @@ function Router({ onSignOut }: { onSignOut: () => void }) {
       <Suspense fallback={<RouteLoader />}>
         <Switch>
           <Route path="/" component={Home} />
-          <Route path="/add" component={AddPage} />
+          <Route path="/add" component={GoalsPage} />
           <Route path="/goals" component={GoalsPage} />
           <Route path="/profile" component={ProfilePage} />
           <Route path="/shop" component={ProfilePage} />

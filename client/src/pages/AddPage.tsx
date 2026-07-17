@@ -15,7 +15,7 @@ const DAYS_OF_WEEK = [
   { id: 4, label: "Чт" }, { id: 5, label: "Пт" }, { id: 6, label: "Сб" }, { id: 0, label: "Вс" },
 ];
 
-type Tab = "habits" | "tasks" | "goals" | "blocks";
+export type ManagementTab = "habits" | "tasks" | "goals" | "blocks";
 
 function DayPicker({ value, onChange }: { value: number[]; onChange: (v: number[]) => void }) {
   const toggle = (id: number) => onChange(value.includes(id) ? value.filter((d) => d !== id) : [...value, id]);
@@ -611,13 +611,11 @@ function BlocksTab() {
 
   const [name, setName] = useState(""); const [startTime, setStartTime] = useState("09:00"); const [endTime, setEndTime] = useState("10:00");
   const [color, setColor] = useState("#3b82f6");
-  const [systemUrl, setSystemUrl] = useState("");
-  const [plans, setPlans] = useState<{ id: string; name: string; url: string }[]>([]);
   const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5, 6, 0]);
   const [isOneTime, setIsOneTime] = useState(false);
   const [specificDate, setSpecificDate] = useState("");
 
-  const resetForm = () => { setName(""); setStartTime("09:00"); setEndTime("10:00"); setColor("#3b82f6"); setSystemUrl(""); setPlans([]); setDays([1, 2, 3, 4, 5, 6, 0]); setIsOneTime(false); setSpecificDate(""); };
+  const resetForm = () => { setName(""); setStartTime("09:00"); setEndTime("10:00"); setColor("#3b82f6"); setDays([1, 2, 3, 4, 5, 6, 0]); setIsOneTime(false); setSpecificDate(""); };
 
   const blockFormContent = (
     <>
@@ -645,31 +643,6 @@ function BlocksTab() {
         <label className="text-sm font-medium text-slate-300">Цвет блока</label>
         <AdvancedColorPicker value={color} onChange={setColor} />
       </div>
-      <div className="space-y-3 mt-4 p-3 bg-slate-900/50 rounded-2xl border border-slate-800/60">
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-slate-300">Планы и Ссылки</label>
-          <Button type="button" size="sm" variant="ghost" onClick={() => setPlans([...plans, { id: nanoid(), name: "Новый план", url: "" }])} className="text-blue-400 hover:bg-blue-400/10 h-7 text-xs">
-            <Plus className="w-3 h-3 mr-1" /> Добавить
-          </Button>
-        </div>
-        
-        {/* Legacy systemUrl support if it exists and no plans */}
-        {(systemUrl && plans.length === 0) && (
-           <FormInput label="План (URL — старый формат)" value={systemUrl} onChange={setSystemUrl} placeholder="https://..." />
-        )}
-
-        {plans.map((plan, idx) => (
-          <div key={plan.id} className="flex gap-2 items-start bg-slate-950/40 p-2 rounded-xl border border-slate-800/40">
-            <div className="flex-1 space-y-2">
-              <input type="text" value={plan.name} onChange={e => { const newPlans = [...plans]; newPlans[idx].name = e.target.value; setPlans(newPlans); }} className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-white text-sm focus:ring-1 focus:ring-blue-500" placeholder="Название плана" />
-              <input type="url" value={plan.url} onChange={e => { const newPlans = [...plans]; newPlans[idx].url = e.target.value; setPlans(newPlans); }} className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-white text-sm focus:ring-1 focus:ring-blue-500" placeholder="https://..." />
-            </div>
-            <Button type="button" size="icon" variant="ghost" onClick={() => setPlans(plans.filter(p => p.id !== plan.id))} className="text-red-400 hover:bg-red-400/10 shrink-0">
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        ))}
-      </div>
     </>
   );
 
@@ -690,7 +663,6 @@ function BlocksTab() {
               <p className={`font-bold text-sm text-slate-200 ${expandedItems[b.id] ? "" : "truncate"}`}>{b.name}</p>
               <p className="text-[10px] text-slate-500 font-medium tracking-wide">
                 {b.startTime} - {b.endTime} · {b.isOneTime ? `Дата: ${b.specificDate}` : (!b.daysOfWeek || b.daysOfWeek.length === 7 || b.daysOfWeek.length === 0) ? "Каждый день" : DAYS_OF_WEEK.filter(d => b.daysOfWeek?.includes(d.id)).map(d => d.label).join(", ")}
-                {(b.systemUrl || (b.plans && b.plans.length > 0)) && <span className="ml-2 text-blue-400">🔗 {b.plans?.length ? `${b.plans.length} План(а)` : 'План'}</span>}
               </p>
             </div>
               <div className="flex gap-1">
@@ -698,24 +670,24 @@ function BlocksTab() {
                   <Button size="icon" variant="ghost" onClick={() => moveBlockUp(b.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowUp className="w-3 h-3" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => moveBlockDown(b.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowDown className="w-3 h-3" /></Button>
                 </div>
-                <Button size="icon" variant="ghost" onClick={() => { setEditingId(b.id); setName(b.name); setStartTime(b.startTime||""); setEndTime(b.endTime||""); setColor(b.color || (b.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][b.colorIndex] : "#3b82f6")); setSystemUrl(b.systemUrl || ""); setPlans(b.plans || []); setDays(b.daysOfWeek || [1, 2, 3, 4, 5, 6, 0]); setIsOneTime(!!b.isOneTime); setSpecificDate(b.specificDate || ""); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
+                <Button size="icon" variant="ghost" onClick={() => { setEditingId(b.id); setName(b.name); setStartTime(b.startTime||""); setEndTime(b.endTime||""); setColor(b.color || (b.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][b.colorIndex] : "#3b82f6")); setDays(b.daysOfWeek || [1, 2, 3, 4, 5, 6, 0]); setIsOneTime(!!b.isOneTime); setSpecificDate(b.specificDate || ""); setShowEdit(true); }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
                 <Button size="icon" variant="ghost" onClick={async () => { if (confirm("Удалить?")) { deleteBlock(b.id); setTimeout(() => forcePushToCloud(), 200); } }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
               </div>
           </div>
         ))}
         {blocks.length === 0 && <p className="text-center py-10 text-slate-600 italic">Нет блоков</p>}
       </div>
-      <FormModal title="Новый блок" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addBlock({ id: nanoid(), name, habits: [], collapsed: false, startTime, endTime, color, systemUrl, plans, daysOfWeek: days, isOneTime, specificDate: specificDate || undefined }); setShowCreate(false); resetForm(); } }} submitText="Создать">{blockFormContent}</FormModal>
-      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateBlock(editingId, { name, startTime, endTime, color, systemUrl, plans, daysOfWeek: days, isOneTime, specificDate: specificDate || undefined }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{blockFormContent}</FormModal>
+      <FormModal title="Новый блок" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (name) { addBlock({ id: nanoid(), name, habits: [], collapsed: false, startTime, endTime, color, daysOfWeek: days, isOneTime, specificDate: specificDate || undefined }); setShowCreate(false); resetForm(); } }} submitText="Создать">{blockFormContent}</FormModal>
+      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); if (editingId && name) { updateBlock(editingId, { name, startTime, endTime, color, daysOfWeek: days, isOneTime, specificDate: specificDate || undefined }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{blockFormContent}</FormModal>
     </div>
   );
 }
 
 // ─── MAIN HUB ─────────────────────────────────────────────────────────────
-export default function AddPage() {
-  const [tab, setTab] = useState<Tab>("habits");
+export default function AddPage({ embedded = false, initialTab = "habits" }: { embedded?: boolean; initialTab?: ManagementTab }) {
+  const [tab, setTab] = useState<ManagementTab>(initialTab);
 
-  const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
+  const tabs: { key: ManagementTab; label: string; icon: React.ReactNode }[] = [
     { key: "habits", label: "Привычки", icon: <ListChecks className="w-4 h-4" /> },
     { key: "tasks", label: "Задачи", icon: <Plus className="w-4 h-4" /> },
     { key: "goals", label: "Цели", icon: <Target className="w-4 h-4" /> },
@@ -723,8 +695,8 @@ export default function AddPage() {
   ];
 
   return (
-    <div className="px-5 pt-8 pb-4 min-h-full bg-background">
-      <h2 className="text-2xl font-bold text-foreground mb-6 tracking-tight">Управление</h2>
+    <div className={embedded ? "growth-management" : "px-5 pt-8 pb-4 min-h-full bg-background"}>
+      {!embedded && <h2 className="text-2xl font-bold text-foreground mb-6 tracking-tight">Управление</h2>}
 
       {/* Tabs */}
       <div className="flex gap-2 glass-card rounded-2xl p-1.5 mb-6 overflow-x-auto no-scrollbar">

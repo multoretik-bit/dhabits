@@ -6,7 +6,6 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
-  ExternalLink,
   LayoutGrid,
   ListTodo,
   Plus,
@@ -59,7 +58,6 @@ function getBlockColor(block?: HabitBlock | null) {
 export default function Home() {
   const { habits, tasks, blocks, addTask, toggleBlockCollapse } = useApp();
   const [mode, setMode] = useState<"focus" | "schedule">("focus");
-  const [dayTab, setDayTab] = useState<"habits" | "tasks" | "plans">("habits");
   const [now, setNow] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showTaskModal, setShowTaskModal] = useState(false);
@@ -106,11 +104,6 @@ export default function Home() {
   const featuredHabits = featuredBlock ? habits.filter((habit) => habit.blockId === featuredBlock.id && (!habit.daysOfWeek?.length || habit.daysOfWeek.includes(dayOfWeek))) : [];
   const dailyHabits = habits.filter((habit) => !habit.daysOfWeek?.length || habit.daysOfWeek.includes(dayOfWeek));
   const allDayHabits = dailyHabits.filter((habit) => !habit.blockId || habit.blockId === "general");
-  const allDayTasks = todayTasks.filter((task) => !task.blockId);
-  const plans = todayBlocks.flatMap((block) => [
-    ...(block.systemUrl ? [{ id: `${block.id}-legacy`, name: "План", url: block.systemUrl, block }] : []),
-    ...(block.plans ?? []).map((plan) => ({ ...plan, block })),
-  ]);
 
   const focusItems = featuredHabits;
   const completedCount = focusItems.filter((item) => Boolean(item.completedDates?.[dateStr])).length;
@@ -183,10 +176,6 @@ export default function Home() {
                       <h2>{featuredBlock.name}</h2>
                       <p className="focus-time"><Clock className="size-4" /> {featuredBlock.startTime || "—"}–{featuredBlock.endTime || "—"}</p>
                     </div>
-                    <div className="focus-links">
-                      {featuredBlock.systemUrl && <a href={featuredBlock.systemUrl} target="_blank" rel="noreferrer" className="icon-button" aria-label="Открыть план"><ExternalLink className="size-5" /></a>}
-                      {featuredBlock.plans?.map((plan) => <a key={plan.id} href={plan.url} target="_blank" rel="noreferrer" className="icon-button" aria-label={`Открыть ${plan.name}`}><ExternalLink className="size-5" /></a>)}
-                    </div>
                   </div>
                   <div className="timeline-progress">
                     <div><span>Время блока</span><strong>{activeBlock ? Math.round(timelineProgress) : 0}%</strong></div>
@@ -210,7 +199,7 @@ export default function Home() {
                   </div>
                 </>
               ) : (
-                <EmptyState icon={Sparkles} title="Свободное время" description="На выбранное время блоков нет. Можно восстановиться или запланировать следующий шаг." action={<Link href="/add" className="app-button">Создать блок</Link>} />
+                <EmptyState icon={Sparkles} title="Свободное время" description="На выбранное время блоков нет. Можно восстановиться или запланировать следующий шаг." action={<Link href="/goals" className="app-button">Создать блок</Link>} />
               )}
             </section>
 
@@ -222,30 +211,17 @@ export default function Home() {
                 <div><p>Прогресс привычек блока</p><span>{completedCount} из {focusItems.length} выполнено</span></div>
               </section>
               <section className="app-surface daily-habits-card">
-                <SectionHeading icon={Target} title="Привычки дня" meta={dailyHabits.length} />
+                <SectionHeading icon={Target} title="Привычки дня" meta={allDayHabits.length} />
                 <div className="daily-habits-list">
-                  {dailyHabits.length ? dailyHabits.map(habit => <HabitRow key={habit.id} habit={habit} dateStr={dateStr} hideUnitTracker />) : <EmptyState compact title="На этот день привычек нет" />}
+                  {allDayHabits.length ? allDayHabits.map(habit => <HabitRow key={habit.id} habit={habit} dateStr={dateStr} hideUnitTracker />) : <EmptyState compact title="Нет привычек на весь день" />}
                 </div>
               </section>
               <section className="app-surface quick-card">
                 <SectionHeading icon={Sparkles} title="Быстрые действия" />
                 <button className="app-button" onClick={openTaskModal}><Plus className="size-4" /> Добавить задачу</button>
-                <Link href="/add" className="app-button is-secondary"><LayoutGrid className="size-4" /> Открыть управление</Link>
+                <Link href="/goals" className="app-button is-secondary"><LayoutGrid className="size-4" /> Открыть саморазвитие</Link>
               </section>
             </aside>
-
-            <section className="day-content app-surface">
-              <SegmentedControl value={dayTab} onChange={setDayTab} ariaLabel="Содержимое выбранного дня" items={[
-                { value: "habits", label: "Привычки", icon: Target, count: allDayHabits.length },
-                { value: "tasks", label: "Задачи", icon: ListTodo, count: allDayTasks.length },
-                { value: "plans", label: "Планы", icon: ExternalLink, count: plans.length },
-              ]} />
-              <div className="day-content-body">
-                {dayTab === "habits" && (allDayHabits.length ? allDayHabits.map((habit) => <HabitRow key={habit.id} habit={habit} dateStr={dateStr} hideUnitTracker />) : <EmptyState title="Нет привычек на весь день" compact />)}
-                {dayTab === "tasks" && (allDayTasks.length ? allDayTasks.map((task) => <TaskRow key={task.id} task={task} dateStr={dateStr} />) : <EmptyState title="Нет задач на весь день" compact action={<button className="text-action" onClick={openTaskModal}>Добавить <Plus className="size-4" /></button>} />)}
-                {dayTab === "plans" && (plans.length ? <div className="plan-grid">{plans.map((plan) => <a key={plan.id} href={plan.url} target="_blank" rel="noreferrer" className="plan-card" style={{ borderLeftColor: getBlockColor(plan.block) }}><span>{plan.name || "План"}</span><small>{plan.block.name}</small><ExternalLink className="size-4" /></a>)}</div> : <EmptyState title="Нет прикреплённых планов" compact />)}
-              </div>
-            </section>
           </motion.div>
         ) : (
           <motion.div key="schedule" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="schedule-layout">
@@ -265,8 +241,6 @@ export default function Home() {
                       <div className="schedule-block-actions">
                         <img src={getBlockIllustration(block)} alt="" aria-hidden="true" />
                         <div className="schedule-links">
-                          {block.systemUrl && <a href={block.systemUrl} target="_blank" rel="noreferrer" className="icon-button is-small" aria-label="Открыть план"><ExternalLink className="size-4" /></a>}
-                          {block.plans?.slice(0, 2).map(plan => <a key={plan.id} href={plan.url} target="_blank" rel="noreferrer" className="icon-button is-small" aria-label={`Открыть ${plan.name}`}><ExternalLink className="size-4" /></a>)}
                           <button type="button" onClick={() => toggleBlockCollapse(block.id)} className="icon-button is-small" aria-label={block.collapsed ? "Развернуть блок" : "Свернуть блок"} aria-expanded={!block.collapsed}>{block.collapsed ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}</button>
                         </div>
                       </div>
@@ -279,7 +253,7 @@ export default function Home() {
                     </div>}
                   </article>
                 );
-              }) : <EmptyState title="Расписание пока пустое" description="Создайте блок во вкладке «Добавить»." />}
+              }) : <EmptyState title="Расписание пока пустое" description="Создайте блок в разделе «Саморазвитие»." />}
             </section>
             <section className="app-surface schedule-tasks">
               <SectionHeading icon={ListTodo} title="Задачи дня" meta={todayTasks.length} action={<button onClick={openTaskModal} className="icon-button is-small"><Plus className="size-4" /></button>} />
