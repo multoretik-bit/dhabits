@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <radialGradient id="coinFace" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(43 31) rotate(48) scale(91)">
+      <stop stop-color="#FFF59A"/>
+      <stop offset=".42" stop-color="#FFC928"/>
+      <stop offset="1" stop-color="#F18400"/>
+    </radialGradient>
+    <linearGradient id="coinRim" x1="26" y1="13" x2="101" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF4A8"/>
+      <stop offset=".34" stop-color="#FFB300"/>
+      <stop offset=".73" stop-color="#E66B00"/>
+      <stop offset="1" stop-color="#FFD85A"/>
+    </linearGradient>
+    <linearGradient id="star" x1="45" y1="38" x2="86" y2="91" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#FFF1B8"/>
+    </linearGradient>
+    <filter id="shadow" x="4" y="6" width="120" height="120" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="7" stdDeviation="6" flood-color="#C25900" flood-opacity=".32"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <circle cx="64" cy="61" r="51" fill="url(#coinRim)"/>
+    <circle cx="64" cy="61" r="43" fill="url(#coinFace)" stroke="#FFE57A" stroke-width="3"/>
+    <path d="M64 31.5 72.9 49l19.4 2.8-14 13.7 3.3 19.3L64 75.7 46.4 85l3.3-19.4-14-13.7L55.1 49 64 31.5Z" fill="url(#star)" stroke="#F39A00" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M31 43c5.4-12.4 16.2-21.8 29.3-25.2" stroke="#FFF9C8" stroke-width="6" stroke-linecap="round" opacity=".9"/>
+    <path d="M86.5 93.5c-7.7 6.3-18 9.2-27.8 8.1" stroke="#D65D00" stroke-width="3" stroke-linecap="round" opacity=".5"/>
+  </g>
+</svg>

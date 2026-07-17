@@ -47,7 +47,7 @@ export default function TaskRow({ task, dateStr, isCondensed, onEdit, onDelete }
         </div>
         {Boolean(task.coins) && (
           <span className="task-reward" title={`${task.coins} монет за выполнение`}>
-            <img src="/illustrations/reward-coin-v2.png" alt="" />
+            <img src="/illustrations/reward-coin-v3.svg" alt="" />
             <strong>{task.coins}</strong>
           </span>
         )}

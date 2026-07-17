@@ -1,24 +1,66 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Edit2, ShoppingCart, FolderPlus, Package, User, Home, Car, Star, Clock, Info } from "lucide-react";
-import { useApp, ShopItem, ShopFolder, getTodayDateString, getNextCharacterLevelCost } from "@/contexts/AppContext";
+import { useMemo, useState } from "react";
+import {
+  BatteryCharging,
+  Brain,
+  Check,
+  ChevronRight,
+  Dumbbell,
+  Heart,
+  Package,
+  Palette,
+  Plus,
+  ShieldCheck,
+  ShoppingBag,
+  Sparkles,
+  Star,
+  SunMedium,
+  UserRound,
+  Zap,
+} from "lucide-react";
+import { nanoid } from "nanoid";
+import { toast } from "sonner";
+import { useApp, getNextCharacterLevelCost, type CharacterState, type ShopItem } from "@/contexts/AppContext";
+import { EmptyState, PageHeader, PageShell, SectionHeading } from "@/components/AppUI";
+import CharacterDisplay from "@/components/CharacterDisplay";
+import CoinDisplay from "@/components/CoinDisplay";
 import FormModal from "@/components/FormModal";
 import { FormInput, FormSelect, FormTextArea } from "@/components/FormInputs";
 import EmojiPicker from "@/components/EmojiPicker";
-import CharacterDisplay from "@/components/CharacterDisplay";
-import CoinDisplay from "@/components/CoinDisplay";
 import { RarityBadge } from "@/components/RarityBadge";
-import { nanoid } from "nanoid";
-import { motion, AnimatePresence } from "framer-motion";
 
-const ITEM_CATEGORIES = [
-  { value: "reward", label: "Награды" },
-  { value: "clothing", label: "Одежда" },
-  { value: "pets", label: "Питомцы" },
-  { value: "background", label: "Дома" },
-  { value: "vehicle", label: "Транспорт" },
+const APPEARANCE_OPTIONS = {
+  skin: ["#F3C99B", "#DFA06C", "#B97044", "#7C452B"],
+  hair: ["#4A3020", "#8A5A3A", "#D6A24C", "#20242E"],
+  shirt: ["#315CFF", "#7765F5", "#FF6B35", "#149C76", "#F04E7A"],
+  pants: ["#334155", "#1E3A8A", "#4C1D95", "#292524"],
+} as const;
+
+const APPEARANCE_LABELS: Record<keyof typeof APPEARANCE_OPTIONS, string> = {
+  skin: "Тон кожи",
+  hair: "Волосы",
+  shirt: "Футболка",
+  pants: "Брюки",
+};
+
+const ATTRIBUTES = [
+  { id: "energy", label: "Энергия", icon: BatteryCharging, color: "#ff9f1c" },
+  { id: "selfLove", label: "Любовь к себе", icon: Heart, color: "#f04e7a" },
+  { id: "focus", label: "Фокус", icon: Brain, color: "#315cff" },
+  { id: "confidence", label: "Уверенность", icon: ShieldCheck, color: "#7765f5" },
+  { id: "discipline", label: "Дисциплина", icon: Dumbbell, color: "#149c76" },
+  { id: "calm", label: "Спокойствие", icon: SunMedium, color: "#e0a400" },
 ];
 
+const CATEGORIES = [
+  { value: "all", label: "Все" },
+  { value: "clothing", label: "Одежда" },
+  { value: "pets", label: "Питомцы" },
+  { value: "background", label: "Пространство" },
+  { value: "vehicle", label: "Транспорт" },
+  { value: "reward", label: "Награды" },
+] as const;
+
+const ITEM_CATEGORIES = CATEGORIES.filter(item => item.value !== "all");
 const ITEM_SLOTS = [
   { value: "head", label: "Голова" },
   { value: "body", label: "Тело" },
@@ -27,650 +69,239 @@ const ITEM_SLOTS = [
   { value: "accessory", label: "Аксессуар" },
   { value: "background", label: "Фон" },
   { value: "vehicle", label: "Транспорт" },
+  { value: "pet", label: "Питомец" },
 ];
 
-function isImageAsset(path?: string): boolean {
-  return !!path && /\.(png|svg|jpe?g|webp)$/i.test(path);
-}
-
-function isInlineSvgMarkup(path?: string): boolean {
-  return !!path && path.trim().startsWith("<");
-}
-
-function getCategoryIcon(category: string) {
-  switch (category) {
-    case "reward": return <Star className="w-4 h-4 text-yellow-500" />;
-    case "clothing": return <User className="w-4 h-4 text-blue-400" />;
-    case "pets": return <span className="text-sm">🐾</span>;
-    case "background": return <Home className="w-4 h-4 text-green-400" />;
-    case "vehicle": return <Car className="w-4 h-4 text-purple-400" />;
-    default: return <ShoppingCart className="w-4 h-4 text-slate-400" />;
+function ItemPreview({ item }: { item: ShopItem }) {
+  if (item.assetPath && /\.(png|svg|jpe?g|webp)$/i.test(item.assetPath)) {
+    return <img src={item.assetPath} alt="" />;
   }
+  if (item.assetPath?.trim().startsWith("<")) {
+    return <svg viewBox="0 0 100 150" aria-hidden="true"><g dangerouslySetInnerHTML={{ __html: item.assetPath }} /></svg>;
+  }
+  return <span>{item.emoji}</span>;
+}
+
+function BalanceWheel({
+  systems,
+  values,
+  selectedId,
+  onSelect,
+}: {
+  systems: { id: string; aspect: string; color: string }[];
+  values: Record<string, number>;
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  const cx = 130;
+  const cy = 130;
+  const radius = 91;
+  const points = systems.map((system, index) => {
+    const angle = (Math.PI * 2 * index) / systems.length - Math.PI / 2;
+    const value = values[system.id] ?? 60;
+    return `${cx + Math.cos(angle) * radius * (value / 100)},${cy + Math.sin(angle) * radius * (value / 100)}`;
+  }).join(" ");
+
+  return (
+    <svg className="balance-wheel" viewBox="0 0 260 260" role="img" aria-label="Колесо баланса из десяти сфер">
+      <defs>
+        <linearGradient id="balanceFill" x1="45" y1="31" x2="219" y2="228" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#315cff" stopOpacity=".48" />
+          <stop offset=".55" stopColor="#7765f5" stopOpacity=".38" />
+          <stop offset="1" stopColor="#ff6b35" stopOpacity=".38" />
+        </linearGradient>
+      </defs>
+      {[20, 40, 60, 80, 100].map(level => {
+        const gridPoints = systems.map((_, index) => {
+          const angle = (Math.PI * 2 * index) / systems.length - Math.PI / 2;
+          return `${cx + Math.cos(angle) * radius * (level / 100)},${cy + Math.sin(angle) * radius * (level / 100)}`;
+        }).join(" ");
+        return <polygon key={level} points={gridPoints} className="balance-grid" />;
+      })}
+      {systems.map((system, index) => {
+        const angle = (Math.PI * 2 * index) / systems.length - Math.PI / 2;
+        const x = cx + Math.cos(angle) * radius;
+        const y = cy + Math.sin(angle) * radius;
+        const labelX = cx + Math.cos(angle) * 115;
+        const labelY = cy + Math.sin(angle) * 115;
+        return <g key={system.id} onClick={() => onSelect(system.id)} className="balance-axis"><line x1={cx} y1={cy} x2={x} y2={y} /><circle cx={labelX} cy={labelY} r={selectedId === system.id ? 11 : 8} fill={system.color} /><text x={labelX} y={labelY + 3}>{index + 1}</text></g>;
+      })}
+      <polygon points={points} className="balance-value" />
+      {systems.map((system, index) => {
+        const angle = (Math.PI * 2 * index) / systems.length - Math.PI / 2;
+        const value = values[system.id] ?? 60;
+        return <circle key={system.id} cx={cx + Math.cos(angle) * radius * (value / 100)} cy={cy + Math.sin(angle) * radius * (value / 100)} r="4.5" fill={system.color} className="balance-point" />;
+      })}
+    </svg>
+  );
 }
 
 export default function ShopPage() {
   const {
-    coins, shopItems, shopFolders, characterState,
-    addShopItem, updateShopItem, deleteShopItem, purchaseItem,
-    addShopFolder, equipItem, unequipItem, levelUpCharacter,
+    coins,
+    shopItems,
+    characterState,
+    identitySystems,
+    updateCharacterState,
+    addShopItem,
+    purchaseItem,
+    equipItem,
+    unequipItem,
+    levelUpCharacter,
   } = useApp();
 
-  const characterLevel = characterState.level || 0;
-  const nextLevelCost = getNextCharacterLevelCost(characterLevel);
-
-  const handleLevelUp = () => {
-    const success = levelUpCharacter();
-    if (!success) alert("Недостаточно монет!");
-  };
-
-  const [activeTab, setActiveTab] = useState<"shop" | "inventory" | "character">("shop");
-  const [activeCategory, setActiveCategory] = useState<"all" | "reward" | "clothing" | "background" | "vehicle" | "pets" | "character">("all");
+  const [selectedBalanceId, setSelectedBalanceId] = useState(identitySystems[0]?.id || "1");
+  const [inventoryCategory, setInventoryCategory] = useState("all");
+  const [catalogCategory, setCatalogCategory] = useState("all");
   const [showCreateItem, setShowCreateItem] = useState(false);
-  const [showEditItem, setShowEditItem] = useState(false);
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [showCreateFolder, setShowCreateFolder] = useState(false);
-
-  // Item form state
   const [itemName, setItemName] = useState("");
   const [itemEmoji, setItemEmoji] = useState("🎁");
   const [itemPrice, setItemPrice] = useState("50");
-  const [itemCategory, setItemCategory] = useState<"reward" | "clothing" | "background" | "vehicle" | "pets" | "character">("reward");
-  const [itemSlot, setItemSlot] = useState("head");
-  const [itemFolder, setItemFolder] = useState("default");
-  const [itemRarity, setItemRarity] = useState<"common" | "rare" | "epic" | "legendary" | "legacy">("common");
+  const [itemCategory, setItemCategory] = useState<ShopItem["category"]>("reward");
+  const [itemSlot, setItemSlot] = useState<NonNullable<ShopItem["slot"]>>("accessory");
+  const [itemRarity, setItemRarity] = useState<ShopItem["rarity"]>("common");
   const [itemDescription, setItemDescription] = useState("");
-  
-  const [selectedItem, setSelectedItem] = useState<ShopItem | null>(null);
 
-  // Inventory filter/sort state
-  const [invCategory, setInvCategory] = useState<string>("all");
-  const [invRarity, setInvRarity] = useState<string>("all");
-  const [invSort, setInvSort] = useState<string>("newest");
+  const level = characterState.level || 0;
+  const nextLevelCost = getNextCharacterLevelCost(level);
+  const balance = characterState.balance || {};
+  const attributes = characterState.attributes || {};
+  const appearance = characterState.appearance || {};
+  const purchasedItems = useMemo(() => shopItems.filter(item => item.purchased && (inventoryCategory === "all" || item.category === inventoryCategory)), [shopItems, inventoryCategory]);
+  const availableItems = useMemo(() => shopItems.filter(item => !item.purchased && (catalogCategory === "all" || item.category === catalogCategory)), [shopItems, catalogCategory]);
+  const selectedSystem = identitySystems.find(system => system.id === selectedBalanceId) || identitySystems[0];
+  const averageBalance = identitySystems.length ? Math.round(identitySystems.reduce((sum, system) => sum + (balance[system.id] ?? 60), 0) / identitySystems.length) : 0;
 
-  // Shop filter/sort state
-  const [shopRarity, setShopRarity] = useState<string>("all");
-  const [shopSort, setShopSort] = useState<string>("newest");
-
-  // Folder form state
-  const [folderName, setFolderName] = useState("");
-
-  const resetItemForm = () => {
-    setItemName(""); setItemEmoji("🎁"); setItemPrice("50");
-    setItemCategory("reward"); setItemSlot("head"); setItemFolder("default");
-    setItemRarity("common"); setItemDescription("");
+  const updateAppearance = (key: keyof typeof APPEARANCE_OPTIONS, value: string) => {
+    updateCharacterState({ appearance: { ...appearance, [key]: value } });
   };
 
-  const handleCreateItem = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (itemName.trim()) {
-      addShopItem({
-        id: nanoid(), name: itemName, emoji: itemEmoji,
-        price: parseFloat(itemPrice) || 50, category: itemCategory,
-        slot: itemSlot as any, folder: itemFolder, purchased: false,
-        createdAt: new Date().toISOString(),
-        rarity: itemRarity,
-        description: itemDescription,
-      });
-      resetItemForm(); setShowCreateItem(false);
-    }
+  const updateBalance = (id: string, value: number) => {
+    updateCharacterState({ balance: { ...balance, [id]: value } });
   };
 
-  const handleOpenEditItem = (item: ShopItem) => {
-    setEditingItemId(item.id); setItemName(item.name); setItemEmoji(item.emoji);
-    setItemPrice(String(item.price)); setItemCategory(item.category);
-    setItemSlot(item.slot || "head"); setItemFolder(item.folder);
-    setItemRarity(item.rarity || "common"); setItemDescription(item.description || "");
-    setShowEditItem(true);
+  const updateAttribute = (id: string, value: number) => {
+    updateCharacterState({ attributes: { ...attributes, [id]: value } });
   };
 
-  const handleEditItem = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingItemId && itemName.trim()) {
-      updateShopItem(editingItemId, {
-        name: itemName, emoji: itemEmoji, price: parseFloat(itemPrice) || 50,
-        category: itemCategory, slot: itemSlot as any, folder: itemFolder,
-        rarity: itemRarity, description: itemDescription,
-      });
-      setShowEditItem(false); setEditingItemId(null); resetItemForm();
-    }
+  const handleLevelUp = () => {
+    if (!levelUpCharacter()) toast.error("Недостаточно монет для нового уровня");
+    else toast.success("Персонаж получил новый уровень");
   };
 
-  const handleDeleteItem = (id: string) => {
-    if (confirm("Удалить предмет?")) deleteShopItem(id);
-  };
-
-  const handlePurchaseItem = (id: string) => {
-    const success = purchaseItem(id);
-    if (!success) alert("Недостаточно монет!");
-    else if (selectedItem) setSelectedItem(null); 
-  };
-
-  const handleEquipItem = (itemId: string) => equipItem(itemId);
-  const handleUnequipSlot = (slot: string) => unequipItem(slot as any);
-
-  const handleCreateFolder = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (folderName.trim()) {
-      addShopFolder({ id: nanoid(), name: folderName, collapsed: false });
-      setFolderName(""); setShowCreateFolder(false);
-    }
-  };
-
-  const availableItems = shopItems
-    .filter(i => !i.purchased && (activeCategory === "all" || i.category === activeCategory))
-    .filter(i => shopRarity === "all" || i.rarity === shopRarity)
-    .sort((a, b) => {
-      if (shopSort === "price-asc") return a.price - b.price;
-      if (shopSort === "price-desc") return b.price - a.price;
-      if (shopSort === "newest") return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-      if (shopSort === "oldest") return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
-      return 0;
+  const handleCreateItem = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!itemName.trim()) return;
+    addShopItem({
+      id: nanoid(),
+      name: itemName.trim(),
+      emoji: itemEmoji,
+      price: Number(itemPrice) || 0,
+      category: itemCategory,
+      slot: itemSlot,
+      folder: "default",
+      purchased: false,
+      createdAt: new Date().toISOString(),
+      rarity: itemRarity,
+      description: itemDescription.trim(),
     });
-  
-  const filteredPurchasedItems = shopItems
-    .filter(i => i.purchased)
-    .filter(i => invCategory === "all" || i.category === invCategory)
-    .filter(i => invRarity === "all" || i.rarity === invRarity)
-    .sort((a, b) => {
-      if (invSort === "price-asc") return a.price - b.price;
-      if (invSort === "price-desc") return b.price - a.price;
-      if (invSort === "newest") return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-      if (invSort === "oldest") return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
-      return 0;
-    });
-
-  const ItemForm = () => (
-    <>
-      <FormInput label="Название предмета" value={itemName} onChange={setItemName} />
-      <EmojiPicker label="Эмодзи" value={itemEmoji} onChange={setItemEmoji} />
-      <FormInput label="Цена (монеты)" value={itemPrice} onChange={setItemPrice} type="number" />
-      <FormSelect label="Категория" value={itemCategory} onChange={(v) => setItemCategory(v as any)} options={ITEM_CATEGORIES} />
-      {itemCategory === "clothing" && <FormSelect label="Слот" value={itemSlot} onChange={setItemSlot} options={ITEM_SLOTS} />}
-      <FormSelect label="Редкость" value={itemRarity} onChange={(v) => setItemRarity(v as any)} options={[
-        { value: "common", label: "Обычный" },
-        { value: "rare", label: "Редкий" },
-        { value: "epic", label: "Эпический" },
-        { value: "legendary", label: "Легендарный" },
-        { value: "legacy", label: "Раритет (Legacy)" },
-      ]} />
-      <FormTextArea label="Описание" value={itemDescription} onChange={setItemDescription} />
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-slate-300">Папка</label>
-        <select value={itemFolder} onChange={(e) => setItemFolder(e.target.value)} className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-white focus:ring-2 focus:ring-blue-500">
-          <option value="default">Default</option>
-          {shopFolders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-        </select>
-      </div>
-    </>
-  );
-
-  const rarityColors = {
-    common: "border-slate-800/80 shadow-sm",
-    rare: "border-blue-900/50 shadow-[0_0_15px_rgba(59,130,246,0.1)]",
-    epic: "border-purple-900/50 shadow-[0_0_20px_rgba(168,85,247,0.15)]",
-    legendary: "border-orange-900/50 shadow-[0_0_25px_rgba(249,115,22,0.2)]",
-    legacy: "border-amber-900/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]",
+    setShowCreateItem(false);
+    setItemName("");
+    setItemDescription("");
+    toast.success("Предмет добавлен в коллекцию");
   };
+
+  const purchase = (item: ShopItem) => {
+    if (!purchaseItem(item.id)) toast.error("Недостаточно монет");
+    else toast.success(`${item.name} теперь в инвентаре`);
+  };
+
+  const isEquipped = (item: ShopItem) => Boolean(item.slot && characterState[item.slot] === item.id);
 
   return (
-    <div className="px-5 pt-8 pb-4 min-h-full bg-background">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-foreground tracking-tight">Магазин</h2>
-        <div className="flex items-center gap-3">
-          <div className="glass-card px-3 py-1.5 rounded-xl flex items-center">
-            <CoinDisplay amount={coins} size="md" showLabel={true} />
+    <PageShell className="profile-page">
+      <PageHeader
+        eyebrow="Ваше состояние"
+        title="Профиль"
+        description="Персонаж, баланс жизненных сфер, внутренние характеристики и коллекция наград — в одном месте."
+        actions={<div className="profile-balance"><span>Баланс</span><CoinDisplay amount={coins} size="lg" /></div>}
+      />
+
+      <section className="profile-hero-grid">
+        <article className="profile-character-card">
+          <span className="profile-orb profile-orb-one" />
+          <span className="profile-orb profile-orb-two" />
+          <div className="profile-card-head">
+            <div><p>Мой персонаж</p><h2>Уровень {level}</h2></div>
+            <div className="profile-level-badge"><Star className="size-4" /> {level || 1}</div>
           </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 glass-card rounded-2xl p-1.5 mb-6 overflow-x-auto no-scrollbar">
-        {[
-          { id: "shop", label: "Магазин", icon: <ShoppingCart className="w-4 h-4" /> },
-          { id: "inventory", label: "Инвентарь", icon: <Package className="w-4 h-4" /> },
-          { id: "character", label: "Персонаж", icon: <User className="w-4 h-4" /> },
-        ].map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id as any)}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold transition-all whitespace-nowrap
-              ${activeTab === t.id ? "bg-indigo-600 text-white shadow-md shadow-indigo-900/50" : "text-muted-foreground hover:text-foreground hover:bg-white/5"}`}
-          >
-            {t.icon}
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* SHOP TAB */}
-      {activeTab === "shop" && (
-        <div className="space-y-5">
-          {/* Admin Tools - optional to be visible all the time, but user had it */}
-          <div className="flex gap-2 mb-2">
-            <Button onClick={() => setShowCreateFolder(true)} variant="outline" size="sm" className="bg-slate-900/50 border-slate-800 text-slate-300">
-               <FolderPlus className="w-4 h-4 mr-1" /> Папка
-            </Button>
-            <Button onClick={() => setShowCreateItem(true)} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-               <Plus className="w-4 h-4 mr-1" /> Добавить
-            </Button>
+          <div className="profile-character-stage">
+            <CharacterDisplay width={235} height={350} level={level} showLevelBadge />
           </div>
-
-          {/* Shop Controls */}
-          <div className="glass-card rounded-3xl p-5 space-y-4">
-            {/* Category Filter */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] px-1">Категория</label>
-              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                {[ { value: "all", label: "Все" }, ...ITEM_CATEGORIES ].map(cat => (
-                  <button
-                    key={cat.value}
-                    onClick={() => setActiveCategory(cat.value as any)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${
-                      activeCategory === cat.value
-                        ? "bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-900/30"
-                        : "bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10"
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Rarity Filter */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Редкость</label>
-                <select 
-                  value={shopRarity} 
-                  onChange={(e) => setShopRarity(e.target.value)}
-                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2 text-xs font-bold text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                >
-                  <option value="all">Любая</option>
-                  <option value="common">Обычный</option>
-                  <option value="rare">Редкий</option>
-                  <option value="epic">Эпический</option>
-                  <option value="legendary">Легендарный</option>
-                  <option value="legacy">Раритет</option>
-                </select>
-              </div>
-
-              {/* Sorting */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Сортировка</label>
-                <select 
-                  value={shopSort} 
-                  onChange={(e) => setShopSort(e.target.value)}
-                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2 text-xs font-bold text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                >
-                  <option value="newest">Сначала новые</option>
-                  <option value="oldest">Сначала старые</option>
-                  <option value="price-asc">Дешевле</option>
-                  <option value="price-desc">Дороже</option>
-                </select>
-              </div>
-            </div>
+          <div className="profile-level-row">
+            <div><span>Следующий уровень</span><strong>{nextLevelCost} монет</strong></div>
+            <button type="button" className="app-button" onClick={handleLevelUp}><Zap className="size-4" /> Прокачать</button>
           </div>
-
-          <div className="flex justify-between items-center px-1">
-            <p className="text-muted-foreground text-xs font-bold">Найдено: {availableItems.length}</p>
-          </div>
-
-          {availableItems.length === 0 ? (
-            <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-8 text-center text-slate-500">
-              В этой категории нет предметов
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {availableItems.map((item) => (
-                <motion.div
-                  key={item.id}
-                  layoutId={`item-${item.id}`}
-                  onClick={() => setSelectedItem(item)}
-                  className={`glass-card rounded-2xl p-4 flex flex-col items-center gap-3 relative group hover-lift cursor-pointer active:scale-95
-                    ${rarityColors[item.rarity || "common"]}`}
-                >
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => handleOpenEditItem(item)} className="text-blue-400 p-1"><Edit2 className="w-3 h-3" /></button>
-                    <button onClick={() => handleDeleteItem(item.id)} className="text-red-400 p-1"><Trash2 className="w-3 h-3" /></button>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 absolute top-3 left-3 z-10">
-                    {getCategoryIcon(item.category)}
-                  </div>
-
-                  <div className="absolute bottom-2 right-2">
-                    <RarityBadge rarity={item.rarity || "common"} showIcon={false} className="opacity-80 scale-75 origin-bottom-right" />
-                  </div>
-                  
-                  {isImageAsset(item.assetPath) ? (
-                    <img src={item.assetPath} alt={item.name} className="w-20 h-20 object-contain mt-4 mb-2 filter drop-shadow-md" />
-                  ) : isInlineSvgMarkup(item.assetPath) ? (
-                    <svg viewBox="0 0 100 150" className="w-20 h-20 mt-4 mb-2 filter drop-shadow-md" dangerouslySetInnerHTML={{ __html: item.assetPath! }} />
-                  ) : (
-                    <div className="text-5xl mt-4 mb-2 filter drop-shadow-md">{item.emoji}</div>
-                  )}
-                  <div className="text-center w-full">
-                    <h3 className="font-bold text-slate-200 text-sm mb-0.5 leading-tight">{item.name}</h3>
-                    {item.slot && <p className="text-[10px] text-slate-500 uppercase tracking-widest">{ITEM_SLOTS.find(s=>s.value===item.slot)?.label}</p>}
-                  </div>
-
-                  <div className="w-full flex items-center justify-center gap-1 text-slate-400 font-bold text-xs mt-1">
-                     <img src="/illustrations/reward-coin-v2.png" alt="Монета" className="w-3 h-3 object-contain" /> {item.price}
-                  </div>
-                </motion.div>
+          <details className="profile-customizer">
+            <summary><span><Palette className="size-4" /> Настроить внешность</span><ChevronRight className="size-4" /></summary>
+            <div className="profile-color-groups">
+              {(Object.keys(APPEARANCE_OPTIONS) as (keyof typeof APPEARANCE_OPTIONS)[]).map(key => (
+                <div key={key} className="profile-color-group">
+                  <span>{APPEARANCE_LABELS[key]}</span>
+                  <div>{APPEARANCE_OPTIONS[key].map(color => <button key={color} type="button" className={(appearance[key] || APPEARANCE_OPTIONS[key][0]) === color ? "is-active" : ""} style={{ backgroundColor: color }} onClick={() => updateAppearance(key, color)} aria-label={`${APPEARANCE_LABELS[key]} ${color}`}>{(appearance[key] || APPEARANCE_OPTIONS[key][0]) === color && <Check className="size-3.5" />}</button>)}</div>
+                </div>
               ))}
             </div>
-          )}
+          </details>
+        </article>
+
+        <article className="profile-wheel-card app-surface">
+          <div className="profile-card-head">
+            <div><p>Колесо баланса</p><h2>{averageBalance}%</h2></div>
+            <div className="profile-balance-score">Сегодня</div>
+          </div>
+          <div className="profile-wheel-body">
+            <BalanceWheel systems={identitySystems} values={balance} selectedId={selectedBalanceId} onSelect={setSelectedBalanceId} />
+            <div className="profile-sphere-list">
+              {identitySystems.map((system, index) => <button key={system.id} type="button" className={selectedBalanceId === system.id ? "is-active" : ""} onClick={() => setSelectedBalanceId(system.id)}><i style={{ backgroundColor: system.color }}>{index + 1}</i><span>{system.aspect}</span><strong>{balance[system.id] ?? 60}</strong></button>)}
+            </div>
+          </div>
+          {selectedSystem && <div className="profile-balance-editor" style={{ "--sphere-color": selectedSystem.color } as React.CSSProperties}><div><span>{selectedSystem.aspect}</span><strong>{balance[selectedSystem.id] ?? 60}%</strong></div><input type="range" min="0" max="100" step="5" value={balance[selectedSystem.id] ?? 60} onChange={event => updateBalance(selectedSystem.id, Number(event.target.value))} /></div>}
+        </article>
+      </section>
+
+      <section className="profile-attributes app-surface">
+        <SectionHeading icon={Sparkles} title="Мои характеристики" meta="Как я чувствую себя сейчас" />
+        <div className="profile-attribute-grid">
+          {ATTRIBUTES.map(attribute => {
+            const Icon = attribute.icon;
+            const value = attributes[attribute.id] ?? 60;
+            return <div key={attribute.id} className="profile-attribute" style={{ "--attribute-color": attribute.color } as React.CSSProperties}><div className="profile-attribute-icon"><Icon className="size-5" /></div><div className="profile-attribute-copy"><div><span>{attribute.label}</span><strong>{value}%</strong></div><input type="range" min="0" max="100" step="5" value={value} onChange={event => updateAttribute(attribute.id, Number(event.target.value))} /></div></div>;
+          })}
         </div>
-      )}
+      </section>
 
-      {/* INVENTORY TAB */}
-      {activeTab === "inventory" && (
-        <div className="space-y-6">
-          {/* Inventory Controls */}
-          <div className="glass-card rounded-3xl p-5 space-y-4">
-            {/* Category Filter */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] px-1">Категория</label>
-              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                {[ { value: "all", label: "Все" }, ...ITEM_CATEGORIES ].map(cat => (
-                  <button
-                    key={cat.value}
-                    onClick={() => setInvCategory(cat.value)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${
-                      invCategory === cat.value
-                        ? "bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-900/30"
-                        : "bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10"
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+      <section className="profile-collection-section">
+        <div className="profile-section-head"><div><p className="page-eyebrow">Моя коллекция</p><h2>Инвентарь</h2></div><Package className="size-6" /></div>
+        <div className="profile-category-row">{CATEGORIES.map(category => <button key={category.value} type="button" className={inventoryCategory === category.value ? "is-active" : ""} onClick={() => setInventoryCategory(category.value)}>{category.label}</button>)}</div>
+        {purchasedItems.length ? <div className="profile-item-grid">{purchasedItems.map(item => <article key={item.id} className={`profile-item-card ${isEquipped(item) ? "is-equipped" : ""}`}><div className="profile-item-preview"><ItemPreview item={item} />{isEquipped(item) && <span className="profile-equipped"><Check className="size-3" /> Надето</span>}</div><div className="profile-item-copy"><RarityBadge rarity={item.rarity} /><h3>{item.name}</h3><p>{item.description || "Предмет вашей коллекции"}</p></div>{item.slot && <button type="button" className={`app-button ${isEquipped(item) ? "is-secondary" : ""}`} onClick={() => isEquipped(item) ? unequipItem(item.slot!) : equipItem(item.id)}>{isEquipped(item) ? "Снять" : "Надеть"}</button>}</article>)}</div> : <EmptyState icon={Package} title="Инвентарь пока пуст" description="Полученные и купленные предметы появятся здесь." />}
+      </section>
 
-            <div className="grid grid-cols-2 gap-4">
-              {/* Rarity Filter */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Редкость</label>
-                <select 
-                  value={invRarity} 
-                  onChange={(e) => setInvRarity(e.target.value)}
-                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2 text-xs font-bold text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                >
-                  <option value="all">Любая</option>
-                  <option value="common">Обычный</option>
-                  <option value="rare">Редкий</option>
-                  <option value="epic">Эпический</option>
-                  <option value="legendary">Легендарный</option>
-                  <option value="legacy">Раритет</option>
-                </select>
-              </div>
+      <section className="profile-collection-section">
+        <div className="profile-section-head"><div><p className="page-eyebrow">Награды за развитие</p><h2>Предметы</h2></div><button type="button" className="app-button is-secondary" onClick={() => setShowCreateItem(true)}><Plus className="size-4" /> Свой предмет</button></div>
+        <div className="profile-category-row">{CATEGORIES.map(category => <button key={category.value} type="button" className={catalogCategory === category.value ? "is-active" : ""} onClick={() => setCatalogCategory(category.value)}>{category.label}</button>)}</div>
+        {availableItems.length ? <div className="profile-item-grid">{availableItems.map(item => <article key={item.id} className="profile-item-card"><div className="profile-item-preview"><ItemPreview item={item} /><span className="profile-item-price"><CoinDisplay amount={item.price} size="sm" /></span></div><div className="profile-item-copy"><RarityBadge rarity={item.rarity} /><h3>{item.name}</h3><p>{item.description || "Новая награда для вашего персонажа"}</p></div><button type="button" className="app-button" onClick={() => purchase(item)} disabled={coins < item.price}><ShoppingBag className="size-4" /> Получить <ChevronRight className="size-4" /></button></article>)}</div> : <EmptyState icon={ShoppingBag} title="В этой категории всё собрано" description="Попробуйте выбрать другую категорию." />}
+      </section>
 
-              {/* Sorting */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1">Сортировка</label>
-                <select 
-                  value={invSort} 
-                  onChange={(e) => setInvSort(e.target.value)}
-                  className="w-full bg-slate-800/80 border border-slate-700/50 rounded-xl px-3 py-2 text-xs font-bold text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                >
-                  <option value="newest">Сначала новые</option>
-                  <option value="oldest">Сначала старые</option>
-                  <option value="price-asc">Дешевле</option>
-                  <option value="price-desc">Дороже</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center px-1">
-            <p className="text-slate-400 text-xs font-bold">Найдено: {filteredPurchasedItems.length}</p>
-          </div>
-
-          {filteredPurchasedItems.length === 0 ? (
-            <div className="bg-slate-900/50 border border-slate-800/80 rounded-[32px] p-12 text-center">
-              <div className="bg-slate-800/50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-700/50">
-                <Package className="w-8 h-8 text-slate-600" />
-              </div>
-              <p className="text-slate-500 text-sm font-medium">Ничего не найдено с такими фильтрами</p>
-              <button 
-                onClick={() => { setInvCategory("all"); setInvRarity("all"); }}
-                className="mt-4 text-blue-400 text-xs font-bold hover:underline"
-              >
-                Сбросить фильтры
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {filteredPurchasedItems.map((item) => {
-                const isEquipped = item.slot && characterState[item.slot as keyof typeof characterState] === item.id;
-                return (
-                  <motion.div 
-                    layoutId={`item-${item.id}`}
-                    key={item.id} 
-                    onClick={() => setSelectedItem(item)}
-                    className={`glass-card rounded-2xl p-4 flex flex-col items-center gap-3 relative cursor-pointer hover-lift active:scale-95
-                      ${isEquipped ? "border-indigo-500/50 bg-indigo-950/20" : ""} ${rarityColors[item.rarity || "common"]}`}
-                  >
-                    {isEquipped && <div className="absolute top-0 right-0 bg-blue-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-bl-lg rounded-tr-lg tracking-wider uppercase z-10">Надето</div>}
-                    
-                    <div className="absolute top-3 left-3 opacity-60 scale-75 origin-top-left z-10">
-                      <RarityBadge rarity={item.rarity || "common"} showIcon={false} />
-                    </div>
-
-                    {isImageAsset(item.assetPath) ? (
-                      <img src={item.assetPath} alt={item.name} className="w-20 h-20 object-contain my-2 filter drop-shadow-md" />
-                    ) : isInlineSvgMarkup(item.assetPath) ? (
-                      <svg viewBox="0 0 100 150" className="w-20 h-20 my-2 filter drop-shadow-md" dangerouslySetInnerHTML={{ __html: item.assetPath! }} />
-                    ) : (
-                      <div className="text-5xl my-2 filter drop-shadow-md">{item.emoji}</div>
-                    )}
-                    <div className="text-center w-full">
-                      <h3 className="font-bold text-slate-200 text-sm leading-tight">{item.name}</h3>
-                      <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">{ITEM_CATEGORIES.find(c=>c.value===item.category)?.label}</p>
-                    </div>
-
-                    {item.slot && (
-                      <Button
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          isEquipped ? handleUnequipSlot(item.slot!) : handleEquipItem(item.id);
-                        }}
-                        variant={isEquipped ? "outline" : "default"}
-                        className={`w-full mt-1 font-bold shadow-sm ${!isEquipped ? "bg-blue-600 text-white" : "border-blue-900 text-blue-400 hover:bg-slate-800"}`}
-                      >
-                        {isEquipped ? "Снять" : "Надеть"}
-                      </Button>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* CHARACTER TAB */}
-      {activeTab === "character" && (
-        <div className="space-y-6">
-          <div className="glass-card rounded-3xl p-6 flex flex-col items-center relative overflow-hidden">
-            <div className="absolute top-0 w-full h-1/2 bg-indigo-600/10 blur-[50px] pointer-events-none" />
-            <h3 className="font-extrabold text-white text-lg mb-4 z-10">Ваш Персонаж</h3>
-            <div className="bg-black/20 p-5 rounded-2xl border border-white/5 z-10">
-              <CharacterDisplay width={120} height={180} level={characterLevel} showLevelBadge />
-            </div>
-          </div>
-
-          {/* Character Level Up */}
-          <div className="glass-card rounded-3xl p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Уровень персонажа</p>
-                <p className="text-2xl font-black text-white">{characterLevel}</p>
-              </div>
-              <Button
-                onClick={handleLevelUp}
-                disabled={coins < nextLevelCost}
-                className={`h-14 px-5 rounded-2xl font-black gap-2 transition-all ${
-                  coins >= nextLevelCost
-                    ? "bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:scale-105 shadow-lg shadow-indigo-900/40"
-                    : "bg-slate-800 text-slate-500"
-                }`}
-              >
-                <img src="/illustrations/reward-coin-v2.png" alt="Монета" className="w-5 h-5 object-contain" />
-                Прокачать за {nextLevelCost}
-              </Button>
-            </div>
-            <p className="text-xs text-slate-500">Каждый следующий уровень стоит на 5 монет дороже. Прокачивайте персонажа бесконечно!</p>
-          </div>
-
-          <div className="space-y-4 pt-2">
-            <h3 className="font-bold text-slate-200 text-lg">Надето сейчас</h3>
-            {Object.entries(characterState).length === 0 ? (
-               <p className="text-slate-500 text-sm">На персонаже нет предметов.</p>
-            ) : (
-              <div className="space-y-2">
-                {Object.entries(characterState).map(([slot, itemId]) => {
-                  const item = shopItems.find((i) => i.id === itemId);
-                  if (!item) return null;
-                  return (
-                    <div key={slot} className="flex items-center justify-between p-3.5 bg-slate-900/50 border border-slate-800/80 rounded-2xl shadow-sm">
-                      <div className="flex items-center gap-3">
-                        {isImageAsset(item.assetPath) ? (
-                          <img src={item.assetPath} alt={item.name} className="w-9 h-9 object-contain filter drop-shadow-sm" />
-                        ) : isInlineSvgMarkup(item.assetPath) ? (
-                          <svg viewBox="0 0 100 150" className="w-9 h-9 filter drop-shadow-sm" dangerouslySetInnerHTML={{ __html: item.assetPath! }} />
-                        ) : (
-                          <span className="text-3xl filter drop-shadow-sm">{item.emoji}</span>
-                        )}
-                        <div>
-                          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{ITEM_SLOTS.find(s=>s.value===slot)?.label}</p>
-                          <p className="text-sm font-bold text-slate-200">{item.name}</p>
-                        </div>
-                      </div>
-                      <Button size="sm" variant="ghost" onClick={() => handleUnequipSlot(slot)} className="text-red-400 hover:bg-red-400/10 hover:text-red-300">
-                        Снять
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Modals */}
-      {/* Detail Modal */}
-      <AnimatePresence>
-        {selectedItem && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedItem(null)}
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
-            />
-            <motion.div
-              layoutId={`item-${selectedItem.id}`}
-              className={`w-full max-w-md glass-card rounded-[32px] p-8 relative z-10 ${rarityColors[selectedItem.rarity || "common"]}`}
-            >
-              {/* Background Glow */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150%] h-40 blur-[80px] opacity-20 pointer-events-none" style={{ background: selectedItem.rarity === 'legendary' ? 'orange' : selectedItem.rarity === 'epic' ? 'purple' : 'blue' }} />
-
-              <div className="flex flex-col items-center text-center">
-                <RarityBadge rarity={selectedItem.rarity || "common"} className="mb-6 scale-110" />
-                
-                <div className="relative mb-8">
-                  {isImageAsset(selectedItem.assetPath) ? (
-                    <img src={selectedItem.assetPath} alt={selectedItem.name} className="w-40 h-40 object-contain filter drop-shadow-2xl" />
-                  ) : isInlineSvgMarkup(selectedItem.assetPath) ? (
-                    <svg viewBox="0 0 100 150" className="w-40 h-40 filter drop-shadow-2xl" dangerouslySetInnerHTML={{ __html: selectedItem.assetPath! }} />
-                  ) : (
-                    <div className="text-8xl filter drop-shadow-2xl">{selectedItem.emoji}</div>
-                  )}
-                  {selectedItem.version && (
-                    <div className="absolute -bottom-2 -right-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                      v{selectedItem.version}
-                    </div>
-                  )}
-                </div>
-
-                <h3 className="text-3xl font-black text-white mb-2 tracking-tight">{selectedItem.name}</h3>
-                <p className="text-slate-400 text-sm mb-6 leading-relaxed max-w-[280px]">
-                  {selectedItem.description || "Уникальный предмет из вашей коллекции."}
-                </p>
-
-                <div className="w-full grid grid-cols-2 gap-4 mb-8">
-                  <div className="bg-white/5 border border-white/5 rounded-2xl p-4">
-                    <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">
-                      <Clock className="w-3 h-3" /> Дата релиза
-                    </div>
-                    <p className="text-sm font-bold text-slate-200">
-                      {new Date(selectedItem.createdAt || "").toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="bg-white/5 border border-white/5 rounded-2xl p-4">
-                    <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">
-                      <Package className="w-3 h-3" /> Категория
-                    </div>
-                    <p className="text-sm font-bold text-slate-200">
-                      {ITEM_CATEGORIES.find(c => c.value === selectedItem.category)?.label}
-                    </p>
-                  </div>
-                </div>
-
-                {selectedItem.purchased ? (
-                  <div className="w-full flex gap-3">
-                    <Button
-                      className="flex-1 rounded-2xl h-14 font-black transition-all bg-slate-800 text-slate-400"
-                      onClick={() => setSelectedItem(null)}
-                    >
-                      Закрыть
-                    </Button>
-                    {selectedItem.slot && (
-                      <Button
-                        className={`flex-1 rounded-2xl h-14 font-black transition-all ${
-                          characterState[selectedItem.slot as keyof typeof characterState] === selectedItem.id
-                            ? "bg-red-600/20 text-red-400 border border-red-500/30"
-                            : "bg-blue-600 text-white"
-                        }`}
-                        onClick={() => {
-                          const isEquipped = characterState[selectedItem.slot as keyof typeof characterState] === selectedItem.id;
-                          isEquipped ? handleUnequipSlot(selectedItem.slot!) : handleEquipItem(selectedItem.id);
-                        }}
-                      >
-                        {characterState[selectedItem.slot as keyof typeof characterState] === selectedItem.id ? "Снять" : "Надеть"}
-                      </Button>
-                    )}
-                  </div>
-                ) : (
-                  <Button
-                    disabled={coins < selectedItem.price}
-                    onClick={() => handlePurchaseItem(selectedItem.id)}
-                    className={`w-full h-14 rounded-2xl font-black text-lg gap-3 transition-all
-                      ${coins >= selectedItem.price 
-                        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:scale-105 shadow-xl shadow-blue-900/40" 
-                        : "bg-slate-800 text-slate-500"}`}
-                  >
-                    <img src="/illustrations/reward-coin-v2.png" alt="Монета" className="w-6 h-6 object-contain" />
-                    <span>Купить за {selectedItem.price}</span>
-                  </Button>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <FormModal title="Добавить предмет" isOpen={showCreateItem} onClose={() => { setShowCreateItem(false); resetItemForm(); }} onSubmit={handleCreateItem} submitText="Добавить">{ItemForm()}</FormModal>
-      <FormModal title="Изменить предмет" isOpen={showEditItem} onClose={() => { setShowEditItem(false); setEditingItemId(null); resetItemForm(); }} onSubmit={handleEditItem} submitText="Сохранить">{ItemForm()}</FormModal>
-      <FormModal title="Новая папка" isOpen={showCreateFolder} onClose={() => { setShowCreateFolder(false); setFolderName(""); }} onSubmit={handleCreateFolder} submitText="Создать"><FormInput label="Название папки" value={folderName} onChange={setFolderName} /></FormModal>
-    </div>
+      <FormModal title="Новый предмет" isOpen={showCreateItem} onClose={() => setShowCreateItem(false)} onSubmit={handleCreateItem} submitText="Добавить">
+        <FormInput label="Название" value={itemName} onChange={setItemName} placeholder="Например, день у моря" />
+        <EmojiPicker label="Эмодзи" value={itemEmoji} onChange={setItemEmoji} />
+        <FormInput label="Цена в монетах" value={itemPrice} onChange={setItemPrice} type="number" />
+        <FormSelect label="Категория" value={itemCategory} onChange={value => setItemCategory(value as ShopItem["category"])} options={ITEM_CATEGORIES.map(item => ({ value: item.value, label: item.label }))} />
+        <FormSelect label="Слот персонажа" value={itemSlot} onChange={value => setItemSlot(value as NonNullable<ShopItem["slot"]>)} options={ITEM_SLOTS} />
+        <FormSelect label="Редкость" value={itemRarity} onChange={value => setItemRarity(value as ShopItem["rarity"])} options={[{ value: "common", label: "Обычный" }, { value: "rare", label: "Редкий" }, { value: "epic", label: "Эпический" }, { value: "legendary", label: "Легендарный" }, { value: "legacy", label: "Раритет" }]} />
+        <FormTextArea label="Описание" value={itemDescription} onChange={setItemDescription} />
+      </FormModal>
+    </PageShell>
   );
 }

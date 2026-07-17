@@ -218,7 +218,7 @@ export default function Home() {
                   <small>Каждый выполненный шаг приближает награду</small>
                 </div>
                 <img src="/illustrations/reward-companion.png" alt="Подарок и монеты" />
-                <Link href="/shop" className="reward-card-link">Мои награды <ExternalLink className="size-4" /></Link>
+                <Link href="/profile" className="reward-card-link">Мой профиль <ExternalLink className="size-4" /></Link>
               </section>
               <section className="app-surface quick-card">
                 <SectionHeading icon={Sparkles} title="Быстрые действия" />
@@ -247,12 +247,37 @@ export default function Home() {
               {todayBlocks.length ? todayBlocks.map((block) => {
                 const blockTasks = todayTasks.filter((task) => task.blockId === block.id);
                 const blockHabits = habits.filter((habit) => habit.blockId === block.id && habit.daysOfWeek.includes(dayOfWeek));
-                return <article key={block.id} className="schedule-block" style={{ "--block-color": getBlockColor(block) } as React.CSSProperties}><span className="schedule-dot" /><div className="schedule-time">{block.startTime}<small>{block.endTime}</small></div><div className="schedule-copy"><strong>{block.name}</strong><span>{blockHabits.length} привычек · {blockTasks.length} задач</span></div></article>;
+                const isCurrent = activeBlock?.id === block.id;
+                return (
+                  <article key={block.id} className={`schedule-block ${isCurrent ? "is-current" : ""}`} style={{ "--block-color": getBlockColor(block) } as React.CSSProperties}>
+                    <div className="schedule-block-head">
+                      <div className="schedule-time"><strong>{block.startTime || "—"}</strong><span>—</span><strong>{block.endTime || "—"}</strong></div>
+                      <div className="schedule-copy">
+                        <div><strong>{block.name}</strong>{isCurrent && <span className="schedule-now">Сейчас</span>}</div>
+                        <span>{blockHabits.length} привычек · {blockTasks.length} задач</span>
+                      </div>
+                      <div className="schedule-links">
+                        {block.systemUrl && <a href={block.systemUrl} target="_blank" rel="noreferrer" className="icon-button is-small" aria-label="Открыть план"><ExternalLink className="size-4" /></a>}
+                        {block.plans?.slice(0, 2).map(plan => <a key={plan.id} href={plan.url} target="_blank" rel="noreferrer" className="icon-button is-small" aria-label={`Открыть ${plan.name}`}><ExternalLink className="size-4" /></a>)}
+                      </div>
+                    </div>
+                    <div className="schedule-block-body">
+                      <div className="schedule-block-column">
+                        <SectionHeading icon={Target} title="Привычки" meta={blockHabits.length} />
+                        {blockHabits.length ? blockHabits.map(habit => <HabitRow key={habit.id} habit={habit} dateStr={dateStr} hideUnitTracker />) : <p className="schedule-empty-line">В этом блоке пока нет привычек</p>}
+                      </div>
+                      <div className="schedule-block-column">
+                        <SectionHeading icon={ListTodo} title="Задачи" meta={blockTasks.length} />
+                        {blockTasks.length ? blockTasks.map(task => <TaskRow key={task.id} task={task} dateStr={dateStr} isCondensed />) : <p className="schedule-empty-line">В этом блоке пока нет задач</p>}
+                      </div>
+                    </div>
+                  </article>
+                );
               }) : <EmptyState title="Расписание пока пустое" description="Создайте блок во вкладке «Добавить»." />}
             </section>
             <section className="app-surface schedule-tasks">
-              <SectionHeading icon={ListTodo} title="Задачи дня" meta={todayTasks.length} action={<button onClick={openTaskModal} className="icon-button is-small"><Plus className="size-4" /></button>} />
-              {todayTasks.length ? todayTasks.map((task) => <TaskRow key={task.id} task={task} dateStr={dateStr} isCondensed />) : <EmptyState compact title="Задач пока нет" />}
+              <SectionHeading icon={ListTodo} title="Вне блоков" meta={allDayTasks.length} action={<button onClick={openTaskModal} className="icon-button is-small"><Plus className="size-4" /></button>} />
+              {allDayTasks.length ? allDayTasks.map((task) => <TaskRow key={task.id} task={task} dateStr={dateStr} isCondensed />) : <EmptyState compact title="Всё распределено" description="Задачи с блоками находятся внутри расписания." />}
             </section>
           </motion.div>
         )}

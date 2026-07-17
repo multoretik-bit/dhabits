@@ -41,7 +41,7 @@ export default function HabitRow({ habit, dateStr, hideUnitTracker }: { habit: H
         <button onClick={handleComplete} className="habit-complete-action" aria-label={`${completed ? "Отменить выполнение" : "Выполнить"}: ${habit.name}`}>
           <span className="habit-status" style={{ backgroundColor: statusColor }} />
           <span className="reward-badge" style={{ backgroundColor: `${habit.color}14`, borderColor: `${habit.color}32` }}>
-            <img src="/illustrations/reward-coin-v2.png" alt="" />
+            <img src="/illustrations/reward-coin-v3.svg" alt="" />
             <strong>{habit.coinsPerComplete}</strong>
           </span>
           <span className="item-emoji" style={{ backgroundColor: `${habit.color}14` }}>

@@ -90,6 +90,7 @@ export interface IdentitySystem {
   id: string;
   aspect: string;
   color: string;
+  notionUrl?: string;
 }
 
 export interface IdentitySystemFolder {
@@ -221,6 +222,14 @@ export interface CharacterState {
   vehicle?: string;
   pet?: string;
   level?: number;
+  appearance?: {
+    skin?: string;
+    hair?: string;
+    shirt?: string;
+    pants?: string;
+  };
+  balance?: Record<string, number>;
+  attributes?: Record<string, number>;
 }
 
 export function getNextCharacterLevelCost(currentLevel: number): number {
@@ -286,6 +295,7 @@ interface AppContextType {
   shopItems: ShopItem[];
   shopFolders: ShopFolder[];
   characterState: CharacterState;
+  updateCharacterState: (updates: Partial<CharacterState>) => void;
   addShopItem: (item: ShopItem) => void;
   updateShopItem: (id: string, item: Partial<ShopItem>) => void;
   deleteShopItem: (id: string) => void;
@@ -341,6 +351,7 @@ interface AppContextType {
   addIdentityValueFolder: (name: string) => void;
   deleteIdentityValueFolder: (id: string) => void;
   identitySystems: IdentitySystem[];
+  updateIdentitySystem: (id: string, updates: Partial<IdentitySystem>) => void;
   identitySystemFolders: IdentitySystemFolder[];
   identitySystemIdeas: IdentitySystemIdea[];
   addIdentitySystemFolder: (aspectId: string, name: string) => void;
@@ -1089,6 +1100,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, newCharacterState, tasks, taskFolders, customColors);
   };
 
+  const updateCharacterState = (updates: Partial<CharacterState>) => {
+    const newCharacterState = { ...characterState, ...updates };
+    setCharacterState(newCharacterState);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, newCharacterState, tasks, taskFolders, customColors);
+  };
+
   const unequipItem = (slot: keyof CharacterState) => {
     const newCharacterState = { ...characterState };
     delete newCharacterState[slot];
@@ -1520,6 +1537,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, newFolders);
   };
 
+  const updateIdentitySystem = (id: string, updates: Partial<IdentitySystem>) => {
+    const newSystems = identitySystems.map(system => system.id === id ? { ...system, ...updates } : system);
+    setIdentitySystems(newSystems);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, newSystems);
+  };
+
   const deleteIdentitySystemFolder = (id: string) => {
     const newFolders = identitySystemFolders.filter(f => f.id !== id);
     const newIdeas = identitySystemIdeas.map(i => i.folderId === id ? { ...i, folderId: undefined } : i);
@@ -1594,6 +1617,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addUnitsToHabit,
         resetUnitsForHabit,
         characterState,
+        updateCharacterState,
         equipItem,
         unequipItem,
         levelUpCharacter,
@@ -1646,6 +1670,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addIdentityValueFolder,
         deleteIdentityValueFolder,
         identitySystems,
+        updateIdentitySystem,
         identitySystemFolders,
         identitySystemIdeas,
         addIdentitySystemFolder,
