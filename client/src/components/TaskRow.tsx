@@ -6,7 +6,7 @@ import { spring } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import CompletionBurst from "./CompletionBurst";
 
-export default function TaskRow({ task, dateStr, isCondensed, onEdit, onDelete }: { task: Task; dateStr: string; isCondensed?: boolean; onEdit?: () => void; onDelete?: () => void }) {
+export default function TaskRow({ task, dateStr, isCondensed, showTime = false, onEdit, onDelete }: { task: Task; dateStr: string; isCondensed?: boolean; showTime?: boolean; onEdit?: () => void; onDelete?: () => void }) {
   const { completeTask, moveTaskUp, moveTaskDown, toggleSubtask } = useApp();
   const [expanded, setExpanded] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
@@ -36,7 +36,7 @@ export default function TaskRow({ task, dateStr, isCondensed, onEdit, onDelete }
         <div className="item-copy">
           <div className="flex min-w-0 items-center gap-2">
             <span className="item-title truncate">{task.title}</span>
-            {task.time && <span className="time-badge">{task.time}</span>}
+            {(showTime || task.time) && <span className="time-badge">{task.time || (task.isAllDay ? "Весь день" : "Без времени")}</span>}
           </div>
           {subtasks.length > 0 && (
             <div className="subtask-progress">

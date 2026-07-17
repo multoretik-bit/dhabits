@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 export type Rarity = "common" | "rare" | "epic" | "legendary" | "legacy";
 
 interface RarityBadgeProps {
-  rarity: Rarity;
+  rarity?: Rarity | string;
   className?: string;
   showIcon?: boolean;
 }
@@ -44,7 +44,8 @@ const RARITY_CONFIG = {
 };
 
 export const RarityBadge: React.FC<RarityBadgeProps> = ({ rarity, className, showIcon = true }) => {
-  const config = RARITY_CONFIG[rarity];
+  const safeRarity: Rarity = rarity && rarity in RARITY_CONFIG ? rarity as Rarity : "common";
+  const config = RARITY_CONFIG[safeRarity];
 
   return (
     <div
@@ -58,7 +59,7 @@ export const RarityBadge: React.FC<RarityBadgeProps> = ({ rarity, className, sho
       {showIcon && <span>{config.icon}</span>}
       <div className="flex flex-col leading-none">
         <span>{config.label}</span>
-        {rarity === "legacy" && <span className="text-[7px] opacity-70 font-bold">До обновления</span>}
+        {safeRarity === "legacy" && <span className="text-[7px] opacity-70 font-bold">До обновления</span>}
       </div>
     </div>
   );
