@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { syncSave, syncLoad } from "@/lib/sync";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
+import { rollOverOverdueTasks } from "@/lib/taskRollover";
 
 export { getCurrentBlock } from "@/lib/schedule";
 
@@ -63,7 +64,9 @@ export interface HabitBlock {
   endTime?: string;   // "HH:MM"
   colorIndex?: number;
   color?: string;
-  systemUrl?: string; // Legacy field for a single plan
+  /** @deprecated Preserved only so older backups can still be read. */
+  systemUrl?: string;
+  /** @deprecated Preserved only so older backups can still be read. */
   plans?: { id: string; name: string; url: string }[];
   daysOfWeek?: number[];
   isOneTime?: boolean;
@@ -124,6 +127,16 @@ export interface Task {
   coins?: number;
   isOneTime?: boolean;
   subtasks?: SubTask[];
+  overdueSince?: string;
+}
+
+function prepareTasks(value: unknown): Task[] {
+  return rollOverOverdueTasks(Array.isArray(value) ? value as Task[] : [], getTodayDateString());
+}
+
+function prepareTaskData<T extends { tasks?: Task[] }>(data: T): T & { tasks: Task[] } {
+  const preparedTasks = prepareTasks(data.tasks);
+  return preparedTasks === data.tasks ? data as T & { tasks: Task[] } : { ...data, tasks: preparedTasks };
 }
 
 
@@ -454,7 +467,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setShopItems([...savedShopItems, ...newDefaults]);
     setShopFolders(savedData.shopFolders || []);
     setCharacterState(savedData.characterState || {});
-    setTasks(savedData.tasks || []);
+    setTasks(prepareTasks(savedData.tasks));
     let tFolders = savedData.taskFolders || [];
     if (!tFolders.find((f: any) => f.id === "general")) {
       tFolders = [{ id: "general", name: "Общие", emoji: "📁", color: "#94a3b8", collapsed: false }, ...tFolders];
@@ -509,7 +522,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 vehicle: undefined,
                 ...(remoteData.characterState || {})
               });
-              setTasks(remoteData.tasks || []);
+              const preparedRemoteData = prepareTaskData(remoteData);
+              setTasks(preparedRemoteData.tasks);
               setTaskFolders(remoteData.taskFolders || []);
               setCustomColors(remoteData.customColors || []);
               setWakeUpTimes(remoteData.wakeUpTimes || {});
@@ -519,7 +533,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               if (remoteData.identitySystems) setIdentitySystems(remoteData.identitySystems);
               setIdentitySystemFolders(remoteData.identitySystemFolders || []);
               setIdentitySystemIdeas(remoteData.identitySystemIdeas || []);
-              storage.saveData(remoteData);
+              storage.saveData(preparedRemoteData);
               setTimeout(() => { isRemoteUpdateRef.current = false; }, 200);
             }
           }
@@ -574,7 +588,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                     vehicle: undefined,
                     ...(newData.characterState || {})
                   });
-                  setTasks(newData.tasks || []);
+                  const preparedNewData = prepareTaskData(newData);
+                  setTasks(preparedNewData.tasks);
                   setTaskFolders(newData.taskFolders || []);
                   setCustomColors(newData.customColors || []);
                   setWakeUpTimes(newData.wakeUpTimes || {});
@@ -584,7 +599,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   if (newData.identitySystems) setIdentitySystems(newData.identitySystems);
                   setIdentitySystemFolders(newData.identitySystemFolders || []);
                   setIdentitySystemIdeas(newData.identitySystemIdeas || []);
-                  storage.saveData(newData);
+                  storage.saveData(preparedNewData);
                   setTimeout(() => { isRemoteUpdateRef.current = false; }, 500);
                 } else {
                   console.log("Sync: Ignoring OLDER or SAME remote data (Remote:", newData.lastUpdated, "Local:", currentData.lastUpdated, ")");
@@ -596,6 +611,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             console.log("Sync: Channel status change:", status);
             setIsOnline(status === 'SUBSCRIBED');
           });
+      }
+      const currentData = storage.getData();
+      const preparedCurrentData = prepareTaskData(currentData);
+      if (preparedCurrentData !== currentData) {
+        storage.saveData({ ...preparedCurrentData, clientId: clientIdRef.current });
+        setTasks(preparedCurrentData.tasks);
       }
       setIsSyncing(false);
       isInitialLoadRef.current = false;
@@ -720,7 +741,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         vehicle: undefined,
         ...(remoteData.characterState || {})
       });
-      setTasks(remoteData.tasks || []);
+      const preparedRemoteData = prepareTaskData(remoteData);
+      setTasks(preparedRemoteData.tasks);
       setTaskFolders(remoteData.taskFolders || []);
       setCustomColors(remoteData.customColors || []);
       setWakeUpTimes(remoteData.wakeUpTimes || {});
@@ -730,7 +752,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (remoteData.identitySystems) setIdentitySystems(remoteData.identitySystems);
       setIdentitySystemFolders(remoteData.identitySystemFolders || []);
       setIdentitySystemIdeas(remoteData.identitySystemIdeas || []);
-      storage.saveData(remoteData);
+      storage.saveData(preparedRemoteData);
       
       logSyncEvent("Данные загружены из облака", "success");
       toast.success("Данные успешно загружены из облака!");
@@ -826,7 +848,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setShopItems(remoteData.shopItems || []);
         setShopFolders(remoteData.shopFolders || []);
         setCharacterState(remoteData.characterState || {});
-        setTasks(remoteData.tasks || []);
+        const preparedRemoteData = prepareTaskData(remoteData);
+        setTasks(preparedRemoteData.tasks);
         setTaskFolders(remoteData.taskFolders || []);
         setCustomColors(remoteData.customColors || []);
         setWakeUpTimes(remoteData.wakeUpTimes || {});
@@ -836,7 +859,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (remoteData.identitySystems) setIdentitySystems(remoteData.identitySystems);
         setIdentitySystemFolders(remoteData.identitySystemFolders || []);
         setIdentitySystemIdeas(remoteData.identitySystemIdeas || []);
-        storage.saveData(remoteData);
+        storage.saveData(preparedRemoteData);
         setTimeout(() => { isRemoteUpdateRef.current = false; }, 500);
       }
     } catch (err) {
@@ -1164,12 +1187,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setShopItems(savedData.shopItems || []);
         setShopFolders(savedData.shopFolders || []);
         setCharacterState(savedData.characterState || {});
-        setTasks(savedData.tasks || []);
+        const preparedSavedData = prepareTaskData(savedData);
+        setTasks(preparedSavedData.tasks);
         setTaskFolders(savedData.taskFolders || []);
         setCustomColors(savedData.customColors || []);
         
         const finalData: StorageData = {
-          ...savedData,
+          ...preparedSavedData,
           taskFolders: savedData.taskFolders || [],
           lastUpdated: new Date().toISOString(),
           clientId: clientIdRef.current

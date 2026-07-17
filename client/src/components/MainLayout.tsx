@@ -7,7 +7,6 @@ import {
   LogOut,
   Menu,
   Moon,
-  Plus,
   Settings,
   Sun,
   Target,
@@ -25,14 +24,13 @@ import { toast } from "sonner";
 
 const navItems = [
   { path: "/", label: "Сегодня", description: "Фокус дня", icon: Home },
-  { path: "/goals", label: "Саморазвитие", description: "Цели и привычки", icon: Target },
-  { path: "/add", label: "Добавить", description: "Управление", icon: Plus },
+  { path: "/goals", label: "Саморазвитие", description: "Цели, привычки и управление", icon: Target },
   { path: "/profile", label: "Профиль", description: "Состояние и награды", icon: UserRound },
 ] as const;
 
 function NavLink({ path, label, description, icon: Icon, compact = false }: (typeof navItems)[number] & { compact?: boolean }) {
   const [location] = useLocation();
-  const active = location === path;
+  const active = location === path || (path === "/goals" && location === "/add");
   return (
     <Link href={path} className={cn("app-nav-link", active && "is-active", compact && "is-compact")}>
       {active && !compact && <motion.span layoutId="side-nav-active" transition={spring.snappy} className="app-nav-active" />}

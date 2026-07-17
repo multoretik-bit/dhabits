@@ -11,6 +11,7 @@ export default function TaskRow({ task, dateStr, isCondensed, showTime = false, 
   const [expanded, setExpanded] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
   const completed = Boolean(task.completedDates?.[dateStr]);
+  const isOverdue = Boolean(task.overdueSince && !completed);
   const color = task.color || "#315cff";
   const subtasks = task.subtasks ?? [];
   const completedSubtasks = subtasks.filter((item) => item.completed).length;
@@ -37,6 +38,7 @@ export default function TaskRow({ task, dateStr, isCondensed, showTime = false, 
           <div className="flex min-w-0 items-center gap-2">
             <span className="item-title truncate">{task.title}</span>
             {(showTime || task.time) && <span className="time-badge">{task.time || (task.isAllDay ? "Весь день" : "Без времени")}</span>}
+            {isOverdue && <span className="overdue-badge" title={`Перенесено с ${task.overdueSince}`}>Просрочено</span>}
           </div>
           {subtasks.length > 0 && (
             <div className="subtask-progress">

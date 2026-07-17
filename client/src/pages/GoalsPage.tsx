@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, ListTodo, Plus, Target, Trash2, Trophy } from "lucide-react";
 import { useApp, type Goal, type Habit, type HabitFolder } from "@/contexts/AppContext";
 import HabitRow from "@/components/HabitRow";
 import FormModal from "@/components/FormModal";
 import { FormInput } from "@/components/FormInputs";
 import { EmptyState, Metric, PageHeader, PageShell, SectionHeading, SegmentedControl } from "@/components/AppUI";
+import AddPage from "./AddPage";
 
 function GoalCard({
   goal,
@@ -49,12 +50,13 @@ function GoalCard({
 }
 
 export default function GoalsPage() {
+  const [location] = useLocation();
   const {
     goals, goalFolders, habits, habitFolders,
     updateGoal, deleteGoalFolder, toggleGoalFolderCollapse, toggleHabitFolderCollapse,
     moveGoalFolderUp, moveGoalFolderDown,
   } = useApp();
-  const [activeTab, setActiveTab] = useState<"goals" | "habits">("goals");
+  const [activeTab, setActiveTab] = useState<"goals" | "habits" | "manage">(() => location === "/add" ? "manage" : "goals");
   const [progressGoalId, setProgressGoalId] = useState<string | null>(null);
   const [progressValue, setProgressValue] = useState("");
   const today = new Date();
@@ -133,26 +135,29 @@ export default function GoalsPage() {
         eyebrow="Личный рост"
         title="Саморазвитие"
         description="Следите за движением к целям и поддерживайте привычки без лишнего визуального шума."
-        actions={<Link href="/add" className="app-button"><Plus className="size-4" /> Создать</Link>}
+        actions={<button type="button" onClick={() => setActiveTab("manage")} className="app-button"><Plus className="size-4" /> Создать</button>}
       />
 
-      <div className="growth-overview">
-        <Metric icon={Trophy} label="Целей завершено" value={`${completedGoals}/${goals.length}`} hint="за всё время" accent="var(--coin)" />
-        <Metric icon={Target} label="Средний прогресс" value={`${averageProgress}%`} hint="по активным целям" />
-        <Metric icon={ListTodo} label="Привычек сегодня" value={habitsForToday.length} hint="по расписанию" accent="var(--success)" />
-      </div>
+      {activeTab !== "manage" && (
+        <div className="growth-overview">
+          <Metric icon={Trophy} label="Целей завершено" value={`${completedGoals}/${goals.length}`} hint="за всё время" accent="var(--coin)" />
+          <Metric icon={Target} label="Средний прогресс" value={`${averageProgress}%`} hint="по активным целям" />
+          <Metric icon={ListTodo} label="Привычек сегодня" value={habitsForToday.length} hint="по расписанию" accent="var(--success)" />
+        </div>
+      )}
 
       <SegmentedControl value={activeTab} onChange={setActiveTab} ariaLabel="Раздел саморазвития" items={[
         { value: "goals", label: "Цели", icon: Target, count: goals.length },
         { value: "habits", label: "Привычки", icon: ListTodo, count: habitsForToday.length },
+        { value: "manage", label: "Управление", icon: Plus },
       ]} />
 
       <div className="growth-list">
-        {activeTab === "goals" ? (
+        {activeTab === "manage" ? <AddPage embedded /> : activeTab === "goals" ? (
           goals.length || goalFolders.length ? <>
             {renderGoalFolder({ id: "general", name: "Общие цели", emoji: "🏆", color: "var(--coin)", collapsed: false }, true)}
             {goalFolders.filter((folder) => folder.id !== "general").map((folder) => renderGoalFolder(folder))}
-          </> : <EmptyState icon={Target} title="Добавьте первую цель" description="Цель появится здесь, а ежедневные действия можно связать с привычками." action={<Link href="/add" className="app-button">Перейти к созданию</Link>} />
+          </> : <EmptyState icon={Target} title="Добавьте первую цель" description="Цель появится здесь, а ежедневные действия можно связать с привычками." action={<button type="button" onClick={() => setActiveTab("manage")} className="app-button">Перейти к созданию</button>} />
         ) : habitFolders.map(renderHabitFolder)}
       </div>
 
