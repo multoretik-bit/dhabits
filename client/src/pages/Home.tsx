@@ -18,6 +18,7 @@ import { formatDateToDateString, isSameDay } from "@/lib/dateUtils";
 import Calendar from "@/components/Calendar";
 import HabitRow from "@/components/HabitRow";
 import TaskRow from "@/components/TaskRow";
+import CoinDisplay from "@/components/CoinDisplay";
 import FormModal from "@/components/FormModal";
 import EmojiPicker from "@/components/EmojiPicker";
 import AdvancedColorPicker from "@/components/AdvancedColorPicker";
@@ -55,7 +56,7 @@ function getBlockColor(block?: HabitBlock | null) {
 }
 
 export default function Home() {
-  const { habits, tasks, blocks, addTask } = useApp();
+  const { habits, tasks, blocks, coins, addTask } = useApp();
   const [mode, setMode] = useState<"focus" | "schedule">("focus");
   const [dayTab, setDayTab] = useState<"habits" | "tasks" | "plans">("habits");
   const [now, setNow] = useState(new Date());
@@ -159,6 +160,9 @@ export default function Home() {
             <section className="focus-card" style={{ "--block-color": featuredColor } as React.CSSProperties}>
               {featuredBlock ? (
                 <>
+                  <span className="focus-glow focus-glow-one" />
+                  <span className="focus-glow focus-glow-two" />
+                  <img className="focus-companion" src="/illustrations/focus-companion.png" alt="" aria-hidden="true" />
                   <div className="focus-card-head">
                     <div>
                       <p className="focus-label">{activeBlock ? "Сейчас в фокусе" : "Первый блок дня"}</p>
@@ -181,7 +185,13 @@ export default function Home() {
                     </div>
                     <div>
                       <SectionHeading icon={ListTodo} title="Задачи" meta={featuredTasks.length} />
-                      {featuredTasks.length ? featuredTasks.map((task) => <TaskRow key={task.id} task={task} dateStr={dateStr} />) : <EmptyState compact title="Нет задач в этом блоке" action={<button onClick={openTaskModal} className="text-action">Добавить задачу <Plus className="size-4" /></button>} />}
+                      {featuredTasks.length ? featuredTasks.map((task) => <TaskRow key={task.id} task={task} dateStr={dateStr} />) : (
+                        <div className="illustrated-empty">
+                          <img src="/illustrations/tasks-companion.png" alt="" aria-hidden="true" />
+                          <div><strong>Нет задач</strong><span>Добавьте один понятный следующий шаг.</span></div>
+                          <button onClick={openTaskModal} className="text-action">Добавить задачу <Plus className="size-4" /></button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </>
@@ -191,7 +201,9 @@ export default function Home() {
             </section>
 
             <aside className="focus-summary">
-              <section className="app-surface progress-card">
+              <section className="app-surface progress-card progress-showcase">
+                <i className="progress-spark progress-spark-one" />
+                <i className="progress-spark progress-spark-two" />
                 <div className="progress-ring" style={{ "--progress": `${completion * 3.6}deg` } as React.CSSProperties}><strong>{completion}%</strong></div>
                 <div><p>Прогресс блока</p><span>{completedCount} из {focusItems.length} выполнено</span></div>
               </section>
@@ -199,6 +211,15 @@ export default function Home() {
                 <Metric icon={CheckCircle2} label="Выполнено" value={completedCount} hint="в текущем блоке" accent="var(--success)" />
                 <Metric icon={Clock} label="Блоков сегодня" value={todayBlocks.length} hint="в расписании" accent="var(--violet)" />
               </div>
+              <section className="app-surface reward-card">
+                <div className="reward-card-copy">
+                  <span>Ваш баланс</span>
+                  <CoinDisplay amount={coins} size="lg" />
+                  <small>Каждый выполненный шаг приближает награду</small>
+                </div>
+                <img src="/illustrations/reward-companion.png" alt="Подарок и монеты" />
+                <Link href="/shop" className="reward-card-link">Мои награды <ExternalLink className="size-4" /></Link>
+              </section>
               <section className="app-surface quick-card">
                 <SectionHeading icon={Sparkles} title="Быстрые действия" />
                 <button className="app-button" onClick={openTaskModal}><Plus className="size-4" /> Добавить задачу</button>

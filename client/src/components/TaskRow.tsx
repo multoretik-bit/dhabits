@@ -45,6 +45,12 @@ export default function TaskRow({ task, dateStr, isCondensed, onEdit, onDelete }
             </div>
           )}
         </div>
+        {Boolean(task.coins) && (
+          <span className="task-reward" title={`${task.coins} монет за выполнение`}>
+            <img src="/illustrations/reward-coin-v2.png" alt="" />
+            <strong>{task.coins}</strong>
+          </span>
+        )}
         <div className="task-actions" onClick={(event) => event.stopPropagation()}>
           {subtasks.length > 0 && <button onClick={() => setExpanded((value) => !value)} aria-label="Показать подзадачи"><ListTodo className="size-4" /></button>}
           {!completed && !isCondensed && (

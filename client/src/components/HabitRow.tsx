@@ -37,26 +37,28 @@ export default function HabitRow({ habit, dateStr, hideUnitTracker }: { habit: H
       <AnimatePresence>
         {celebrate && <motion.span initial={{ opacity: 0, y: 0 }} animate={{ opacity: 1, y: -25 }} exit={{ opacity: 0 }} className="reward-float">+{habit.coinsPerComplete}</motion.span>}
       </AnimatePresence>
-      <button onClick={handleComplete} className="habit-row-main" aria-label={`${completed ? "Отменить выполнение" : "Выполнить"}: ${habit.name}`}>
-        <span className="habit-status" style={{ backgroundColor: statusColor }} />
-        <span className="reward-badge" style={{ backgroundColor: `${habit.color}14`, borderColor: `${habit.color}32` }}>
-          <img src="/coin.png" alt="" />
-          <strong>{habit.coinsPerComplete}</strong>
-        </span>
-        <span className="item-emoji" style={{ backgroundColor: `${habit.color}14` }}>
-          {completed ? <Check className="size-4" /> : habit.emoji}
-        </span>
-        <span className="item-copy">
-          <span onClick={(event) => { event.stopPropagation(); setExpanded((value) => !value); }} className={`item-title ${expanded ? "" : "truncate"}`}>{habit.name}</span>
-          <StreakFlames streak={habit.streak} />
-        </span>
+      <div className="habit-row-main">
+        <button onClick={handleComplete} className="habit-complete-action" aria-label={`${completed ? "Отменить выполнение" : "Выполнить"}: ${habit.name}`}>
+          <span className="habit-status" style={{ backgroundColor: statusColor }} />
+          <span className="reward-badge" style={{ backgroundColor: `${habit.color}14`, borderColor: `${habit.color}32` }}>
+            <img src="/illustrations/reward-coin-v2.png" alt="" />
+            <strong>{habit.coinsPerComplete}</strong>
+          </span>
+          <span className="item-emoji" style={{ backgroundColor: `${habit.color}14` }}>
+            {completed ? <Check className="size-4" /> : habit.emoji}
+          </span>
+          <span className="item-copy">
+            <span onClick={(event) => { event.stopPropagation(); setExpanded((value) => !value); }} className={`item-title ${expanded ? "" : "truncate"}`}>{habit.name}</span>
+            <StreakFlames streak={habit.streak} />
+          </span>
+        </button>
         {!completed && (
-          <span className="reorder-controls" onClick={(event) => event.stopPropagation()}>
+          <span className="reorder-controls">
             <button onClick={() => moveHabitUp(habit.id)} aria-label="Переместить привычку выше"><ArrowUp className="size-3" /></button>
             <button onClick={() => moveHabitDown(habit.id)} aria-label="Переместить привычку ниже"><ArrowDown className="size-3" /></button>
           </span>
         )}
-      </button>
+      </div>
       {habit.unitsTracking && !completed && !hideUnitTracker && <div className="px-3 pb-3"><HabitUnitTracker habit={habit} /></div>}
     </motion.article>
   );

@@ -33,7 +33,7 @@ function GoalCard({
           </div>
           <p className={expanded ? "" : "truncate"}>{goal.description || "Без описания"}</p>
         </div>
-        <div className="goal-reward"><img src="/coin.png" alt="" /><strong>{goal.coins}</strong></div>
+        <div className="goal-reward"><img src="/illustrations/reward-coin-v2.png" alt="" /><strong>{goal.coins}</strong></div>
       </div>
       <div className="goal-progress-copy"><span>{goal.currentValue} / {goal.targetValue}</span><strong>{Math.round(progress)}%</strong></div>
       <div className="goal-progress"><i style={{ width: `${progress}%` }} /></div>

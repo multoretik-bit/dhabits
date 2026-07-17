@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Route, Switch } from "wouter";
 import { Toaster } from "@/components/ui/sonner";
@@ -9,29 +9,36 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { AppProvider } from "./contexts/AppContext";
 import { supabase } from "./lib/supabase";
 import Home from "./pages/Home";
-import AddPage from "./pages/AddPage";
-import GoalsPage from "./pages/GoalsPage";
-import ShopPage from "./pages/ShopPage";
-import StatsPage from "./pages/StatsPage";
-import SettingsPage from "./pages/SettingsPage";
-import IdentityPage from "./pages/IdentityPage";
 import AuthPage from "./pages/AuthPage";
-import NotFound from "./pages/NotFound";
+
+const AddPage = lazy(() => import("./pages/AddPage"));
+const GoalsPage = lazy(() => import("./pages/GoalsPage"));
+const ShopPage = lazy(() => import("./pages/ShopPage"));
+const StatsPage = lazy(() => import("./pages/StatsPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const IdentityPage = lazy(() => import("./pages/IdentityPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+function RouteLoader() {
+  return <div className="route-loader" role="status" aria-label="Загрузка страницы"><div className="app-loading-mark" /></div>;
+}
 
 function Router({ onSignOut }: { onSignOut: () => void }) {
   return (
     <MainLayout onSignOut={onSignOut}>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/add" component={AddPage} />
-        <Route path="/goals" component={GoalsPage} />
-        <Route path="/shop" component={ShopPage} />
-        <Route path="/stats" component={StatsPage} />
-        <Route path="/settings" component={SettingsPage} />
-        <Route path="/identity" component={IdentityPage} />
-        <Route path="/404" component={NotFound} />
-        <Route component={NotFound} />
-      </Switch>
+      <Suspense fallback={<RouteLoader />}>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/add" component={AddPage} />
+          <Route path="/goals" component={GoalsPage} />
+          <Route path="/shop" component={ShopPage} />
+          <Route path="/stats" component={StatsPage} />
+          <Route path="/settings" component={SettingsPage} />
+          <Route path="/identity" component={IdentityPage} />
+          <Route path="/404" component={NotFound} />
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
     </MainLayout>
   );
 }
