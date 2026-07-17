@@ -1,42 +1,49 @@
+import { lazy, Suspense, useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import { Route, Switch } from "wouter";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import MainLayout from "./components/MainLayout";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AppProvider } from "./contexts/AppContext";
-import MainLayout from "./components/MainLayout";
-import Home from "./pages/Home";
-import AddPage from "./pages/AddPage";
-import GoalsPage from "./pages/GoalsPage";
-import ShopPage from "./pages/ShopPage";
-import StatsPage from "./pages/StatsPage";
-import SettingsPage from "./pages/SettingsPage";
-import IdentityPage from "./pages/IdentityPage";
-import AuthPage from "./pages/AuthPage";
-import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
-import { User } from "@supabase/supabase-js";
+import Home from "./pages/Home";
+import AuthPage from "./pages/AuthPage";
+
+const AddPage = lazy(() => import("./pages/AddPage"));
+const GoalsPage = lazy(() => import("./pages/GoalsPage"));
+const ShopPage = lazy(() => import("./pages/ShopPage"));
+const StatsPage = lazy(() => import("./pages/StatsPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const IdentityPage = lazy(() => import("./pages/IdentityPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+
+function RouteLoader() {
+  return <div className="route-loader" role="status" aria-label="Загрузка страницы"><div className="app-loading-mark" /></div>;
+}
 
 function Router({ onSignOut }: { onSignOut: () => void }) {
   return (
     <MainLayout onSignOut={onSignOut}>
-      <Switch>
-        <Route path="/" component={Home} />
-        <Route path="/add" component={AddPage} />
-        <Route path="/goals" component={GoalsPage} />
-        <Route path="/shop" component={ShopPage} />
-        <Route path="/stats" component={StatsPage} />
-        <Route path="/settings" component={SettingsPage} />
-        <Route path="/identity" component={IdentityPage} />
-        <Route path="/404" component={NotFound} />
-        <Route component={NotFound} />
-      </Switch>
+      <Suspense fallback={<RouteLoader />}>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/add" component={AddPage} />
+          <Route path="/goals" component={GoalsPage} />
+          <Route path="/shop" component={ShopPage} />
+          <Route path="/stats" component={StatsPage} />
+          <Route path="/settings" component={SettingsPage} />
+          <Route path="/identity" component={IdentityPage} />
+          <Route path="/404" component={NotFound} />
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
     </MainLayout>
   );
 }
 
-function App() {
+export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [offlineMode, setOfflineMode] = useState(false);
@@ -46,13 +53,7 @@ function App() {
       setUser(session?.user ?? null);
       setLoading(false);
     });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null));
     return () => subscription.unsubscribe();
   }, []);
 
@@ -61,15 +62,19 @@ function App() {
     setUser(null);
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  if (loading) {
+    return (
+      <ThemeProvider switchable>
+        <div className="app-loading" role="status" aria-label="Загрузка приложения">
+          <div className="app-loading-mark" />
+        </div>
+      </ThemeProvider>
+    );
+  }
 
   if (!user && !offlineMode) {
     return (
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider switchable>
         <Toaster />
         <AuthPage onLogin={() => setOfflineMode(true)} />
       </ThemeProvider>
@@ -78,7 +83,7 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider switchable>
         <AppProvider>
           <TooltipProvider>
             <Toaster />
@@ -89,5 +94,3 @@ function App() {
     </ErrorBoundary>
   );
 }
-
-export default App;

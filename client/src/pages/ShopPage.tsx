@@ -357,7 +357,7 @@ export default function ShopPage() {
                   </div>
 
                   <div className="w-full flex items-center justify-center gap-1 text-slate-400 font-bold text-xs mt-1">
-                     <img src="/coin.png" alt="coin" className="w-3 h-3 object-contain" /> {item.price}
+                     <img src="/illustrations/reward-coin-v2.png" alt="Монета" className="w-3 h-3 object-contain" /> {item.price}
                   </div>
                 </motion.div>
               ))}
@@ -521,7 +521,7 @@ export default function ShopPage() {
                     : "bg-slate-800 text-slate-500"
                 }`}
               >
-                <img src="/coin.png" alt="coin" className="w-5 h-5 object-contain" />
+                <img src="/illustrations/reward-coin-v2.png" alt="Монета" className="w-5 h-5 object-contain" />
                 Прокачать за {nextLevelCost}
               </Button>
             </div>
@@ -658,7 +658,7 @@ export default function ShopPage() {
                         ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:scale-105 shadow-xl shadow-blue-900/40" 
                         : "bg-slate-800 text-slate-500"}`}
                   >
-                    <img src="/coin.png" alt="coin" className="w-6 h-6 object-contain" />
+                    <img src="/illustrations/reward-coin-v2.png" alt="Монета" className="w-6 h-6 object-contain" />
                     <span>Купить за {selectedItem.price}</span>
                   </Button>
                 )}

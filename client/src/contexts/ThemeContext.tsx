@@ -1,64 +1,56 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-type Theme = "light" | "dark";
+export type Theme = "light" | "dark";
 
 interface ThemeContextType {
   theme: Theme;
-  toggleTheme?: () => void;
+  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
   switchable: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-interface ThemeProviderProps {
-  children: React.ReactNode;
-  defaultTheme?: Theme;
-  switchable?: boolean;
+function getInitialTheme(defaultTheme: Theme, switchable: boolean): Theme {
+  if (typeof window === "undefined") return defaultTheme;
+  if (switchable) {
+    const stored = window.localStorage.getItem("dhabits-theme") as Theme | null;
+    if (stored === "light" || stored === "dark") return stored;
+    if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) return "dark";
+  }
+  return defaultTheme;
 }
 
 export function ThemeProvider({
   children,
   defaultTheme = "light",
-  switchable = false,
-}: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (switchable) {
-      const stored = localStorage.getItem("theme");
-      return (stored as Theme) || defaultTheme;
-    }
-    return defaultTheme;
-  });
+  switchable = true,
+}: {
+  children: React.ReactNode;
+  defaultTheme?: Theme;
+  switchable?: boolean;
+}) {
+  const [theme, setTheme] = useState<Theme>(() => getInitialTheme(defaultTheme, switchable));
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-
-    if (switchable) {
-      localStorage.setItem("theme", theme);
-    }
+    root.classList.toggle("dark", theme === "dark");
+    root.style.colorScheme = theme;
+    if (switchable) window.localStorage.setItem("dhabits-theme", theme);
   }, [theme, switchable]);
 
-  const toggleTheme = switchable
-    ? () => {
-        setTheme(prev => (prev === "light" ? "dark" : "light"));
-      }
-    : undefined;
+  const value = useMemo<ThemeContextType>(() => ({
+    theme,
+    setTheme,
+    toggleTheme: () => switchable && setTheme((current) => current === "light" ? "dark" : "light"),
+    switchable,
+  }), [theme, switchable]);
 
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, switchable }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {
   const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error("useTheme must be used within ThemeProvider");
-  }
+  if (!context) throw new Error("useTheme must be used within ThemeProvider");
   return context;
 }
