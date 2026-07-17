@@ -39,7 +39,7 @@ function DayPicker({ value, onChange }: { value: number[]; onChange: (v: number[
 function UnifiedCoinBadge({ coins, color, label }: { coins: number; color: string; label?: string }) {
   return (
     <div
-      className="flex-shrink-0 flex flex-col items-center justify-center w-12 h-12 rounded-xl text-center shadow-sm"
+      className="management-coin-badge flex-shrink-0 flex flex-col items-center justify-center w-12 h-12 rounded-xl text-center shadow-sm"
       style={{ backgroundColor: `${color}25`, border: `1px solid ${color}40` }}
     >
       <img src="/illustrations/reward-coin-v3.svg" alt="Монета" className="w-3.5 h-3.5 object-contain mb-0.5" />
@@ -127,7 +127,7 @@ function HabitsTab() {
 
   return (
     <div className="space-y-4 pb-20">
-      <div className="flex gap-2 justify-end mb-4">
+      <div className="management-toolbar flex gap-2 justify-end mb-4">
         <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-white/10 text-muted-foreground hover:bg-white/5 hover:text-foreground rounded-xl">
           <FolderPlus className="w-4 h-4 mr-2" /> Папка
         </Button>
@@ -142,7 +142,7 @@ function HabitsTab() {
           return (
             <div key={f.id} className="glass-card rounded-3xl overflow-hidden shadow-sm">
               <div 
-                className="flex items-center justify-between px-5 py-3 bg-white/5 border-b border-white/5 cursor-pointer transition-colors hover:bg-white/10"
+                className="management-folder-head flex items-center justify-between px-5 py-3 bg-white/5 border-b border-white/5 cursor-pointer transition-colors hover:bg-white/10"
                 onClick={() => toggleHabitFolderCollapse(f.id)}
               >
                 <div className="flex items-center gap-3 text-foreground font-bold uppercase text-[11px] tracking-wider">
@@ -169,7 +169,7 @@ function HabitsTab() {
                 {fHabits.map(h => (
                   <div 
                     key={h.id} 
-                    className="flex items-center gap-3 p-3 rounded-2xl bg-black/20 border border-white/5 hover:bg-white/5 transition-colors"
+                    className="management-item-row flex items-center gap-3 p-3 rounded-2xl bg-black/20 border border-white/5 hover:bg-white/5 transition-colors"
                     style={{ borderLeft: `3px solid ${h.color}` }}
                   >
                     <UnifiedCoinBadge coins={h.coinsPerComplete} color={h.color} />
@@ -190,7 +190,7 @@ function HabitsTab() {
                          </div>
                       )}
                     </div>
-                    <div className="flex gap-1">
+                    <div className="management-item-actions flex gap-1">
                       <div className="flex flex-col gap-0.5 mr-1">
                         <Button size="icon" variant="ghost" onClick={() => moveHabitUp(h.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowUp className="w-3 h-3" /></Button>
                         <Button size="icon" variant="ghost" onClick={() => moveHabitDown(h.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowDown className="w-3 h-3" /></Button>
@@ -337,13 +337,13 @@ function TasksTab() {
 
   return (
     <div className="space-y-4 pb-20">
-      <div className="flex gap-2 justify-between mb-4">
-        <div className="flex gap-1 bg-slate-900/50 p-1 rounded-xl">
+      <div className="management-toolbar management-toolbar-split flex gap-2 justify-between mb-4">
+        <div className="management-view-switch flex gap-1 bg-slate-900/50 p-1 rounded-xl">
            <Button variant="ghost" onClick={() => setViewMode('folders')} className={`h-8 px-3 text-xs rounded-lg ${viewMode === 'folders' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>Папки</Button>
            <Button variant="ghost" onClick={() => setViewMode('calendar')} className={`h-8 px-3 text-xs rounded-lg ${viewMode === 'calendar' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white'}`}>Календарь</Button>
         </div>
         
-        <div className="flex gap-2">
+        <div className="management-create-actions flex gap-2">
           {viewMode === 'folders' && (
             <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-white/10 text-muted-foreground hover:bg-white/5 hover:text-foreground rounded-xl">
               <FolderPlus className="w-4 h-4 mr-2" /> Большая задача
@@ -362,7 +362,7 @@ function TasksTab() {
           return (
             <div key={f.id} className="glass-card rounded-3xl overflow-hidden shadow-sm">
               <div 
-                className="flex items-center justify-between px-5 py-3 bg-white/5 border-b border-white/5 cursor-pointer transition-colors hover:bg-white/10"
+                className="management-folder-head flex items-center justify-between px-5 py-3 bg-white/5 border-b border-white/5 cursor-pointer transition-colors hover:bg-white/10"
                 onClick={() => toggleTaskFolderCollapse(f.id)}
               >
                 <div className="flex items-center gap-3 text-foreground font-bold uppercase text-[11px] tracking-wider">
@@ -389,7 +389,7 @@ function TasksTab() {
                   {fTasks.map(t => (
                     <div 
                       key={t.id} 
-                      className="flex items-center gap-3 p-3 bg-black/20 hover:bg-white/5 rounded-2xl border border-white/5 transition-colors"
+                      className="management-item-row flex items-center gap-3 p-3 bg-black/20 hover:bg-white/5 rounded-2xl border border-white/5 transition-colors"
                       style={{ borderLeft: `3px solid ${t.color || '#6366f1'}` }}
                     >
                       <span 
@@ -409,7 +409,7 @@ function TasksTab() {
                           ) : ''}
                         </p>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="management-item-actions flex gap-1">
                         <div className="flex flex-col gap-0.5 mr-1">
                           <Button size="icon" variant="ghost" onClick={() => moveTaskUp(t.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowUp className="w-3 h-3" /></Button>
                           <Button size="icon" variant="ghost" onClick={() => moveTaskDown(t.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowDown className="w-3 h-3" /></Button>
@@ -515,7 +515,7 @@ function GoalsTab() {
 
   return (
     <div className="space-y-4 pb-20">
-      <div className="flex justify-end gap-2 mb-4">
+      <div className="management-toolbar flex justify-end gap-2 mb-4">
         <Button onClick={() => setShowCreateFolder(true)} variant="outline" className="border-white/10 text-muted-foreground hover:bg-white/5 hover:text-foreground rounded-xl">
           <FolderPlus className="w-4 h-4 mr-2" /> Папка
         </Button>
@@ -530,7 +530,7 @@ function GoalsTab() {
           return (
             <div key={f.id} className="glass-card rounded-3xl overflow-hidden shadow-sm">
               <div 
-                className="flex items-center justify-between px-5 py-3 bg-white/5 border-b border-white/5 cursor-pointer transition-colors hover:bg-white/10"
+                className="management-folder-head flex items-center justify-between px-5 py-3 bg-white/5 border-b border-white/5 cursor-pointer transition-colors hover:bg-white/10"
                 onClick={() => toggleGoalFolderCollapse(f.id)}
               >
                 <div className="flex items-center gap-3 text-foreground font-bold uppercase text-[11px] tracking-wider">
@@ -557,7 +557,7 @@ function GoalsTab() {
                 {fGoals.map(g => (
                   <div 
                     key={g.id} 
-                    className="flex items-center gap-3 p-3 rounded-2xl bg-black/20 hover:bg-white/5 border border-white/5 transition-colors"
+                    className="management-item-row flex items-center gap-3 p-3 rounded-2xl bg-black/20 hover:bg-white/5 border border-white/5 transition-colors"
                     style={{ borderLeft: `3px solid ${g.color}` }}
                   >
                     <UnifiedCoinBadge coins={g.coins} color={g.color} />
@@ -574,7 +574,7 @@ function GoalsTab() {
                         {g.deadline && <span className="ml-2 text-red-400/80">📅 До: {g.deadline}</span>}
                       </p>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="management-item-actions flex gap-1">
                       <Button size="icon" variant="ghost" onClick={() => { 
                         setEditingId(g.id); setName(g.name); setEmoji(g.emoji); setColor(g.color); 
                         setDesc(g.description); setTarget(String(g.targetValue)); setFolder(g.folder);
@@ -648,14 +648,14 @@ function BlocksTab() {
 
   return (
     <div className="space-y-4 pb-20">
-      <div className="flex justify-end mb-4">
+      <div className="management-toolbar flex justify-end mb-4">
         <Button onClick={() => setShowCreate(true)} className="premium-gradient text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20 active:scale-[0.98]">
           <Plus className="w-4 h-4 mr-2" /> Блок
         </Button>
       </div>
       <div className="space-y-3">
         {blocks.map(b => (
-          <div key={b.id} className="flex items-center gap-3 p-3 glass-card rounded-2xl hover:bg-white/5 transition-colors">
+          <div key={b.id} className="management-item-row flex items-center gap-3 p-3 glass-card rounded-2xl hover:bg-white/5 transition-colors">
             <div className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: b.color ? b.color + '25' : (b.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][b.colorIndex] + '25' : 'rgba(148, 163, 184, 0.1)') }}>
               <Layers className="w-5 h-5" style={{ color: b.color ? b.color : (b.colorIndex !== undefined ? ["#00d9ff", "#0066ff", "#cc00ff", "#00cc00", "#ffcc00", "#ff0000", "#ff00ff", "#ff6600"][b.colorIndex] : "#94a3b8") }} />
             </div>
@@ -665,7 +665,7 @@ function BlocksTab() {
                 {b.startTime} - {b.endTime} · {b.isOneTime ? `Дата: ${b.specificDate}` : (!b.daysOfWeek || b.daysOfWeek.length === 7 || b.daysOfWeek.length === 0) ? "Каждый день" : DAYS_OF_WEEK.filter(d => b.daysOfWeek?.includes(d.id)).map(d => d.label).join(", ")}
               </p>
             </div>
-              <div className="flex gap-1">
+              <div className="management-item-actions flex gap-1">
                 <div className="flex flex-col gap-0.5 mr-1">
                   <Button size="icon" variant="ghost" onClick={() => moveBlockUp(b.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowUp className="w-3 h-3" /></Button>
                   <Button size="icon" variant="ghost" onClick={() => moveBlockDown(b.id)} className="w-6 h-6 text-slate-600 hover:text-blue-400"><ArrowDown className="w-3 h-3" /></Button>
@@ -699,7 +699,7 @@ export default function AddPage({ embedded = false, initialTab = "habits" }: { e
       {!embedded && <h2 className="text-2xl font-bold text-foreground mb-6 tracking-tight">Управление</h2>}
 
       {/* Tabs */}
-      <div className="flex gap-2 glass-card rounded-2xl p-1.5 mb-6 overflow-x-auto no-scrollbar">
+      <div className="management-tabs flex gap-2 glass-card rounded-2xl p-1.5 mb-6 overflow-x-auto no-scrollbar">
         {tabs.map((t) => (
           <button
             key={t.key}
