@@ -73,11 +73,12 @@ const ITEM_SLOTS = [
 ];
 
 function ItemPreview({ item }: { item: ShopItem }) {
-  if (item.assetPath && /\.(png|svg|jpe?g|webp)$/i.test(item.assetPath)) {
-    return <img src={item.assetPath} alt="" />;
+  const assetPath = typeof item.assetPath === "string" ? item.assetPath : "";
+  if (assetPath && /\.(png|svg|jpe?g|webp)$/i.test(assetPath)) {
+    return <img src={assetPath} alt="" />;
   }
-  if (item.assetPath?.trim().startsWith("<")) {
-    return <svg viewBox="0 0 100 150" aria-hidden="true"><g dangerouslySetInnerHTML={{ __html: item.assetPath }} /></svg>;
+  if (assetPath.trim().startsWith("<")) {
+    return <svg viewBox="0 0 100 150" aria-hidden="true"><g dangerouslySetInnerHTML={{ __html: assetPath }} /></svg>;
   }
   return <span>{item.emoji}</span>;
 }
@@ -162,15 +163,20 @@ export default function ShopPage() {
   const [itemRarity, setItemRarity] = useState<ShopItem["rarity"]>("common");
   const [itemDescription, setItemDescription] = useState("");
 
-  const level = characterState.level || 0;
+  const safeShopItems = Array.isArray(shopItems) ? shopItems : [];
+  const safeSystems = Array.isArray(identitySystems) ? identitySystems.filter(system => system && typeof system.id === "string" && typeof system.aspect === "string") : [];
+  const level = typeof characterState.level === "number" && Number.isFinite(characterState.level) ? characterState.level : 0;
   const nextLevelCost = getNextCharacterLevelCost(level);
-  const balance = characterState.balance || {};
-  const attributes = characterState.attributes || {};
-  const appearance = characterState.appearance || {};
-  const purchasedItems = useMemo(() => shopItems.filter(item => item.purchased && (inventoryCategory === "all" || item.category === inventoryCategory)), [shopItems, inventoryCategory]);
-  const availableItems = useMemo(() => shopItems.filter(item => !item.purchased && (catalogCategory === "all" || item.category === catalogCategory)), [shopItems, catalogCategory]);
-  const selectedSystem = identitySystems.find(system => system.id === selectedBalanceId) || identitySystems[0];
-  const averageBalance = identitySystems.length ? Math.round(identitySystems.reduce((sum, system) => sum + (balance[system.id] ?? 60), 0) / identitySystems.length) : 0;
+  const balance = characterState.balance && typeof characterState.balance === "object" && !Array.isArray(characterState.balance) ? characterState.balance : {};
+  const attributes = characterState.attributes && typeof characterState.attributes === "object" && !Array.isArray(characterState.attributes) ? characterState.attributes : {};
+  const appearance = characterState.appearance && typeof characterState.appearance === "object" ? characterState.appearance : {};
+  const purchasedItems = useMemo(() => safeShopItems.filter(item => item?.purchased && (inventoryCategory === "all" || item.category === inventoryCategory)), [safeShopItems, inventoryCategory]);
+  const availableItems = useMemo(() => safeShopItems.filter(item => item && !item.purchased && (catalogCategory === "all" || item.category === catalogCategory)), [safeShopItems, catalogCategory]);
+  const selectedSystem = safeSystems.find(system => system.id === selectedBalanceId) || safeSystems[0];
+  const averageBalance = safeSystems.length ? Math.round(safeSystems.reduce((sum, system) => {
+    const value = Number(balance[system.id]);
+    return sum + (Number.isFinite(value) ? value : 60);
+  }, 0) / safeSystems.length) : 0;
 
   const updateAppearance = (key: keyof typeof APPEARANCE_OPTIONS, value: string) => {
     updateCharacterState({ appearance: { ...appearance, [key]: value } });
@@ -261,9 +267,9 @@ export default function ShopPage() {
             <div className="profile-balance-score">Сегодня</div>
           </div>
           <div className="profile-wheel-body">
-            <BalanceWheel systems={identitySystems} values={balance} selectedId={selectedBalanceId} onSelect={setSelectedBalanceId} />
+            <BalanceWheel systems={safeSystems} values={balance} selectedId={selectedBalanceId} onSelect={setSelectedBalanceId} />
             <div className="profile-sphere-list">
-              {identitySystems.map((system, index) => <button key={system.id} type="button" className={selectedBalanceId === system.id ? "is-active" : ""} onClick={() => setSelectedBalanceId(system.id)}><i style={{ backgroundColor: system.color }}>{index + 1}</i><span>{system.aspect}</span><strong>{balance[system.id] ?? 60}</strong></button>)}
+              {safeSystems.map((system, index) => <button key={system.id} type="button" className={selectedBalanceId === system.id ? "is-active" : ""} onClick={() => setSelectedBalanceId(system.id)}><i style={{ backgroundColor: system.color || "#315cff" }}>{index + 1}</i><span>{system.aspect}</span><strong>{balance[system.id] ?? 60}</strong></button>)}
             </div>
           </div>
           {selectedSystem && <div className="profile-balance-editor" style={{ "--sphere-color": selectedSystem.color } as React.CSSProperties}><div><span>{selectedSystem.aspect}</span><strong>{balance[selectedSystem.id] ?? 60}%</strong></div><input type="range" min="0" max="100" step="5" value={balance[selectedSystem.id] ?? 60} onChange={event => updateBalance(selectedSystem.id, Number(event.target.value))} /></div>}

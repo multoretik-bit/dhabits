@@ -6,6 +6,8 @@ import { syncSave, syncLoad } from "@/lib/sync";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
 
+export { getCurrentBlock } from "@/lib/schedule";
+
 // Color palette for folders/goals/blocks
 export const FOLDER_COLORS = [
   { name: "cyan", border: "#00d9ff", text: "#00d9ff", bg: "rgba(0, 217, 255, 0.1)" },
@@ -124,18 +126,6 @@ export interface Task {
   subtasks?: SubTask[];
 }
 
-
-export function getCurrentBlock(blocks: HabitBlock[], now: Date): HabitBlock | null {
-  const h = now.getHours();
-  const m = now.getMinutes();
-  const total = h * 60 + m;
-  return blocks.find((b) => {
-    if (!b.startTime || !b.endTime) return false;
-    const [sh, sm] = b.startTime.split(":").map(Number);
-    const [eh, em] = b.endTime.split(":").map(Number);
-    return total >= sh * 60 + sm && total < eh * 60 + em;
-  }) ?? null;
-}
 
 export function getNextBlock(blocks: HabitBlock[], now: Date): HabitBlock | null {
   const h = now.getHours();

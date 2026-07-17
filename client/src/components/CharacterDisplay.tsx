@@ -19,10 +19,11 @@ function getAuraColor(level: number): string | null {
 
 const CharacterDisplay: React.FC<CharacterDisplayProps> = ({ width = 150, height = 200, level = 0, showLevelBadge = false }) => {
   const { characterState, shopItems } = useApp();
+  const safeShopItems = Array.isArray(shopItems) ? shopItems.filter(Boolean) : [];
   const reduceMotion = useReducedMotion();
   const uid = useId().replace(/:/g, "");
   const auraColor = getAuraColor(level);
-  const appearance = characterState.appearance || {};
+  const appearance = characterState.appearance && typeof characterState.appearance === "object" ? characterState.appearance : {};
   const skinTop = appearance.skin || "#F3C99B";
   const skinBottom = appearance.skin ? `color-mix(in srgb, ${appearance.skin} 76%, #8B5E3C)` : "#E0AD78";
   const shirtTop = appearance.shirt || "#818CF8";
@@ -36,10 +37,11 @@ const CharacterDisplay: React.FC<CharacterDisplayProps> = ({ width = 150, height
     if (!item) return null;
 
     // Image file support (PNG/SVG/JPG/WEBP files served from /public)
-    if (item.assetPath && /\.(png|svg|jpe?g|webp)$/i.test(item.assetPath)) {
+    const assetPath = typeof item.assetPath === "string" ? item.assetPath : "";
+    if (assetPath && /\.(png|svg|jpe?g|webp)$/i.test(assetPath)) {
       return (
         <image
-          href={item.assetPath}
+          href={assetPath}
           x={isPet ? "-50" : "0"} y={isPet ? "-50" : "0"}
           width={isPet ? "100" : "100"} height={isPet ? "100" : "150"}
           preserveAspectRatio="xMidYMid meet"
@@ -48,8 +50,8 @@ const CharacterDisplay: React.FC<CharacterDisplayProps> = ({ width = 150, height
     }
 
     // Inline SVG markup support (legacy clothing items)
-    if (item.assetPath) {
-      return <g dangerouslySetInnerHTML={{ __html: item.assetPath }} />;
+    if (assetPath.trim().startsWith("<")) {
+      return <g dangerouslySetInnerHTML={{ __html: assetPath }} />;
     }
 
     // Emoji Fallback
@@ -67,8 +69,11 @@ const CharacterDisplay: React.FC<CharacterDisplayProps> = ({ width = 150, height
   };
 
   const equippedItems: { [key: string]: ShopItem } = {};
-  Object.entries(characterState).forEach(([slot, itemId]) => {
-    const item = shopItems.find((i) => i.id === itemId);
+  const equipmentSlots = ["head", "body", "hands", "feet", "accessory", "background", "vehicle", "pet"];
+  equipmentSlots.forEach((slot) => {
+    const itemId = characterState[slot as keyof typeof characterState];
+    if (typeof itemId !== "string") return;
+    const item = safeShopItems.find((i) => i.id === itemId);
     if (item) equippedItems[slot] = item;
   });
 

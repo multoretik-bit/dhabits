@@ -3,7 +3,8 @@ import { Link } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   CalendarDays,
-  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Clock,
   ExternalLink,
   LayoutGrid,
@@ -15,15 +16,15 @@ import {
 import { nanoid } from "nanoid";
 import { useApp, type HabitBlock, type Task, getCurrentBlock } from "@/contexts/AppContext";
 import { formatDateToDateString, isSameDay } from "@/lib/dateUtils";
+import { getBlockIllustration } from "@/lib/blockIllustrations";
 import Calendar from "@/components/Calendar";
 import HabitRow from "@/components/HabitRow";
 import TaskRow from "@/components/TaskRow";
-import CoinDisplay from "@/components/CoinDisplay";
 import FormModal from "@/components/FormModal";
 import EmojiPicker from "@/components/EmojiPicker";
 import AdvancedColorPicker from "@/components/AdvancedColorPicker";
 import { FormCheckbox, FormInput } from "@/components/FormInputs";
-import { EmptyState, Metric, PageHeader, PageShell, SectionHeading, SegmentedControl } from "@/components/AppUI";
+import { EmptyState, PageHeader, PageShell, SectionHeading, SegmentedControl } from "@/components/AppUI";
 
 const DAYS_OF_WEEK = [
   { id: 1, label: "Пн" }, { id: 2, label: "Вт" }, { id: 3, label: "Ср" },
@@ -56,7 +57,7 @@ function getBlockColor(block?: HabitBlock | null) {
 }
 
 export default function Home() {
-  const { habits, tasks, blocks, coins, addTask } = useApp();
+  const { habits, tasks, blocks, addTask, toggleBlockCollapse } = useApp();
   const [mode, setMode] = useState<"focus" | "schedule">("focus");
   const [dayTab, setDayTab] = useState<"habits" | "tasks" | "plans">("habits");
   const [now, setNow] = useState(new Date());
@@ -74,8 +75,13 @@ export default function Home() {
   const [taskTime, setTaskTime] = useState("");
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 60_000);
-    return () => window.clearInterval(timer);
+    const syncClock = () => setNow(new Date());
+    const timer = window.setInterval(syncClock, 15_000);
+    document.addEventListener("visibilitychange", syncClock);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", syncClock);
+    };
   }, []);
 
   const dateStr = formatDateToDateString(selectedDate);
@@ -91,27 +97,35 @@ export default function Home() {
     .sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time)), [tasks, dateStr, dayOfWeek]);
 
   const activeBlock = selectedIsToday ? getCurrentBlock(todayBlocks, now) : null;
-  const featuredBlock = activeBlock ?? todayBlocks[0] ?? null;
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const nextBlock = selectedIsToday ? todayBlocks.find(block => block.startTime && timeToMinutes(block.startTime) > currentMinutes) ?? null : null;
+  const previousBlock = selectedIsToday ? [...todayBlocks].reverse().find(block => block.endTime && timeToMinutes(block.endTime) <= currentMinutes) ?? null : null;
+  const featuredBlock = activeBlock ?? nextBlock ?? previousBlock ?? todayBlocks[0] ?? null;
+  const focusLabel = activeBlock ? "Сейчас в фокусе" : nextBlock ? "Следующий блок" : previousBlock ? "Последний блок дня" : "Блок дня";
   const featuredColor = getBlockColor(featuredBlock);
-  const featuredHabits = featuredBlock ? habits.filter((habit) => habit.blockId === featuredBlock.id && habit.daysOfWeek.includes(dayOfWeek)) : [];
-  const featuredTasks = featuredBlock ? todayTasks.filter((task) => task.blockId === featuredBlock.id) : [];
-  const allDayHabits = habits.filter((habit) => (!habit.blockId || habit.blockId === "general") && habit.daysOfWeek.includes(dayOfWeek));
+  const featuredHabits = featuredBlock ? habits.filter((habit) => habit.blockId === featuredBlock.id && (!habit.daysOfWeek?.length || habit.daysOfWeek.includes(dayOfWeek))) : [];
+  const dailyHabits = habits.filter((habit) => !habit.daysOfWeek?.length || habit.daysOfWeek.includes(dayOfWeek));
+  const allDayHabits = dailyHabits.filter((habit) => !habit.blockId || habit.blockId === "general");
   const allDayTasks = todayTasks.filter((task) => !task.blockId);
   const plans = todayBlocks.flatMap((block) => [
     ...(block.systemUrl ? [{ id: `${block.id}-legacy`, name: "План", url: block.systemUrl, block }] : []),
     ...(block.plans ?? []).map((plan) => ({ ...plan, block })),
   ]);
 
-  const focusItems = [...featuredHabits, ...featuredTasks];
+  const focusItems = featuredHabits;
   const completedCount = focusItems.filter((item) => Boolean(item.completedDates?.[dateStr])).length;
   const completion = focusItems.length ? Math.round((completedCount / focusItems.length) * 100) : 0;
 
   let timelineProgress = 0;
   if (activeBlock?.startTime && activeBlock.endTime) {
     const start = timeToMinutes(activeBlock.startTime);
-    const end = timeToMinutes(activeBlock.endTime);
-    const current = now.getHours() * 60 + now.getMinutes();
-    if (end > start) timelineProgress = Math.min(100, Math.max(0, ((current - start) / (end - start)) * 100));
+    let end = timeToMinutes(activeBlock.endTime);
+    let current = currentMinutes;
+    if (end <= start) {
+      end += 24 * 60;
+      if (current < start) current += 24 * 60;
+    }
+    timelineProgress = Math.min(100, Math.max(0, ((current - start) / (end - start)) * 100));
   }
 
   const resetTask = () => {
@@ -154,7 +168,7 @@ export default function Home() {
 
       <Calendar selectedDate={selectedDate} onDateChange={setSelectedDate} />
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence initial={false} mode="sync">
         {mode === "focus" ? (
           <motion.div key="focus" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="focus-layout">
             <section className="focus-card" style={{ "--block-color": featuredColor } as React.CSSProperties}>
@@ -162,10 +176,10 @@ export default function Home() {
                 <>
                   <span className="focus-glow focus-glow-one" />
                   <span className="focus-glow focus-glow-two" />
-                  <img className="focus-companion" src="/illustrations/focus-companion.png" alt="" aria-hidden="true" />
+                  <img className="focus-companion" src={getBlockIllustration(featuredBlock)} alt="" aria-hidden="true" />
                   <div className="focus-card-head">
                     <div>
-                      <p className="focus-label">{activeBlock ? "Сейчас в фокусе" : "Первый блок дня"}</p>
+                      <p className="focus-label">{focusLabel}</p>
                       <h2>{featuredBlock.name}</h2>
                       <p className="focus-time"><Clock className="size-4" /> {featuredBlock.startTime || "—"}–{featuredBlock.endTime || "—"}</p>
                     </div>
@@ -184,8 +198,8 @@ export default function Home() {
                       {featuredHabits.length ? featuredHabits.map((habit) => <HabitRow key={habit.id} habit={habit} dateStr={dateStr} hideUnitTracker />) : <EmptyState compact title="Нет привычек в этом блоке" />}
                     </div>
                     <div>
-                      <SectionHeading icon={ListTodo} title="Задачи" meta={featuredTasks.length} />
-                      {featuredTasks.length ? featuredTasks.map((task) => <TaskRow key={task.id} task={task} dateStr={dateStr} />) : (
+                      <SectionHeading icon={ListTodo} title="Задачи дня" meta={todayTasks.length} />
+                      {todayTasks.length ? todayTasks.map((task) => <TaskRow key={task.id} task={task} dateStr={dateStr} showTime />) : (
                         <div className="illustrated-empty">
                           <img src="/illustrations/tasks-companion.png" alt="" aria-hidden="true" />
                           <div><strong>Нет задач</strong><span>Добавьте один понятный следующий шаг.</span></div>
@@ -205,20 +219,13 @@ export default function Home() {
                 <i className="progress-spark progress-spark-one" />
                 <i className="progress-spark progress-spark-two" />
                 <div className="progress-ring" style={{ "--progress": `${completion * 3.6}deg` } as React.CSSProperties}><strong>{completion}%</strong></div>
-                <div><p>Прогресс блока</p><span>{completedCount} из {focusItems.length} выполнено</span></div>
+                <div><p>Прогресс привычек блока</p><span>{completedCount} из {focusItems.length} выполнено</span></div>
               </section>
-              <div className="metric-grid">
-                <Metric icon={CheckCircle2} label="Выполнено" value={completedCount} hint="в текущем блоке" accent="var(--success)" />
-                <Metric icon={Clock} label="Блоков сегодня" value={todayBlocks.length} hint="в расписании" accent="var(--violet)" />
-              </div>
-              <section className="app-surface reward-card">
-                <div className="reward-card-copy">
-                  <span>Ваш баланс</span>
-                  <CoinDisplay amount={coins} size="lg" />
-                  <small>Каждый выполненный шаг приближает награду</small>
+              <section className="app-surface daily-habits-card">
+                <SectionHeading icon={Target} title="Привычки дня" meta={dailyHabits.length} />
+                <div className="daily-habits-list">
+                  {dailyHabits.length ? dailyHabits.map(habit => <HabitRow key={habit.id} habit={habit} dateStr={dateStr} hideUnitTracker />) : <EmptyState compact title="На этот день привычек нет" />}
                 </div>
-                <img src="/illustrations/reward-companion.png" alt="Подарок и монеты" />
-                <Link href="/profile" className="reward-card-link">Мой профиль <ExternalLink className="size-4" /></Link>
               </section>
               <section className="app-surface quick-card">
                 <SectionHeading icon={Sparkles} title="Быстрые действия" />
@@ -245,8 +252,7 @@ export default function Home() {
             <section className="app-surface schedule-timeline">
               <SectionHeading icon={Clock} title="Блоки дня" meta={todayBlocks.length} />
               {todayBlocks.length ? todayBlocks.map((block) => {
-                const blockTasks = todayTasks.filter((task) => task.blockId === block.id);
-                const blockHabits = habits.filter((habit) => habit.blockId === block.id && habit.daysOfWeek.includes(dayOfWeek));
+                const blockHabits = habits.filter((habit) => habit.blockId === block.id && (!habit.daysOfWeek?.length || habit.daysOfWeek.includes(dayOfWeek)));
                 const isCurrent = activeBlock?.id === block.id;
                 return (
                   <article key={block.id} className={`schedule-block ${isCurrent ? "is-current" : ""}`} style={{ "--block-color": getBlockColor(block) } as React.CSSProperties}>
@@ -254,30 +260,31 @@ export default function Home() {
                       <div className="schedule-time"><strong>{block.startTime || "—"}</strong><span>—</span><strong>{block.endTime || "—"}</strong></div>
                       <div className="schedule-copy">
                         <div><strong>{block.name}</strong>{isCurrent && <span className="schedule-now">Сейчас</span>}</div>
-                        <span>{blockHabits.length} привычек · {blockTasks.length} задач</span>
+                        <span>{blockHabits.length} привычек</span>
                       </div>
-                      <div className="schedule-links">
-                        {block.systemUrl && <a href={block.systemUrl} target="_blank" rel="noreferrer" className="icon-button is-small" aria-label="Открыть план"><ExternalLink className="size-4" /></a>}
-                        {block.plans?.slice(0, 2).map(plan => <a key={plan.id} href={plan.url} target="_blank" rel="noreferrer" className="icon-button is-small" aria-label={`Открыть ${plan.name}`}><ExternalLink className="size-4" /></a>)}
+                      <div className="schedule-block-actions">
+                        <img src={getBlockIllustration(block)} alt="" aria-hidden="true" />
+                        <div className="schedule-links">
+                          {block.systemUrl && <a href={block.systemUrl} target="_blank" rel="noreferrer" className="icon-button is-small" aria-label="Открыть план"><ExternalLink className="size-4" /></a>}
+                          {block.plans?.slice(0, 2).map(plan => <a key={plan.id} href={plan.url} target="_blank" rel="noreferrer" className="icon-button is-small" aria-label={`Открыть ${plan.name}`}><ExternalLink className="size-4" /></a>)}
+                          <button type="button" onClick={() => toggleBlockCollapse(block.id)} className="icon-button is-small" aria-label={block.collapsed ? "Развернуть блок" : "Свернуть блок"} aria-expanded={!block.collapsed}>{block.collapsed ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}</button>
+                        </div>
                       </div>
                     </div>
-                    <div className="schedule-block-body">
-                      <div className="schedule-block-column">
+                    {!block.collapsed && <div className="schedule-block-body">
+                        <div className="schedule-block-column">
                         <SectionHeading icon={Target} title="Привычки" meta={blockHabits.length} />
                         {blockHabits.length ? blockHabits.map(habit => <HabitRow key={habit.id} habit={habit} dateStr={dateStr} hideUnitTracker />) : <p className="schedule-empty-line">В этом блоке пока нет привычек</p>}
-                      </div>
-                      <div className="schedule-block-column">
-                        <SectionHeading icon={ListTodo} title="Задачи" meta={blockTasks.length} />
-                        {blockTasks.length ? blockTasks.map(task => <TaskRow key={task.id} task={task} dateStr={dateStr} isCondensed />) : <p className="schedule-empty-line">В этом блоке пока нет задач</p>}
-                      </div>
-                    </div>
+                        </div>
+                    </div>}
                   </article>
                 );
               }) : <EmptyState title="Расписание пока пустое" description="Создайте блок во вкладке «Добавить»." />}
             </section>
             <section className="app-surface schedule-tasks">
-              <SectionHeading icon={ListTodo} title="Вне блоков" meta={allDayTasks.length} action={<button onClick={openTaskModal} className="icon-button is-small"><Plus className="size-4" /></button>} />
-              {allDayTasks.length ? allDayTasks.map((task) => <TaskRow key={task.id} task={task} dateStr={dateStr} isCondensed />) : <EmptyState compact title="Всё распределено" description="Задачи с блоками находятся внутри расписания." />}
+              <SectionHeading icon={ListTodo} title="Задачи дня" meta={todayTasks.length} action={<button onClick={openTaskModal} className="icon-button is-small"><Plus className="size-4" /></button>} />
+              <p className="schedule-tasks-hint">Все задачи собраны здесь независимо от блока и отсортированы по времени.</p>
+              {todayTasks.length ? todayTasks.map((task) => <TaskRow key={task.id} task={task} dateStr={dateStr} isCondensed showTime />) : <EmptyState compact title="Задач на день нет" description="Добавьте задачу и укажите точное время выполнения." />}
             </section>
           </motion.div>
         )}
