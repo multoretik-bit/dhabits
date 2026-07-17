@@ -1,113 +1,72 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { getStartOfWeek, getDaysInWeek, isSameDay, getDayName, getMonthName } from "@/lib/dateUtils";
 import { cn } from "@/lib/utils";
 
-interface CalendarProps {
-  selectedDate: Date;
-  onDateChange: (date: Date) => void;
-}
-
-export default function Calendar({ selectedDate, onDateChange }: CalendarProps) {
+export default function Calendar({ selectedDate, onDateChange }: { selectedDate: Date; onDateChange: (date: Date) => void }) {
   const [weekStart, setWeekStart] = useState(() => getStartOfWeek(selectedDate));
   const [direction, setDirection] = useState(0);
-
   const days = getDaysInWeek(weekStart);
-  const now = new Date();
+  const today = new Date();
 
-  const handlePrevWeek = () => {
-    setDirection(-1);
-    const newStart = new Date(weekStart);
-    newStart.setDate(weekStart.getDate() - 7);
-    setWeekStart(newStart);
-  };
-
-  const handleNextWeek = () => {
-    setDirection(1);
-    const newStart = new Date(weekStart);
-    newStart.setDate(weekStart.getDate() + 7);
-    setWeekStart(newStart);
+  const changeWeek = (offset: number) => {
+    setDirection(offset);
+    setWeekStart((current) => {
+      const next = new Date(current);
+      next.setDate(current.getDate() + offset * 7);
+      return next;
+    });
   };
 
   useEffect(() => {
-    // If external selectedDate changes significantly, update weekStart
-    const newWeekStart = getStartOfWeek(selectedDate);
-    if (!isSameDay(newWeekStart, weekStart)) {
-      setWeekStart(newWeekStart);
-    }
+    const selectedWeek = getStartOfWeek(selectedDate);
+    if (!isSameDay(selectedWeek, weekStart)) setWeekStart(selectedWeek);
   }, [selectedDate]);
 
   return (
-    <div className="flex flex-col gap-3 px-4 pt-4 select-none relative z-20">
-      <div className="flex items-center justify-between px-2">
-        <h2 className="text-zinc-100 font-bold capitalize">
-          {getMonthName(weekStart)}, {weekStart.getFullYear()}
-        </h2>
-        <div className="flex gap-2">
-          <button 
-            onClick={handlePrevWeek} 
-            className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-all active:scale-95"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button 
-            onClick={handleNextWeek} 
-            className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-white transition-all active:scale-95"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+    <section className="week-calendar" aria-label="Календарь недели">
+      <div className="week-calendar-head">
+        <h2>{getMonthName(weekStart)}, {weekStart.getFullYear()}</h2>
+        <div className="flex gap-1">
+          <button className="icon-button is-small" onClick={() => changeWeek(-1)} aria-label="Предыдущая неделя"><ChevronLeft className="size-4" /></button>
+          <button className="icon-button is-small" onClick={() => changeWeek(1)} aria-label="Следующая неделя"><ChevronRight className="size-4" /></button>
         </div>
       </div>
-
-      <div className="relative overflow-hidden">
+      <div className="overflow-hidden">
         <AnimatePresence mode="popLayout" custom={direction}>
           <motion.div
             key={weekStart.toISOString()}
             custom={direction}
             variants={{
-              enter: (dir: number) => ({ x: dir > 0 ? 300 : -300, opacity: 0 }),
+              enter: (dir: number) => ({ x: dir > 0 ? 120 : -120, opacity: 0 }),
               center: { x: 0, opacity: 1 },
-              exit: (dir: number) => ({ x: dir > 0 ? -300 : 300, opacity: 0 }),
+              exit: (dir: number) => ({ x: dir > 0 ? -120 : 120, opacity: 0 }),
             }}
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="flex justify-between gap-1"
+            transition={{ type: "spring", stiffness: 320, damping: 32 }}
+            className="week-days"
           >
             {days.map((day) => {
-              const isSelected = isSameDay(day, selectedDate);
-              const isToday = isSameDay(day, now);
+              const selected = isSameDay(day, selectedDate);
+              const isToday = isSameDay(day, today);
               return (
                 <button
                   key={day.toISOString()}
                   onClick={() => onDateChange(day)}
-                  className={cn(
-                    "flex-1 flex flex-col items-center py-2.5 rounded-2xl transition-all duration-300 active:scale-95 relative",
-                    isSelected 
-                      ? "bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.4)] text-white" 
-                      : "hover:bg-white/5 text-zinc-400"
-                  )}
+                  className={cn("week-day", selected && "is-selected", isToday && "is-today")}
+                  aria-pressed={selected}
                 >
-                  <span className={cn(
-                    "text-[10px] uppercase font-bold tracking-wider mb-1 opacity-60 transition-colors",
-                    isSelected ? "text-blue-100" : ""
-                  )}>
-                    {getDayName(day)}
-                  </span>
-                  <span className="text-sm font-black transition-all">
-                    {day.getDate()}
-                  </span>
-                  {isToday && !isSelected && (
-                    <div className="absolute bottom-1 w-1 h-1 rounded-full bg-blue-500" />
-                  )}
+                  <span>{getDayName(day)}</span>
+                  <strong>{day.getDate()}</strong>
                 </button>
               );
             })}
           </motion.div>
         </AnimatePresence>
       </div>
-    </div>
+    </section>
   );
 }
