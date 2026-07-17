@@ -777,6 +777,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     storage.saveData(newData);
   };
 
+  // Saves locally AND pushes to cloud immediately (bypassing the 500ms debounce)
+  // so deletions can't be resurrected by a stale write racing in from another device/tab.
+  const pushImmediateSync = async (updates: Partial<StorageData>) => {
+    const data = storage.getData();
+    const updatedData = { ...data, ...updates, lastUpdated: new Date().toISOString(), clientId: clientIdRef.current };
+    storage.saveData(updatedData);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await syncSave(session.user.id, updatedData);
+      }
+    } catch (err) {
+      console.error("pushImmediateSync error:", err);
+    }
+  };
+
   const saveAllData = (
     coinsValue: number,
     habitsValue: Habit[],
@@ -901,7 +917,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const newBlocks = blocks.map((b) => ({ ...b, habits: b.habits.filter((h) => h.id !== id) }));
     setHabits(newHabits);
     setBlocks(newBlocks);
-    saveAllData(coins, newHabits, newBlocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
+    pushImmediateSync({ habits: newHabits, blocks: newBlocks });
   };
 
   const completeHabit = (id: string, dateStr?: string) => {
@@ -983,7 +999,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setBlocks(newBlocks);
     setHabits(newHabits);
     setTasks(newTasks);
-    saveAllData(coins, newHabits, newBlocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, newTasks, taskFolders, customColors);
+    pushImmediateSync({ blocks: newBlocks, habits: newHabits, tasks: newTasks });
   };
 
   const toggleBlockCollapse = (id: string) => {
@@ -1005,7 +1021,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const deleteHabitFolder = (id: string) => {
     const newFolders = habitFolders.filter((f) => f.id !== id);
     setHabitFolders(newFolders);
-    saveAllData(coins, habits, blocks, newFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors);
+    pushImmediateSync({ habitFolders: newFolders });
   };
 
   const toggleHabitFolderCollapse = (id: string) => {
