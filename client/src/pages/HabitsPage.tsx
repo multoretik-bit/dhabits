@@ -181,7 +181,10 @@ function HabitsTab() {
 
       <div className="space-y-3">
         {habitFolders.map((f) => {
-          const fHabits = habits.filter((h) => h.folder === f.id);
+          const fHabits = habits.filter((h) =>
+            h.folder === f.id ||
+            (f.id === "general" && !habitFolders.some((hf) => hf.id === h.folder))
+          );
           return (
             <div key={f.id} className="bg-card rounded-xl border border-border overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 bg-secondary">
