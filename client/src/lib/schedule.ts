@@ -3,6 +3,14 @@ export interface TimedBlock {
   endTime?: string;
 }
 
+export interface HabitWeekSchedule {
+  daysOfWeek?: readonly unknown[];
+}
+
+export function isHabitScheduledForDay(habit: HabitWeekSchedule, dayOfWeek: number): boolean {
+  return habit.daysOfWeek?.some((day) => Number(day) === dayOfWeek) ?? false;
+}
+
 export function getCurrentBlock<T extends TimedBlock>(blocks: T[], now: Date): T | null {
   const total = now.getHours() * 60 + now.getMinutes();
   return blocks.find((block) => {

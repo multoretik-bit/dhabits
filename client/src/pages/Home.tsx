@@ -16,6 +16,7 @@ import { nanoid } from "nanoid";
 import { useApp, type HabitBlock, type Task, getCurrentBlock } from "@/contexts/AppContext";
 import { formatDateToDateString, isSameDay } from "@/lib/dateUtils";
 import { getBlockIllustration } from "@/lib/blockIllustrations";
+import { isHabitScheduledForDay } from "@/lib/schedule";
 import Calendar from "@/components/Calendar";
 import HabitRow from "@/components/HabitRow";
 import TaskRow from "@/components/TaskRow";
@@ -101,8 +102,8 @@ export default function Home() {
   const featuredBlock = activeBlock ?? nextBlock ?? previousBlock ?? todayBlocks[0] ?? null;
   const focusLabel = activeBlock ? "Сейчас в фокусе" : nextBlock ? "Следующий блок" : previousBlock ? "Последний блок дня" : "Блок дня";
   const featuredColor = getBlockColor(featuredBlock);
-  const featuredHabits = featuredBlock ? habits.filter((habit) => habit.blockId === featuredBlock.id && (!habit.daysOfWeek?.length || habit.daysOfWeek.includes(dayOfWeek))) : [];
-  const dailyHabits = habits.filter((habit) => !habit.daysOfWeek?.length || habit.daysOfWeek.includes(dayOfWeek));
+  const featuredHabits = featuredBlock ? habits.filter((habit) => habit.blockId === featuredBlock.id && isHabitScheduledForDay(habit, dayOfWeek)) : [];
+  const dailyHabits = habits.filter((habit) => isHabitScheduledForDay(habit, dayOfWeek));
   const allDayHabits = dailyHabits.filter((habit) => !habit.blockId || habit.blockId === "general");
 
   const focusItems = featuredHabits;
@@ -228,7 +229,7 @@ export default function Home() {
             <section className="app-surface schedule-timeline">
               <SectionHeading icon={Clock} title="Блоки дня" meta={todayBlocks.length} />
               {todayBlocks.length ? todayBlocks.map((block) => {
-                const blockHabits = habits.filter((habit) => habit.blockId === block.id && (!habit.daysOfWeek?.length || habit.daysOfWeek.includes(dayOfWeek)));
+                const blockHabits = habits.filter((habit) => habit.blockId === block.id && isHabitScheduledForDay(habit, dayOfWeek));
                 const isCurrent = activeBlock?.id === block.id;
                 return (
                   <article key={block.id} className={`schedule-block ${isCurrent ? "is-current" : ""}`} style={{ "--block-color": getBlockColor(block) } as React.CSSProperties}>

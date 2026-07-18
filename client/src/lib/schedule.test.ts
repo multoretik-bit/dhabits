@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getCurrentBlock } from "./schedule";
+import { getCurrentBlock, isHabitScheduledForDay } from "./schedule";
 
 const blocks = [
   { id: "morning", startTime: "09:00", endTime: "10:00" },
@@ -19,5 +19,22 @@ describe("getCurrentBlock", () => {
   it("supports blocks that cross midnight", () => {
     expect(at(23, 30)).toBe("night");
     expect(at(0, 30)).toBe("night");
+  });
+});
+
+describe("isHabitScheduledForDay", () => {
+  it("shows a habit only on an explicitly selected weekday", () => {
+    const habit = { daysOfWeek: [1, 3, 5] };
+    expect(isHabitScheduledForDay(habit, 3)).toBe(true);
+    expect(isHabitScheduledForDay(habit, 4)).toBe(false);
+  });
+
+  it("does not treat an empty or missing schedule as every day", () => {
+    expect(isHabitScheduledForDay({ daysOfWeek: [] }, 6)).toBe(false);
+    expect(isHabitScheduledForDay({}, 6)).toBe(false);
+  });
+
+  it("supports weekday values saved by older versions as strings", () => {
+    expect(isHabitScheduledForDay({ daysOfWeek: ["0", "2"] }, 2)).toBe(true);
   });
 });
