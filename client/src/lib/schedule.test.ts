@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getCurrentBlock, isHabitScheduledForDay } from "./schedule";
+import { applyDayScheduleOverride, getCurrentBlock, isHabitScheduledForDay } from "./schedule";
 
 const blocks = [
   { id: "morning", startTime: "09:00", endTime: "10:00" },
@@ -36,5 +36,39 @@ describe("isHabitScheduledForDay", () => {
 
   it("supports weekday values saved by older versions as strings", () => {
     expect(isHabitScheduledForDay({ daysOfWeek: ["0", "2"] }, 2)).toBe(true);
+  });
+});
+
+describe("applyDayScheduleOverride", () => {
+  it("returns the blocks unchanged when there is no override for the day", () => {
+    expect(applyDayScheduleOverride(blocks, undefined)).toEqual(blocks);
+  });
+
+  it("drops blocks hidden for that day", () => {
+    const result = applyDayScheduleOverride(blocks, { hidden: ["work"] });
+    expect(result.map((b) => b.id)).toEqual(["morning", "night"]);
+  });
+
+  it("applies a per-day start/end time override without touching the original block", () => {
+    const result = applyDayScheduleOverride(blocks, { times: { work: { startTime: "17:00" } } });
+    expect(result.find((b) => b.id === "work")).toMatchObject({ startTime: "17:00", endTime: "18:00" });
+    expect(blocks.find((b) => b.id === "work")!.startTime).toBe("16:00");
+  });
+
+  it("reorders blocks per the saved order and appends unlisted blocks at the end", () => {
+    const result = applyDayScheduleOverride(blocks, { order: ["night", "morning"] });
+    expect(result.map((b) => b.id)).toEqual(["night", "morning", "work"]);
+  });
+
+  it("combines hiding, retiming and reordering together", () => {
+    const result = applyDayScheduleOverride(blocks, {
+      hidden: ["morning"],
+      times: { night: { endTime: "02:00" } },
+      order: ["night", "work"],
+    });
+    expect(result).toEqual([
+      { id: "night", startTime: "23:00", endTime: "02:00" },
+      { id: "work", startTime: "16:00", endTime: "18:00" },
+    ]);
   });
 });

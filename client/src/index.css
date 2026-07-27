@@ -334,6 +334,20 @@
   .schedule-block-column .section-heading { margin-bottom: 9px; }
   .schedule-block-column .habit-row, .schedule-block-column .task-row { background: var(--surface-raised); }
   .schedule-empty-line { min-height: 54px; display: grid; place-items: center; padding: 10px; border: 1px dashed var(--border); border-radius: 14px; color: var(--muted-foreground); font-size: 10px; text-align: center; }
+  .schedule-edit-controls { display: flex; align-items: center; gap: 10px; }
+  .schedule-edit-controls .icon-button.is-active { color: white; border-color: var(--primary); background: var(--primary); }
+  .schedule-edit-hint { margin: -4px 0 2px; color: var(--muted-foreground); font-size: 10px; line-height: 1.5; }
+  .schedule-time-edit { min-width: 118px; display: flex; align-items: center; gap: 4px; padding: 6px 8px; border: 1px solid color-mix(in srgb, var(--block-color) 26%, transparent); border-radius: 13px; background: color-mix(in srgb, var(--block-color) 11%, var(--surface-raised)); }
+  .schedule-time-edit input[type="time"] { width: 68px; border: none; background: transparent; color: var(--block-color); font-size: 11px; font-weight: 900; font-family: inherit; }
+  .schedule-time-edit input[type="time"]:focus { outline: none; }
+  .schedule-time-edit span { opacity: .5; color: var(--block-color); }
+  .schedule-today-badge { padding: 3px 7px; border-radius: 999px; color: var(--block-color); background: color-mix(in srgb, var(--block-color) 16%, transparent); font-size: 8px; font-weight: 900; letter-spacing: .04em; }
+  .schedule-reorder { display: flex; flex-direction: column; gap: 2px; }
+  .schedule-reorder .icon-button { width: 26px; height: 26px; border-radius: 8px; }
+  .schedule-reorder .icon-button:disabled { opacity: .3; pointer-events: none; }
+  .schedule-hidden-blocks { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border: 1px dashed var(--border); border-radius: 14px; color: var(--muted-foreground); font-size: 10px; }
+  .schedule-hidden-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; color: var(--foreground); background: var(--surface-raised); font-size: 10px; font-weight: 700; }
+  .schedule-hidden-chip:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
   .day-picker { display: flex; flex-wrap: wrap; gap: 6px; }
   .day-picker button { width: 38px; height: 34px; border: 1px solid var(--border); border-radius: 10px; color: var(--muted-foreground); background: var(--secondary); font-size: 10px; font-weight: 800; }
   .day-picker button.is-active { color: white; border-color: var(--primary); background: var(--primary); }
@@ -632,7 +646,7 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .schedule-timeline, .schedule-tasks { padding: 14px; }
   .schedule-block { padding: 12px; border-radius: 18px; }
   .schedule-block-head { grid-template-columns: 1fr auto; }
-  .schedule-time { grid-column: 1 / -1; justify-self: start; min-width: 0; }
+  .schedule-time, .schedule-time-edit { grid-column: 1 / -1; justify-self: start; min-width: 0; }
   .schedule-block-head { gap: 9px; }
   .schedule-block-actions { gap: 4px; }
   .schedule-block-actions > img { width: 54px; height: 48px; }

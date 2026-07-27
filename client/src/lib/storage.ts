@@ -1,5 +1,7 @@
 // Data persistence layer for dHabits
 // Uses localStorage for simplicity
+import type { DayScheduleOverride } from "./schedule";
+
 export interface StorageData {
   habits: any[];
   goals: any[];
@@ -20,6 +22,7 @@ export interface StorageData {
   customColors?: string[];
   wakeUpTimes?: Record<string, string>;
   daySnapshots?: Record<string, any[]>;
+  dayScheduleOverrides?: Record<string, DayScheduleOverride>;
   identityValues?: any[];
   identityValueFolders?: any[];
   identitySystems?: any[];

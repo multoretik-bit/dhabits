@@ -2,21 +2,26 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  ArrowDown,
+  ArrowUp,
   CalendarDays,
   ChevronDown,
   ChevronUp,
   Clock,
   LayoutGrid,
   ListTodo,
+  Pencil,
   Plus,
+  RotateCcw,
   Sparkles,
   Target,
+  X,
 } from "lucide-react";
 import { nanoid } from "nanoid";
 import { useApp, type HabitBlock, type Task, getCurrentBlock } from "@/contexts/AppContext";
 import { formatDateToDateString, isSameDay } from "@/lib/dateUtils";
 import { getBlockIllustration } from "@/lib/blockIllustrations";
-import { isHabitScheduledForDay } from "@/lib/schedule";
+import { applyDayScheduleOverride, isHabitScheduledForDay } from "@/lib/schedule";
 import Calendar from "@/components/Calendar";
 import HabitRow from "@/components/HabitRow";
 import TaskRow from "@/components/TaskRow";
@@ -57,10 +62,14 @@ function getBlockColor(block?: HabitBlock | null) {
 }
 
 export default function Home() {
-  const { habits, tasks, blocks, addTask, toggleBlockCollapse } = useApp();
+  const {
+    habits, tasks, blocks, addTask, toggleBlockCollapse,
+    dayScheduleOverrides, reorderBlocksForDay, setBlockTimeOverrideForDay, hideBlockForDay, restoreBlockForDay, resetDayScheduleOverride,
+  } = useApp();
   const [mode, setMode] = useState<"focus" | "schedule">("focus");
   const [now, setNow] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isEditingToday, setIsEditingToday] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [taskTitle, setTaskTitle] = useState("");
   const [taskEmoji, setTaskEmoji] = useState("📋");
@@ -87,18 +96,50 @@ export default function Home() {
   const dayOfWeek = selectedDate.getDay();
   const selectedIsToday = isSameDay(selectedDate, now);
 
-  const todayBlocks = useMemo(() => blocks
+  useEffect(() => {
+    if (!selectedIsToday) setIsEditingToday(false);
+  }, [selectedIsToday]);
+
+  const dayOverride = dayScheduleOverrides[dateStr];
+
+  const baseTodayBlocks = useMemo(() => blocks
     .filter((block) => block.isOneTime ? block.specificDate === dateStr : !block.daysOfWeek?.length || block.daysOfWeek.includes(dayOfWeek))
     .sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)), [blocks, dateStr, dayOfWeek]);
+
+  const todayBlocks = useMemo(
+    () => (selectedIsToday ? applyDayScheduleOverride(baseTodayBlocks, dayOverride) : baseTodayBlocks),
+    [baseTodayBlocks, dayOverride, selectedIsToday]
+  );
+
+  const hiddenTodayBlocks = useMemo(() => {
+    if (!selectedIsToday || !dayOverride?.hidden?.length) return [];
+    const hiddenIds = new Set(dayOverride.hidden);
+    return baseTodayBlocks.filter((block) => hiddenIds.has(block.id));
+  }, [baseTodayBlocks, dayOverride, selectedIsToday]);
+
+  const moveScheduleBlock = (blockId: string, direction: -1 | 1) => {
+    const order = todayBlocks.map((block) => block.id);
+    const idx = order.indexOf(blockId);
+    const swapIdx = idx + direction;
+    if (idx < 0 || swapIdx < 0 || swapIdx >= order.length) return;
+    [order[idx], order[swapIdx]] = [order[swapIdx], order[idx]];
+    reorderBlocksForDay(dateStr, order);
+  };
 
   const todayTasks = useMemo(() => tasks
     .filter((task) => task.specificDate ? task.specificDate === dateStr : !task.daysOfWeek?.length || task.daysOfWeek.includes(dayOfWeek))
     .sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time)), [tasks, dateStr, dayOfWeek]);
 
-  const activeBlock = selectedIsToday ? getCurrentBlock(todayBlocks, now) : null;
+  // Reordering only changes display position, so time-based lookups (active/next/previous)
+  // need their own chronological view instead of relying on the manually reordered list.
+  const chronoTodayBlocks = useMemo(
+    () => [...todayBlocks].sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)),
+    [todayBlocks]
+  );
+  const activeBlock = selectedIsToday ? getCurrentBlock(chronoTodayBlocks, now) : null;
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const nextBlock = selectedIsToday ? todayBlocks.find(block => block.startTime && timeToMinutes(block.startTime) > currentMinutes) ?? null : null;
-  const previousBlock = selectedIsToday ? [...todayBlocks].reverse().find(block => block.endTime && timeToMinutes(block.endTime) <= currentMinutes) ?? null : null;
+  const nextBlock = selectedIsToday ? chronoTodayBlocks.find(block => block.startTime && timeToMinutes(block.startTime) > currentMinutes) ?? null : null;
+  const previousBlock = selectedIsToday ? [...chronoTodayBlocks].reverse().find(block => block.endTime && timeToMinutes(block.endTime) <= currentMinutes) ?? null : null;
   const featuredBlock = activeBlock ?? nextBlock ?? previousBlock ?? todayBlocks[0] ?? null;
   const focusLabel = activeBlock ? "Сейчас в фокусе" : nextBlock ? "Следующий блок" : previousBlock ? "Последний блок дня" : "Блок дня";
   const featuredColor = getBlockColor(featuredBlock);
@@ -227,21 +268,62 @@ export default function Home() {
         ) : (
           <motion.div key="schedule" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="schedule-layout">
             <section className="app-surface schedule-timeline">
-              <SectionHeading icon={Clock} title="Блоки дня" meta={todayBlocks.length} />
-              {todayBlocks.length ? todayBlocks.map((block) => {
+              <SectionHeading
+                icon={Clock}
+                title="Блоки дня"
+                meta={todayBlocks.length}
+                action={selectedIsToday ? (
+                  <div className="schedule-edit-controls">
+                    {dayOverride && (
+                      <button type="button" className="text-action" onClick={() => resetDayScheduleOverride(dateStr)}>
+                        <RotateCcw className="size-3.5" /> Сбросить сегодня
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingToday((value) => !value)}
+                      className={`icon-button is-small ${isEditingToday ? "is-active" : ""}`}
+                      aria-pressed={isEditingToday}
+                      aria-label="Изменить расписание на сегодня"
+                    >
+                      <Pencil className="size-4" />
+                    </button>
+                  </div>
+                ) : undefined}
+              />
+              {isEditingToday && (
+                <p className="schedule-edit-hint">Изменения времени, порядка и видимости блоков действуют только сегодня и не повлияют на другие дни.</p>
+              )}
+              {todayBlocks.length ? todayBlocks.map((block, index) => {
                 const blockHabits = habits.filter((habit) => habit.blockId === block.id && isHabitScheduledForDay(habit, dayOfWeek));
                 const isCurrent = activeBlock?.id === block.id;
+                const hasTimeOverride = Boolean(dayOverride?.times?.[block.id]);
                 return (
                   <article key={block.id} className={`schedule-block ${isCurrent ? "is-current" : ""}`} style={{ "--block-color": getBlockColor(block) } as React.CSSProperties}>
                     <div className="schedule-block-head">
-                      <div className="schedule-time"><strong>{block.startTime || "—"}</strong><span>—</span><strong>{block.endTime || "—"}</strong></div>
+                      {isEditingToday ? (
+                        <div className="schedule-time schedule-time-edit">
+                          <input type="time" value={block.startTime || ""} onChange={(event) => setBlockTimeOverrideForDay(dateStr, block.id, { startTime: event.target.value })} aria-label="Начало блока сегодня" />
+                          <span>—</span>
+                          <input type="time" value={block.endTime || ""} onChange={(event) => setBlockTimeOverrideForDay(dateStr, block.id, { endTime: event.target.value })} aria-label="Конец блока сегодня" />
+                        </div>
+                      ) : (
+                        <div className="schedule-time"><strong>{block.startTime || "—"}</strong><span>—</span><strong>{block.endTime || "—"}</strong></div>
+                      )}
                       <div className="schedule-copy">
-                        <div><strong>{block.name}</strong>{isCurrent && <span className="schedule-now">Сейчас</span>}</div>
+                        <div><strong>{block.name}</strong>{isCurrent && <span className="schedule-now">Сейчас</span>}{hasTimeOverride && <span className="schedule-today-badge">Изменено сегодня</span>}</div>
                         <span>{blockHabits.length} привычек</span>
                       </div>
                       <div className="schedule-block-actions">
+                        {isEditingToday && (
+                          <div className="schedule-reorder">
+                            <button type="button" onClick={() => moveScheduleBlock(block.id, -1)} disabled={index === 0} className="icon-button is-small" aria-label="Переместить блок выше"><ArrowUp className="size-4" /></button>
+                            <button type="button" onClick={() => moveScheduleBlock(block.id, 1)} disabled={index === todayBlocks.length - 1} className="icon-button is-small" aria-label="Переместить блок ниже"><ArrowDown className="size-4" /></button>
+                          </div>
+                        )}
                         <img src={getBlockIllustration(block)} alt="" aria-hidden="true" />
                         <div className="schedule-links">
+                          {isEditingToday && <button type="button" onClick={() => hideBlockForDay(dateStr, block.id)} className="icon-button is-small subtle-danger" aria-label="Убрать блок из сегодняшнего дня"><X className="size-4" /></button>}
                           <button type="button" onClick={() => toggleBlockCollapse(block.id)} className="icon-button is-small" aria-label={block.collapsed ? "Развернуть блок" : "Свернуть блок"} aria-expanded={!block.collapsed}>{block.collapsed ? <ChevronDown className="size-4" /> : <ChevronUp className="size-4" />}</button>
                         </div>
                       </div>
@@ -255,6 +337,16 @@ export default function Home() {
                   </article>
                 );
               }) : <EmptyState title="Расписание пока пустое" description="Создайте блок в разделе «Саморазвитие»." />}
+              {isEditingToday && hiddenTodayBlocks.length > 0 && (
+                <div className="schedule-hidden-blocks">
+                  <span>Скрыто на сегодня:</span>
+                  {hiddenTodayBlocks.map((block) => (
+                    <button key={block.id} type="button" className="schedule-hidden-chip" onClick={() => restoreBlockForDay(dateStr, block.id)}>
+                      {block.name} <RotateCcw className="size-3.5" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </section>
             <section className="app-surface schedule-tasks">
               <SectionHeading icon={ListTodo} title="Задачи дня" meta={todayTasks.length} action={<button onClick={openTaskModal} className="icon-button is-small"><Plus className="size-4" /></button>} />
