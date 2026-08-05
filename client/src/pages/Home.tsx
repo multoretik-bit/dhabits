@@ -23,6 +23,7 @@ import { formatDateToDateString, isSameDay } from "@/lib/dateUtils";
 import { getBlockIllustration } from "@/lib/blockIllustrations";
 import { applyDayScheduleOverride, isHabitScheduledForDay } from "@/lib/schedule";
 import Calendar from "@/components/Calendar";
+import MonthCalendar from "@/components/MonthCalendar";
 import HabitRow from "@/components/HabitRow";
 import TaskRow from "@/components/TaskRow";
 import FormModal from "@/components/FormModal";
@@ -66,7 +67,7 @@ export default function Home() {
     habits, tasks, blocks, addTask, toggleBlockCollapse,
     dayScheduleOverrides, reorderBlocksForDay, setBlockTimeOverrideForDay, hideBlockForDay, restoreBlockForDay, resetDayScheduleOverride,
   } = useApp();
-  const [mode, setMode] = useState<"focus" | "schedule">("focus");
+  const [mode, setMode] = useState<"focus" | "schedule" | "month">("focus");
   const [now, setNow] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isEditingToday, setIsEditingToday] = useState(false);
@@ -196,12 +197,13 @@ export default function Home() {
         actions={
           <SegmentedControl value={mode} onChange={setMode} ariaLabel="Режим главной страницы" items={[
             { value: "focus", label: "Фокус", icon: Target },
-            { value: "schedule", label: "Расписание", icon: CalendarDays },
+            { value: "schedule", label: "День", icon: CalendarDays },
+            { value: "month", label: "Месяц", icon: CalendarDays },
           ]} />
         }
       />
 
-      <Calendar selectedDate={selectedDate} onDateChange={setSelectedDate} />
+      {mode !== "month" && <Calendar selectedDate={selectedDate} onDateChange={setSelectedDate} />}
 
       <AnimatePresence initial={false} mode="sync">
         {mode === "focus" ? (
@@ -265,7 +267,7 @@ export default function Home() {
               </section>
             </aside>
           </motion.div>
-        ) : (
+        ) : mode === "schedule" ? (
           <motion.div key="schedule" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="schedule-layout">
             <section className="app-surface schedule-timeline">
               <SectionHeading
@@ -353,6 +355,10 @@ export default function Home() {
               <p className="schedule-tasks-hint">Все задачи собраны здесь независимо от блока и отсортированы по времени.</p>
               {todayTasks.length ? todayTasks.map((task) => <TaskRow key={task.id} task={task} dateStr={dateStr} isCondensed showTime />) : <EmptyState compact title="Задач на день нет" description="Добавьте задачу и укажите точное время выполнения." />}
             </section>
+          </motion.div>
+        ) : (
+          <motion.div key="month" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <MonthCalendar onSelectDate={setSelectedDate} />
           </motion.div>
         )}
       </AnimatePresence>
