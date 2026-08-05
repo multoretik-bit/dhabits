@@ -691,7 +691,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, wakeUpTimes, daySnapshots, dayScheduleOverrides, identityValues, identitySystems]);
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, identityValues, identitySystems]);
 
   // Handle mobile wake/focus
   useEffect(() => {
@@ -776,6 +776,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setWakeUpTimes(remoteData.wakeUpTimes || {});
       setDaySnapshots(remoteData.daySnapshots || {});
       setDayScheduleOverrides(remoteData.dayScheduleOverrides || {});
+      setMonthEvents(remoteData.monthEvents || []);
       setIdentityValues(remoteData.identityValues || []);
       setIdentityValueFolders(remoteData.identityValueFolders || []);
       if (remoteData.identitySystems) setIdentitySystems(remoteData.identitySystems);
@@ -904,6 +905,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setWakeUpTimes(remoteData.wakeUpTimes || {});
         setDaySnapshots(remoteData.daySnapshots || {});
         setDayScheduleOverrides(remoteData.dayScheduleOverrides || {});
+        setMonthEvents(remoteData.monthEvents || []);
         setIdentityValues(remoteData.identityValues || []);
         setIdentityValueFolders(remoteData.identityValueFolders || []);
         if (remoteData.identitySystems) setIdentitySystems(remoteData.identitySystems);
@@ -1603,13 +1605,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ? monthEvents.map((item) => item.id === event.id ? event : item)
       : [...monthEvents, event];
     setMonthEvents(newEvents);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas, dayScheduleOverrides, newEvents);
+    void pushImmediateSync({ monthEvents: newEvents });
   };
 
   const deleteMonthEvent = (id: string) => {
     const newEvents = monthEvents.filter((event) => event.id !== id);
     setMonthEvents(newEvents);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas, dayScheduleOverrides, newEvents);
+    void pushImmediateSync({ monthEvents: newEvents });
   };
 
   const addIdentityValue = (text: string, folderId?: string) => {
