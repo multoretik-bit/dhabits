@@ -256,6 +256,15 @@ export interface ShopFolder {
   collapsed: boolean;
 }
 
+export interface MonthEvent {
+  id: string;
+  startDate: string;
+  title: string;
+  color: string;
+  duration: number;
+  time?: string;
+}
+
 interface AppContextType {
   // ... existing ...
   wakeUpTimes: Record<string, string>;
@@ -270,6 +279,9 @@ interface AppContextType {
   hideBlockForDay: (dateStr: string, blockId: string) => void;
   restoreBlockForDay: (dateStr: string, blockId: string) => void;
   resetDayScheduleOverride: (dateStr: string) => void;
+  monthEvents: MonthEvent[];
+  saveMonthEvent: (event: MonthEvent) => void;
+  deleteMonthEvent: (id: string) => void;
   // ... existing fields ...
   customColors: string[];
   addCustomColor: (color: string) => void;
@@ -417,6 +429,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [wakeUpTimes, setWakeUpTimes] = useState<Record<string, string>>({});
   const [daySnapshots, setDaySnapshots] = useState<Record<string, SnapshotEntry[]>>({});
   const [dayScheduleOverrides, setDayScheduleOverrides] = useState<Record<string, DayScheduleOverride>>({});
+  const [monthEvents, setMonthEvents] = useState<MonthEvent[]>([]);
   const [identityValues, setIdentityValues] = useState<IdentityValue[]>([]);
   const [identityValueFolders, setIdentityValueFolders] = useState<IdentityValueFolder[]>([]);
   const [identitySystems, setIdentitySystems] = useState<IdentitySystem[]>(DEFAULT_IDENTITY_SYSTEMS);
@@ -435,7 +448,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // State ref to avoid stale closures in sync calls
   const currentStateRef = React.useRef({
-    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides,
+    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents,
     identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas
   });
 
@@ -445,10 +458,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     currentStateRef.current = {
-      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides,
+      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents,
       identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides,
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents,
       identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas]);
 
   useEffect(() => {
@@ -485,6 +498,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setWakeUpTimes(savedData.wakeUpTimes || {});
     setDaySnapshots(savedData.daySnapshots || {});
     setDayScheduleOverrides(savedData.dayScheduleOverrides || {});
+    setMonthEvents(savedData.monthEvents || []);
     setIdentityValues(savedData.identityValues || []);
     setIdentityValueFolders(savedData.identityValueFolders || []);
     if (savedData.identitySystems && savedData.identitySystems.length > 0) {
@@ -539,6 +553,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               setWakeUpTimes(remoteData.wakeUpTimes || {});
               setDaySnapshots(remoteData.daySnapshots || {});
               setDayScheduleOverrides(remoteData.dayScheduleOverrides || {});
+              setMonthEvents(remoteData.monthEvents || []);
               setIdentityValues(remoteData.identityValues || []);
               setIdentityValueFolders(remoteData.identityValueFolders || []);
               if (remoteData.identitySystems) setIdentitySystems(remoteData.identitySystems);
@@ -606,6 +621,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   setWakeUpTimes(newData.wakeUpTimes || {});
                   setDaySnapshots(newData.daySnapshots || {});
                   setDayScheduleOverrides(newData.dayScheduleOverrides || {});
+                  setMonthEvents(newData.monthEvents || []);
                   setIdentityValues(newData.identityValues || []);
                   setIdentityValueFolders(newData.identityValueFolders || []);
                   if (newData.identitySystems) setIdentitySystems(newData.identitySystems);
@@ -826,7 +842,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     identitySystemsValue?: IdentitySystem[],
     identitySystemFoldersValue?: IdentitySystemFolder[],
     identitySystemIdeasValue?: IdentitySystemIdea[],
-    dayScheduleOverridesValue?: Record<string, DayScheduleOverride>
+    dayScheduleOverridesValue?: Record<string, DayScheduleOverride>,
+    monthEventsValue?: MonthEvent[]
   ) => {
     const data: StorageData = {
       coins: coinsValue,
@@ -850,6 +867,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       identitySystemFolders: identitySystemFoldersValue || identitySystemFolders,
       identitySystemIdeas: identitySystemIdeasValue || identitySystemIdeas,
       dayScheduleOverrides: dayScheduleOverridesValue || dayScheduleOverrides,
+      monthEvents: monthEventsValue || monthEvents,
       progress: {},
       streaks: {},
       shop: [],
@@ -1580,6 +1598,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas, newOverrides);
   };
 
+  const saveMonthEvent = (event: MonthEvent) => {
+    const newEvents = monthEvents.some((item) => item.id === event.id)
+      ? monthEvents.map((item) => item.id === event.id ? event : item)
+      : [...monthEvents, event];
+    setMonthEvents(newEvents);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas, dayScheduleOverrides, newEvents);
+  };
+
+  const deleteMonthEvent = (id: string) => {
+    const newEvents = monthEvents.filter((event) => event.id !== id);
+    setMonthEvents(newEvents);
+    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas, dayScheduleOverrides, newEvents);
+  };
+
   const addIdentityValue = (text: string, folderId?: string) => {
     const newValue = { id: nanoid(), text, folderId };
     const newValues = [...identityValues, newValue];
@@ -1752,6 +1784,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         hideBlockForDay,
         restoreBlockForDay,
         resetDayScheduleOverride,
+        monthEvents,
+        saveMonthEvent,
+        deleteMonthEvent,
         identityValues,
         identityValueFolders,
         addIdentityValue,
