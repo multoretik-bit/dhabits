@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { Clock3, Pause, Play, RotateCcw, Square, TimerReset, Trash2 } from "lucide-react";
+import { ChevronDown, Clock3, Pause, Play, RotateCcw, Square, TimerReset, Trash2 } from "lucide-react";
 import { nanoid } from "nanoid";
 import {
   useApp,
@@ -42,6 +42,19 @@ function formatTime(isoString: string) {
   return new Date(isoString).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 }
 
+function formatSessionCount(count: number) {
+  const lastTwo = count % 100;
+  const last = count % 10;
+  const word = lastTwo >= 11 && lastTwo <= 14
+    ? "сессий"
+    : last === 1
+      ? "сессия"
+      : last >= 2 && last <= 4
+        ? "сессии"
+        : "сессий";
+  return `${count} ${word}`;
+}
+
 export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }) {
   const {
     activitySessions,
@@ -54,6 +67,7 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [sessionTitle, setSessionTitle] = useState("");
   const [sessionColor, setSessionColor] = useState("#315cff");
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!activityTimer.isRunning) return;
@@ -78,15 +92,15 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
   );
 
   const groupedTotals = useMemo(() => {
-    const totals = new Map<string, { title: string; color: string; seconds: number; count: number }>();
+    const totals = new Map<string, { key: string; title: string; color: string; seconds: number; sessions: ActivitySession[] }>();
     dailySessions.forEach((session) => {
       const key = `${session.color}:${session.title.trim().toLocaleLowerCase("ru-RU")}`;
       const current = totals.get(key);
       if (current) {
         current.seconds += session.durationSeconds;
-        current.count += 1;
+        current.sessions.push(session);
       } else {
-        totals.set(key, { title: session.title, color: session.color, seconds: session.durationSeconds, count: 1 });
+        totals.set(key, { key, title: session.title, color: session.color, seconds: session.durationSeconds, sessions: [session] });
       }
     });
     return Array.from(totals.values()).sort((a, b) => b.seconds - a.seconds);
@@ -186,31 +200,37 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
           <b>{formatDuration(totalDaySeconds || 0)}</b>
         </div>
 
-        {groupedTotals.length > 0 && (
+        {groupedTotals.length > 0 ? (
           <div className="activity-totals">
             {groupedTotals.map((item) => (
-              <article key={`${item.color}-${item.title}`} style={{ "--activity-color": item.color } as CSSProperties}>
-                <i />
-                <div><strong>{item.title}</strong><span>{item.count} {item.count === 1 ? "сессия" : "сессии"}</span></div>
-                <b>{formatDuration(item.seconds)}</b>
+              <article key={item.key} className={`activity-group ${expandedGroups[item.key] ? "is-expanded" : ""}`} style={{ "--activity-color": item.color } as CSSProperties}>
+                <button
+                  type="button"
+                  className="activity-group-summary"
+                  onClick={() => setExpandedGroups(current => ({ ...current, [item.key]: !current[item.key] }))}
+                  aria-expanded={Boolean(expandedGroups[item.key])}
+                  aria-label={`${expandedGroups[item.key] ? "Скрыть" : "Показать"} сессии занятия ${item.title}`}
+                >
+                  <i className="activity-group-dot" />
+                  <div><strong>{item.title}</strong><span>{formatSessionCount(item.sessions.length)}</span></div>
+                  <b>{formatDuration(item.seconds)}</b>
+                  <ChevronDown className="activity-group-chevron size-4" />
+                </button>
+                {expandedGroups[item.key] && (
+                  <div className="activity-group-sessions">
+                    {item.sessions.map((session) => (
+                      <div key={session.id} className="activity-session-row">
+                        <div><Clock3 className="size-3" /><span>{formatTime(session.startedAt)}–{formatTime(session.endedAt)}</span></div>
+                        <b>{formatDuration(session.durationSeconds)}</b>
+                        <button type="button" className="icon-button is-small subtle-danger" onClick={() => deleteActivitySession(session.id)} aria-label={`Удалить сессию ${session.title}`}><Trash2 className="size-3.5" /></button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </article>
             ))}
           </div>
-        )}
-
-        <div className="activity-session-list">
-          {dailySessions.length ? dailySessions.map((session) => (
-            <article key={session.id} style={{ "--activity-color": session.color } as CSSProperties}>
-              <i />
-              <div>
-                <strong>{session.title}</strong>
-                <span><Clock3 className="size-3" /> {formatTime(session.startedAt)}–{formatTime(session.endedAt)}</span>
-              </div>
-              <b>{formatDuration(session.durationSeconds)}</b>
-              <button type="button" className="icon-button is-small subtle-danger" onClick={() => deleteActivitySession(session.id)} aria-label={`Удалить запись ${session.title}`}><Trash2 className="size-3.5" /></button>
-            </article>
-          )) : <EmptyState compact title="Пока нет записей" description="Завершённые занятия появятся здесь и сохранятся в вашем аккаунте." />}
-        </div>
+        ) : <EmptyState compact title="Пока нет занятий" description="Завершённые занятия появятся здесь и сохранятся в вашем аккаунте." />}
       </section>
 
       <FormModal

@@ -366,14 +366,22 @@
   .activity-day-head span { color: var(--muted-foreground); font-size: 8px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
   .activity-day-head strong { font-size: 13px; text-transform: capitalize; }
   .activity-day-head > b { color: var(--primary); font-size: 14px; }
-  .activity-totals, .activity-session-list { display: grid; gap: 7px; }
-  .activity-totals article, .activity-session-list > article { --activity-color: var(--primary); min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 9px 10px; border: 1px solid color-mix(in srgb, var(--activity-color) 18%, var(--border)); border-radius: 13px; background: color-mix(in srgb, var(--activity-color) 6%, var(--surface-soft)); }
-  .activity-totals article > i, .activity-session-list > article > i { width: 9px; height: 9px; border-radius: 50%; background: var(--activity-color); box-shadow: 0 0 0 4px color-mix(in srgb, var(--activity-color) 12%, transparent); }
-  .activity-totals article > div, .activity-session-list > article > div { min-width: 0; display: grid; gap: 2px; }
-  .activity-totals strong, .activity-session-list strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
-  .activity-totals span, .activity-session-list span { display: flex; align-items: center; gap: 4px; color: var(--muted-foreground); font-size: 8px; }
-  .activity-totals b, .activity-session-list b { color: var(--activity-color); font-size: 10px; white-space: nowrap; }
-  .activity-session-list > article { grid-template-columns: auto minmax(0, 1fr) auto auto; background: var(--surface-soft); }
+  .activity-totals { display: grid; gap: 7px; }
+  .activity-group { --activity-color: var(--primary); min-width: 0; overflow: hidden; border: 1px solid color-mix(in srgb, var(--activity-color) 18%, var(--border)); border-radius: 13px; background: color-mix(in srgb, var(--activity-color) 6%, var(--surface-soft)); }
+  .activity-group-summary { width: 100%; min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 9px; padding: 10px; color: var(--foreground); text-align: left; }
+  .activity-group-summary:hover { background: color-mix(in srgb, var(--activity-color) 7%, transparent); }
+  .activity-group-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--activity-color); box-shadow: 0 0 0 4px color-mix(in srgb, var(--activity-color) 12%, transparent); }
+  .activity-group-summary > div { min-width: 0; display: grid; gap: 2px; }
+  .activity-group-summary strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+  .activity-group-summary span { color: var(--muted-foreground); font-size: 8px; }
+  .activity-group-summary > b, .activity-session-row > b { color: var(--activity-color); font-size: 10px; white-space: nowrap; }
+  .activity-group-chevron { color: var(--muted-foreground); transition: transform .18s ease; }
+  .activity-group.is-expanded .activity-group-chevron { transform: rotate(180deg); }
+  .activity-group-sessions { display: grid; padding: 0 8px 8px; border-top: 1px solid color-mix(in srgb, var(--activity-color) 14%, var(--border)); }
+  .activity-session-row { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 8px 2px 7px 10px; border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent); }
+  .activity-session-row:last-child { border-bottom: 0; }
+  .activity-session-row > div { min-width: 0; display: flex; align-items: center; gap: 5px; color: var(--muted-foreground); }
+  .activity-session-row span { overflow: hidden; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
   .pomodoro-session-summary { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border)); border-radius: 14px; color: var(--primary); background: color-mix(in srgb, var(--primary) 7%, var(--surface-soft)); }
   .pomodoro-session-summary > div { display: grid; gap: 2px; }
   .pomodoro-session-summary span { color: var(--muted-foreground); font-size: 9px; }
@@ -752,9 +760,8 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .pomodoro-clock { width: min(100%, 190px); }
   .pomodoro-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .pomodoro-actions > .icon-button { grid-column: 1 / -1; width: 100%; }
-  .activity-totals article, .activity-session-list > article { padding: 8px; }
-  .activity-session-list > article { grid-template-columns: auto minmax(0, 1fr) auto; }
-  .activity-session-list > article > .icon-button { grid-column: 2 / -1; justify-self: end; }
+  .activity-group-summary { grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 7px; padding: 9px 8px; }
+  .activity-session-row { padding-left: 7px; }
   .month-calendar { padding: 11px; border-radius: 20px; }
   .month-calendar-head { align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
   .month-calendar-head h2 { font-size: 21px; }
