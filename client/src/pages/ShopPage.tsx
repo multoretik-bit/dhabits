@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import {
-  BatteryCharging,
   Brain,
   Check,
   ChevronRight,
@@ -22,6 +21,7 @@ import { toast } from "sonner";
 import { useApp, getNextCharacterLevelCost, type CharacterState, type ShopItem } from "@/contexts/AppContext";
 import { EmptyState, PageHeader, PageShell, SectionHeading } from "@/components/AppUI";
 import CharacterDisplay from "@/components/CharacterDisplay";
+import DailyEnergyCard from "@/components/DailyEnergyCard";
 import CoinDisplay from "@/components/CoinDisplay";
 import FormModal from "@/components/FormModal";
 import { FormInput, FormSelect, FormTextArea } from "@/components/FormInputs";
@@ -43,7 +43,6 @@ const APPEARANCE_LABELS: Record<keyof typeof APPEARANCE_OPTIONS, string> = {
 };
 
 const ATTRIBUTES = [
-  { id: "energy", label: "Энергия", icon: BatteryCharging, color: "#ff9f1c" },
   { id: "selfLove", label: "Любовь к себе", icon: Heart, color: "#f04e7a" },
   { id: "focus", label: "Фокус", icon: Brain, color: "#315cff" },
   { id: "confidence", label: "Уверенность", icon: ShieldCheck, color: "#7765f5" },
@@ -277,7 +276,8 @@ export default function ShopPage() {
       </section>
 
       <section className="profile-attributes app-surface">
-        <SectionHeading icon={Sparkles} title="Мои характеристики" meta="Как я чувствую себя сейчас" />
+        <SectionHeading icon={Sparkles} title="Мои характеристики" meta="Состояние на каждый день" />
+        <DailyEnergyCard />
         <div className="profile-attribute-grid">
           {ATTRIBUTES.map(attribute => {
             const Icon = attribute.icon;

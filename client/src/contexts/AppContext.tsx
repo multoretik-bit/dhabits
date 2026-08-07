@@ -217,6 +217,21 @@ export interface ShopItem {
   description?: string;
 }
 
+export interface DailyEnergyChange {
+  id: string;
+  delta: number;
+  note?: string;
+  createdAt: string;
+}
+
+export interface DailyEnergyRecord {
+  date: string;
+  initial: number;
+  current: number;
+  changes: DailyEnergyChange[];
+  updatedAt: string;
+}
+
 export interface CharacterState {
   head?: string;
   body?: string;
@@ -235,6 +250,7 @@ export interface CharacterState {
   };
   balance?: Record<string, number>;
   attributes?: Record<string, number>;
+  dailyEnergy?: Record<string, DailyEnergyRecord>;
 }
 
 export function getNextCharacterLevelCost(currentLevel: number): number {

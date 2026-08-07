@@ -542,6 +542,46 @@
   .profile-balance-editor strong { color: var(--sphere-color); }
   .profile-balance-editor input, .profile-attribute input { width: 100%; height: 5px; accent-color: var(--sphere-color); }
   .profile-attributes { margin-top: 18px; padding: 20px; }
+  .daily-energy-card { --energy-color: #ff9f1c; display: grid; gap: 15px; margin-bottom: 12px; padding: 18px; border: 1px solid color-mix(in srgb, var(--energy-color) 25%, var(--border)); border-radius: 20px; background: radial-gradient(circle at 0 0, color-mix(in srgb, var(--energy-color) 12%, transparent), transparent 34%), linear-gradient(135deg, color-mix(in srgb, var(--energy-color) 5%, var(--surface-soft)), var(--surface-soft)); }
+  .daily-energy-card.is-empty { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+  .daily-energy-intro, .daily-energy-overview { min-width: 0; display: flex; align-items: center; gap: 13px; }
+  .daily-energy-icon { width: 50px; height: 50px; display: grid; place-items: center; flex: none; border-radius: 16px; color: var(--energy-color); background: color-mix(in srgb, var(--energy-color) 14%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--energy-color) 12%, transparent); }
+  .daily-energy-intro span, .daily-energy-title span { color: var(--energy-color); font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+  .daily-energy-intro h3, .daily-energy-title h3 { margin-top: 3px; font-size: 16px; }
+  .daily-energy-intro p { max-width: 660px; margin-top: 4px; color: var(--muted-foreground); font-size: 10px; line-height: 1.55; }
+  .daily-energy-morning-form { display: flex; align-items: end; gap: 8px; }
+  .daily-energy-morning-form label, .daily-energy-amount, .daily-energy-note { display: grid; gap: 5px; color: var(--muted-foreground); font-size: 8px; font-weight: 800; }
+  .daily-energy-morning-form label > div, .daily-energy-amount > div { display: flex; align-items: center; min-height: 38px; padding: 0 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-raised); }
+  .daily-energy-morning-form input, .daily-energy-amount input { width: 62px; min-width: 0; color: var(--foreground); background: transparent; font: inherit; font-size: 12px; font-weight: 900; outline: none; }
+  .daily-energy-morning-form b, .daily-energy-amount b { color: var(--energy-color); font-size: 11px; }
+  .daily-energy-overview { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; }
+  .daily-energy-value { color: var(--energy-color); font-size: clamp(30px, 4vw, 44px); line-height: 1; letter-spacing: -.05em; }
+  .daily-energy-progress { height: 10px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--energy-color) 10%, var(--border)); box-shadow: inset 0 1px 3px rgba(0,0,0,.12); }
+  .daily-energy-progress i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #f07c18, var(--energy-color), #ffc04c); box-shadow: 0 0 16px color-mix(in srgb, var(--energy-color) 45%, transparent); transition: width .25s ease; }
+  .daily-energy-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+  .daily-energy-stats > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 38px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--surface-raised) 76%, transparent); }
+  .daily-energy-stats span { color: var(--muted-foreground); font-size: 8px; font-weight: 750; }
+  .daily-energy-stats strong { font-size: 10px; }
+  .daily-energy-card .is-positive { color: #19b37a; }
+  .daily-energy-card .is-negative { color: #f05a67; }
+  .daily-energy-controls { display: grid; grid-template-columns: minmax(100px, .4fr) minmax(190px, 1fr) auto; align-items: end; gap: 8px; padding-top: 13px; border-top: 1px solid var(--border); }
+  .daily-energy-note > input { min-width: 0; min-height: 38px; padding: 8px 11px; border: 1px solid var(--border); border-radius: 12px; color: var(--foreground); background: var(--surface-raised); font: inherit; font-size: 10px; outline: none; }
+  .daily-energy-note > input:focus, .daily-energy-morning-form label > div:focus-within, .daily-energy-amount > div:focus-within { border-color: color-mix(in srgb, var(--energy-color) 70%, var(--border)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--energy-color) 11%, transparent); }
+  .daily-energy-actions { display: flex; gap: 7px; }
+  .daily-energy-actions .app-button { min-height: 38px; }
+  .daily-energy-actions .energy-spend { color: #f05a67; }
+  .daily-energy-actions .energy-add { border-color: var(--energy-color); background: var(--energy-color); box-shadow: 0 8px 18px color-mix(in srgb, var(--energy-color) 22%, transparent); }
+  .daily-energy-history { display: grid; gap: 8px; padding-top: 13px; border-top: 1px solid var(--border); }
+  .daily-energy-history-head { display: flex; justify-content: space-between; gap: 10px; font-size: 9px; }
+  .daily-energy-history-head span { color: var(--muted-foreground); }
+  .daily-energy-history > div { display: grid; gap: 5px; max-height: 185px; overflow-y: auto; }
+  .daily-energy-history article { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 11px; background: color-mix(in srgb, var(--surface-raised) 78%, transparent); }
+  .daily-energy-history article > i { width: 27px; height: 27px; display: grid; place-items: center; border-radius: 9px; background: currentColor; }
+  .daily-energy-history article > i svg { color: white; }
+  .daily-energy-history article > div { min-width: 0; display: grid; gap: 2px; }
+  .daily-energy-history article strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
+  .daily-energy-history article span { color: var(--muted-foreground); font-size: 8px; }
+  .daily-energy-history article > b { font-size: 10px; }
   .profile-attribute-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .profile-attribute { --attribute-color: var(--primary); display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid color-mix(in srgb, var(--attribute-color) 14%, var(--border)); border-radius: 16px; background: linear-gradient(135deg, color-mix(in srgb, var(--attribute-color) 6%, var(--surface-soft)), var(--surface-soft)); }
   .profile-attribute-icon { width: 40px; height: 40px; display: grid; place-items: center; flex: none; border-radius: 13px; color: var(--attribute-color); background: color-mix(in srgb, var(--attribute-color) 11%, transparent); }
@@ -758,6 +798,12 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .profile-wheel-body { grid-template-columns: 1fr; }
   .profile-sphere-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .profile-attributes { padding: 14px; }
+  .daily-energy-card.is-empty { grid-template-columns: 1fr; }
+  .daily-energy-morning-form { align-items: stretch; flex-direction: column; }
+  .daily-energy-morning-form .app-button { width: 100%; }
+  .daily-energy-controls { grid-template-columns: 1fr; }
+  .daily-energy-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .daily-energy-stats { grid-template-columns: 1fr; }
   .profile-attribute-grid { grid-template-columns: 1fr; }
   .profile-item-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .profile-item-card { gap: 8px; padding: 9px; border-radius: 16px; }
