@@ -232,6 +232,22 @@ export interface DailyEnergyRecord {
   updatedAt: string;
 }
 
+export interface DailyFoodEntry {
+  id: string;
+  title: string;
+  grams: number;
+  caloriesPer100g: number;
+  calories: number;
+  createdAt: string;
+}
+
+export interface DailyWellnessRecord {
+  date: string;
+  sleepHours?: number;
+  foods: DailyFoodEntry[];
+  updatedAt: string;
+}
+
 export interface CharacterState {
   head?: string;
   body?: string;
@@ -251,6 +267,7 @@ export interface CharacterState {
   balance?: Record<string, number>;
   attributes?: Record<string, number>;
   dailyEnergy?: Record<string, DailyEnergyRecord>;
+  dailyWellness?: Record<string, DailyWellnessRecord>;
 }
 
 export function getNextCharacterLevelCost(currentLevel: number): number {

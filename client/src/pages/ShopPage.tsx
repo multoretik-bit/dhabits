@@ -1,57 +1,18 @@
 import { useMemo, useState } from "react";
-import {
-  Brain,
-  Check,
-  ChevronRight,
-  Dumbbell,
-  Heart,
-  Package,
-  Palette,
-  Plus,
-  ShieldCheck,
-  ShoppingBag,
-  Sparkles,
-  Star,
-  SunMedium,
-  UserRound,
-  Zap,
-} from "lucide-react";
+import { Check, ChevronRight, Package, Plus, ShoppingBag, Sparkles, Star, UserRound, Zap } from "lucide-react";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
-import { useApp, getNextCharacterLevelCost, type CharacterState, type ShopItem } from "@/contexts/AppContext";
-import { EmptyState, PageHeader, PageShell, SectionHeading } from "@/components/AppUI";
-import CharacterDisplay from "@/components/CharacterDisplay";
-import DailyEnergyCard from "@/components/DailyEnergyCard";
+import { useApp, getNextCharacterLevelCost, type ShopItem } from "@/contexts/AppContext";
+import { EmptyState, PageHeader, PageShell } from "@/components/AppUI";
+import ProfileDailyDashboard from "@/components/ProfileDailyDashboard";
 import CoinDisplay from "@/components/CoinDisplay";
 import FormModal from "@/components/FormModal";
 import { FormInput, FormSelect, FormTextArea } from "@/components/FormInputs";
 import EmojiPicker from "@/components/EmojiPicker";
 import { RarityBadge } from "@/components/RarityBadge";
 
-const APPEARANCE_OPTIONS = {
-  skin: ["#F3C99B", "#DFA06C", "#B97044", "#7C452B"],
-  hair: ["#4A3020", "#8A5A3A", "#D6A24C", "#20242E"],
-  shirt: ["#315CFF", "#7765F5", "#FF6B35", "#149C76", "#F04E7A"],
-  pants: ["#334155", "#1E3A8A", "#4C1D95", "#292524"],
-} as const;
-
-const APPEARANCE_LABELS: Record<keyof typeof APPEARANCE_OPTIONS, string> = {
-  skin: "Тон кожи",
-  hair: "Волосы",
-  shirt: "Футболка",
-  pants: "Брюки",
-};
-
-const ATTRIBUTES = [
-  { id: "selfLove", label: "Любовь к себе", icon: Heart, color: "#f04e7a" },
-  { id: "focus", label: "Фокус", icon: Brain, color: "#315cff" },
-  { id: "confidence", label: "Уверенность", icon: ShieldCheck, color: "#7765f5" },
-  { id: "discipline", label: "Дисциплина", icon: Dumbbell, color: "#149c76" },
-  { id: "calm", label: "Спокойствие", icon: SunMedium, color: "#e0a400" },
-];
-
 const CATEGORIES = [
-  { value: "all", label: "Все" },
+  { value: "all", label: "Все категории" },
   { value: "clothing", label: "Одежда" },
   { value: "pets", label: "Питомцы" },
   { value: "background", label: "Пространство" },
@@ -73,76 +34,19 @@ const ITEM_SLOTS = [
 
 function ItemPreview({ item }: { item: ShopItem }) {
   const assetPath = typeof item.assetPath === "string" ? item.assetPath : "";
-  if (assetPath && /\.(png|svg|jpe?g|webp)$/i.test(assetPath)) {
-    return <img src={assetPath} alt="" />;
-  }
-  if (assetPath.trim().startsWith("<")) {
-    return <svg viewBox="0 0 100 150" aria-hidden="true"><g dangerouslySetInnerHTML={{ __html: assetPath }} /></svg>;
-  }
+  if (assetPath && /\.(png|svg|jpe?g|webp)$/i.test(assetPath)) return <img src={assetPath} alt="" />;
+  if (assetPath.trim().startsWith("<")) return <svg viewBox="0 0 100 150" aria-hidden="true"><g dangerouslySetInnerHTML={{ __html: assetPath }} /></svg>;
   return <span>{item.emoji}</span>;
 }
 
-function BalanceWheel({
-  systems,
-  values,
-  selectedId,
-  onSelect,
-}: {
-  systems: { id: string; aspect: string; color: string }[];
-  values: Record<string, number>;
-  selectedId: string;
-  onSelect: (id: string) => void;
-}) {
-  const cx = 130;
-  const cy = 130;
-  const radius = 91;
-  const points = systems.map((system, index) => {
-    const angle = (Math.PI * 2 * index) / systems.length - Math.PI / 2;
-    const value = values[system.id] ?? 60;
-    return `${cx + Math.cos(angle) * radius * (value / 100)},${cy + Math.sin(angle) * radius * (value / 100)}`;
-  }).join(" ");
-
-  return (
-    <svg className="balance-wheel" viewBox="0 0 260 260" role="img" aria-label="Колесо баланса из десяти сфер">
-      <defs>
-        <linearGradient id="balanceFill" x1="45" y1="31" x2="219" y2="228" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#315cff" stopOpacity=".48" />
-          <stop offset=".55" stopColor="#7765f5" stopOpacity=".38" />
-          <stop offset="1" stopColor="#ff6b35" stopOpacity=".38" />
-        </linearGradient>
-      </defs>
-      {[20, 40, 60, 80, 100].map(level => {
-        const gridPoints = systems.map((_, index) => {
-          const angle = (Math.PI * 2 * index) / systems.length - Math.PI / 2;
-          return `${cx + Math.cos(angle) * radius * (level / 100)},${cy + Math.sin(angle) * radius * (level / 100)}`;
-        }).join(" ");
-        return <polygon key={level} points={gridPoints} className="balance-grid" />;
-      })}
-      {systems.map((system, index) => {
-        const angle = (Math.PI * 2 * index) / systems.length - Math.PI / 2;
-        const x = cx + Math.cos(angle) * radius;
-        const y = cy + Math.sin(angle) * radius;
-        const labelX = cx + Math.cos(angle) * 115;
-        const labelY = cy + Math.sin(angle) * 115;
-        return <g key={system.id} onClick={() => onSelect(system.id)} className="balance-axis"><line x1={cx} y1={cy} x2={x} y2={y} /><circle cx={labelX} cy={labelY} r={selectedId === system.id ? 11 : 8} fill={system.color} /><text x={labelX} y={labelY + 3}>{index + 1}</text></g>;
-      })}
-      <polygon points={points} className="balance-value" />
-      {systems.map((system, index) => {
-        const angle = (Math.PI * 2 * index) / systems.length - Math.PI / 2;
-        const value = values[system.id] ?? 60;
-        return <circle key={system.id} cx={cx + Math.cos(angle) * radius * (value / 100)} cy={cy + Math.sin(angle) * radius * (value / 100)} r="4.5" fill={system.color} className="balance-point" />;
-      })}
-    </svg>
-  );
-}
+type ProfileTab = "profile" | "inventory";
+type InventoryStatus = "purchased" | "available" | "all";
 
 export default function ShopPage() {
   const {
     coins,
     shopItems,
     characterState,
-    identitySystems,
-    updateCharacterState,
     addShopItem,
     purchaseItem,
     equipItem,
@@ -150,9 +54,9 @@ export default function ShopPage() {
     levelUpCharacter,
   } = useApp();
 
-  const [selectedBalanceId, setSelectedBalanceId] = useState(identitySystems[0]?.id || "1");
+  const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
+  const [inventoryStatus, setInventoryStatus] = useState<InventoryStatus>("purchased");
   const [inventoryCategory, setInventoryCategory] = useState("all");
-  const [catalogCategory, setCatalogCategory] = useState("all");
   const [showCreateItem, setShowCreateItem] = useState(false);
   const [itemName, setItemName] = useState("");
   const [itemEmoji, setItemEmoji] = useState("🎁");
@@ -163,31 +67,17 @@ export default function ShopPage() {
   const [itemDescription, setItemDescription] = useState("");
 
   const safeShopItems = Array.isArray(shopItems) ? shopItems : [];
-  const safeSystems = Array.isArray(identitySystems) ? identitySystems.filter(system => system && typeof system.id === "string" && typeof system.aspect === "string") : [];
   const level = typeof characterState.level === "number" && Number.isFinite(characterState.level) ? characterState.level : 0;
   const nextLevelCost = getNextCharacterLevelCost(level);
-  const balance = characterState.balance && typeof characterState.balance === "object" && !Array.isArray(characterState.balance) ? characterState.balance : {};
-  const attributes = characterState.attributes && typeof characterState.attributes === "object" && !Array.isArray(characterState.attributes) ? characterState.attributes : {};
-  const appearance = characterState.appearance && typeof characterState.appearance === "object" ? characterState.appearance : {};
-  const purchasedItems = useMemo(() => safeShopItems.filter(item => item?.purchased && (inventoryCategory === "all" || item.category === inventoryCategory)), [safeShopItems, inventoryCategory]);
-  const availableItems = useMemo(() => safeShopItems.filter(item => item && !item.purchased && (catalogCategory === "all" || item.category === catalogCategory)), [safeShopItems, catalogCategory]);
-  const selectedSystem = safeSystems.find(system => system.id === selectedBalanceId) || safeSystems[0];
-  const averageBalance = safeSystems.length ? Math.round(safeSystems.reduce((sum, system) => {
-    const value = Number(balance[system.id]);
-    return sum + (Number.isFinite(value) ? value : 60);
-  }, 0) / safeSystems.length) : 0;
-
-  const updateAppearance = (key: keyof typeof APPEARANCE_OPTIONS, value: string) => {
-    updateCharacterState({ appearance: { ...appearance, [key]: value } });
-  };
-
-  const updateBalance = (id: string, value: number) => {
-    updateCharacterState({ balance: { ...balance, [id]: value } });
-  };
-
-  const updateAttribute = (id: string, value: number) => {
-    updateCharacterState({ attributes: { ...attributes, [id]: value } });
-  };
+  const purchasedCount = safeShopItems.filter(item => item?.purchased).length;
+  const availableCount = safeShopItems.filter(item => item && !item.purchased).length;
+  const visibleItems = useMemo(() => safeShopItems.filter(item => {
+    if (!item) return false;
+    if (inventoryCategory !== "all" && item.category !== inventoryCategory) return false;
+    if (inventoryStatus === "purchased") return item.purchased;
+    if (inventoryStatus === "available") return !item.purchased;
+    return true;
+  }), [safeShopItems, inventoryCategory, inventoryStatus]);
 
   const handleLevelUp = () => {
     if (!levelUpCharacter()) toast.error("Недостаточно монет для нового уровня");
@@ -226,78 +116,72 @@ export default function ShopPage() {
   return (
     <PageShell className="profile-page">
       <PageHeader
-        eyebrow="Ваше состояние"
-        title="Профиль"
-        description="Персонаж, баланс жизненных сфер, внутренние характеристики и коллекция наград — в одном месте."
+        eyebrow="Личный центр"
+        title={activeTab === "profile" ? "Мой профиль" : "Инвентарь"}
+        description={activeTab === "profile" ? "Персонаж и всё важное о сегодняшнем дне — в одном месте." : "Купленные награды, доступные предметы и вся ваша коллекция."}
         actions={<div className="profile-balance"><span>Баланс</span><CoinDisplay amount={coins} size="lg" /></div>}
       />
 
-      <section className="profile-hero-grid">
-        <article className="profile-character-card">
-          <span className="profile-orb profile-orb-one" />
-          <span className="profile-orb profile-orb-two" />
-          <div className="profile-card-head">
-            <div><p>Мой персонаж</p><h2>Уровень {level}</h2></div>
-            <div className="profile-level-badge"><Star className="size-4" /> {level || 1}</div>
+      <nav className="profile-page-tabs" aria-label="Разделы профиля">
+        <button type="button" className={activeTab === "profile" ? "is-active" : ""} onClick={() => setActiveTab("profile")}><UserRound className="size-4" /> Профиль</button>
+        <button type="button" className={activeTab === "inventory" ? "is-active" : ""} onClick={() => setActiveTab("inventory")}><Package className="size-4" /> Инвентарь <span>{purchasedCount}</span></button>
+      </nav>
+
+      {activeTab === "profile" ? (
+        <>
+          <section className="profile-avatar-hero app-surface">
+            <span className="profile-avatar-glow is-one" />
+            <span className="profile-avatar-glow is-two" />
+            <div className="profile-avatar-frame"><img src="/profile-avatar.png" alt="Мой 2D-персонаж" /></div>
+            <div className="profile-avatar-copy">
+              <span className="profile-avatar-kicker"><Sparkles className="size-4" /> Мой цифровой персонаж</span>
+              <h2>Это твой день.<br />Собери его по-своему.</h2>
+              <p>Здесь видно состояние, энергию, сон, питание, полезное время и финансовый прогресс.</p>
+              <div className="profile-avatar-stats">
+                <div><span>Уровень</span><strong>{level || 1}</strong></div>
+                <div><span>В коллекции</span><strong>{purchasedCount}</strong></div>
+                <div><span>До уровня</span><strong>{nextLevelCost} монет</strong></div>
+              </div>
+              <button type="button" className="app-button profile-level-button" onClick={handleLevelUp}><Zap className="size-4" /> Повысить уровень</button>
+            </div>
+            <div className="profile-level-orbit"><Star className="size-4" /> LVL {level || 1}</div>
+          </section>
+
+          <ProfileDailyDashboard />
+        </>
+      ) : (
+        <section className="profile-inventory-page">
+          <div className="profile-section-head">
+            <div><p className="page-eyebrow">Моя коллекция</p><h2>Предметы и награды</h2></div>
+            <button type="button" className="app-button is-secondary" onClick={() => setShowCreateItem(true)}><Plus className="size-4" /> Свой предмет</button>
           </div>
-          <div className="profile-character-stage">
-            <CharacterDisplay width={235} height={350} level={level} showLevelBadge />
+
+          <div className="profile-inventory-status">
+            <button type="button" className={inventoryStatus === "purchased" ? "is-active" : ""} onClick={() => setInventoryStatus("purchased")}><Check className="size-4" /> Куплено <span>{purchasedCount}</span></button>
+            <button type="button" className={inventoryStatus === "available" ? "is-active" : ""} onClick={() => setInventoryStatus("available")}><ShoppingBag className="size-4" /> Не куплено <span>{availableCount}</span></button>
+            <button type="button" className={inventoryStatus === "all" ? "is-active" : ""} onClick={() => setInventoryStatus("all")}><Package className="size-4" /> Всё <span>{safeShopItems.length}</span></button>
           </div>
-          <div className="profile-level-row">
-            <div><span>Следующий уровень</span><strong>{nextLevelCost} монет</strong></div>
-            <button type="button" className="app-button" onClick={handleLevelUp}><Zap className="size-4" /> Прокачать</button>
-          </div>
-          <details className="profile-customizer">
-            <summary><span><Palette className="size-4" /> Настроить внешность</span><ChevronRight className="size-4" /></summary>
-            <div className="profile-color-groups">
-              {(Object.keys(APPEARANCE_OPTIONS) as (keyof typeof APPEARANCE_OPTIONS)[]).map(key => (
-                <div key={key} className="profile-color-group">
-                  <span>{APPEARANCE_LABELS[key]}</span>
-                  <div>{APPEARANCE_OPTIONS[key].map(color => <button key={color} type="button" className={(appearance[key] || APPEARANCE_OPTIONS[key][0]) === color ? "is-active" : ""} style={{ backgroundColor: color }} onClick={() => updateAppearance(key, color)} aria-label={`${APPEARANCE_LABELS[key]} ${color}`}>{(appearance[key] || APPEARANCE_OPTIONS[key][0]) === color && <Check className="size-3.5" />}</button>)}</div>
-                </div>
+
+          <div className="profile-category-row">{CATEGORIES.map(category => <button key={category.value} type="button" className={inventoryCategory === category.value ? "is-active" : ""} onClick={() => setInventoryCategory(category.value)}>{category.label}</button>)}</div>
+
+          {visibleItems.length ? (
+            <div className="profile-item-grid">
+              {visibleItems.map(item => (
+                <article key={item.id} className={`profile-item-card ${isEquipped(item) ? "is-equipped" : ""}`}>
+                  <div className="profile-item-preview">
+                    <ItemPreview item={item} />
+                    {item.purchased ? <span className="profile-equipped"><Check className="size-3" /> {isEquipped(item) ? "Надето" : "Куплено"}</span> : <span className="profile-item-price"><CoinDisplay amount={item.price} size="sm" /></span>}
+                  </div>
+                  <div className="profile-item-copy"><RarityBadge rarity={item.rarity} /><h3>{item.name}</h3><p>{item.description || "Предмет вашей коллекции"}</p></div>
+                  {item.purchased ? (
+                    item.slot ? <button type="button" className={`app-button ${isEquipped(item) ? "is-secondary" : ""}`} onClick={() => isEquipped(item) ? unequipItem(item.slot!) : equipItem(item.id)}>{isEquipped(item) ? "Снять" : "Надеть"}</button> : <div className="profile-owned-label"><Check className="size-4" /> В коллекции</div>
+                  ) : <button type="button" className="app-button" onClick={() => purchase(item)} disabled={coins < item.price}><ShoppingBag className="size-4" /> Получить <ChevronRight className="size-4" /></button>}
+                </article>
               ))}
             </div>
-          </details>
-        </article>
-
-        <article className="profile-wheel-card app-surface">
-          <div className="profile-card-head">
-            <div><p>Колесо баланса</p><h2>{averageBalance}%</h2></div>
-            <div className="profile-balance-score">Сегодня</div>
-          </div>
-          <div className="profile-wheel-body">
-            <BalanceWheel systems={safeSystems} values={balance} selectedId={selectedBalanceId} onSelect={setSelectedBalanceId} />
-            <div className="profile-sphere-list">
-              {safeSystems.map((system, index) => <button key={system.id} type="button" className={selectedBalanceId === system.id ? "is-active" : ""} onClick={() => setSelectedBalanceId(system.id)}><i style={{ backgroundColor: system.color || "#315cff" }}>{index + 1}</i><span>{system.aspect}</span><strong>{balance[system.id] ?? 60}</strong></button>)}
-            </div>
-          </div>
-          {selectedSystem && <div className="profile-balance-editor" style={{ "--sphere-color": selectedSystem.color } as React.CSSProperties}><div><span>{selectedSystem.aspect}</span><strong>{balance[selectedSystem.id] ?? 60}%</strong></div><input type="range" min="0" max="100" step="5" value={balance[selectedSystem.id] ?? 60} onChange={event => updateBalance(selectedSystem.id, Number(event.target.value))} /></div>}
-        </article>
-      </section>
-
-      <section className="profile-attributes app-surface">
-        <SectionHeading icon={Sparkles} title="Мои характеристики" meta="Состояние на каждый день" />
-        <DailyEnergyCard />
-        <div className="profile-attribute-grid">
-          {ATTRIBUTES.map(attribute => {
-            const Icon = attribute.icon;
-            const value = attributes[attribute.id] ?? 60;
-            return <div key={attribute.id} className="profile-attribute" style={{ "--attribute-color": attribute.color } as React.CSSProperties}><div className="profile-attribute-icon"><Icon className="size-5" /></div><div className="profile-attribute-copy"><div><span>{attribute.label}</span><strong>{value}%</strong></div><input type="range" min="0" max="100" step="5" value={value} onChange={event => updateAttribute(attribute.id, Number(event.target.value))} /></div></div>;
-          })}
-        </div>
-      </section>
-
-      <section className="profile-collection-section">
-        <div className="profile-section-head"><div><p className="page-eyebrow">Моя коллекция</p><h2>Инвентарь</h2></div><Package className="size-6" /></div>
-        <div className="profile-category-row">{CATEGORIES.map(category => <button key={category.value} type="button" className={inventoryCategory === category.value ? "is-active" : ""} onClick={() => setInventoryCategory(category.value)}>{category.label}</button>)}</div>
-        {purchasedItems.length ? <div className="profile-item-grid">{purchasedItems.map(item => <article key={item.id} className={`profile-item-card ${isEquipped(item) ? "is-equipped" : ""}`}><div className="profile-item-preview"><ItemPreview item={item} />{isEquipped(item) && <span className="profile-equipped"><Check className="size-3" /> Надето</span>}</div><div className="profile-item-copy"><RarityBadge rarity={item.rarity} /><h3>{item.name}</h3><p>{item.description || "Предмет вашей коллекции"}</p></div>{item.slot && <button type="button" className={`app-button ${isEquipped(item) ? "is-secondary" : ""}`} onClick={() => isEquipped(item) ? unequipItem(item.slot!) : equipItem(item.id)}>{isEquipped(item) ? "Снять" : "Надеть"}</button>}</article>)}</div> : <EmptyState icon={Package} title="Инвентарь пока пуст" description="Полученные и купленные предметы появятся здесь." />}
-      </section>
-
-      <section className="profile-collection-section">
-        <div className="profile-section-head"><div><p className="page-eyebrow">Награды за развитие</p><h2>Предметы</h2></div><button type="button" className="app-button is-secondary" onClick={() => setShowCreateItem(true)}><Plus className="size-4" /> Свой предмет</button></div>
-        <div className="profile-category-row">{CATEGORIES.map(category => <button key={category.value} type="button" className={catalogCategory === category.value ? "is-active" : ""} onClick={() => setCatalogCategory(category.value)}>{category.label}</button>)}</div>
-        {availableItems.length ? <div className="profile-item-grid">{availableItems.map(item => <article key={item.id} className="profile-item-card"><div className="profile-item-preview"><ItemPreview item={item} /><span className="profile-item-price"><CoinDisplay amount={item.price} size="sm" /></span></div><div className="profile-item-copy"><RarityBadge rarity={item.rarity} /><h3>{item.name}</h3><p>{item.description || "Новая награда для вашего персонажа"}</p></div><button type="button" className="app-button" onClick={() => purchase(item)} disabled={coins < item.price}><ShoppingBag className="size-4" /> Получить <ChevronRight className="size-4" /></button></article>)}</div> : <EmptyState icon={ShoppingBag} title="В этой категории всё собрано" description="Попробуйте выбрать другую категорию." />}
-      </section>
+          ) : <EmptyState icon={Package} title="Здесь пока пусто" description="Попробуйте выбрать другой статус или категорию." />}
+        </section>
+      )}
 
       <FormModal title="Новый предмет" isOpen={showCreateItem} onClose={() => setShowCreateItem(false)} onSubmit={handleCreateItem} submitText="Добавить">
         <FormInput label="Название" value={itemName} onChange={setItemName} placeholder="Например, день у моря" />
