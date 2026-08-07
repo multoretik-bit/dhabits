@@ -348,6 +348,36 @@
   .schedule-hidden-blocks { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border: 1px dashed var(--border); border-radius: 14px; color: var(--muted-foreground); font-size: 10px; }
   .schedule-hidden-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; color: var(--foreground); background: var(--surface-raised); font-size: 10px; font-weight: 700; }
   .schedule-hidden-chip:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
+  .pomodoro-panel { position: sticky; top: 90px; max-height: calc(100vh - 112px); display: grid; gap: 14px; padding: 20px; overflow-y: auto; scrollbar-width: thin; }
+  .pomodoro-panel > .section-heading { margin-bottom: 0; }
+  .pomodoro-hint { margin-top: -7px; color: var(--muted-foreground); font-size: 9px; line-height: 1.5; }
+  .pomodoro-clock { --timer-progress: 0deg; position: relative; width: min(100%, 220px); aspect-ratio: 1; display: grid; place-items: center; justify-self: center; padding: 15px; border-radius: 50%; background: conic-gradient(var(--primary) var(--timer-progress), color-mix(in srgb, var(--border) 70%, transparent) 0); box-shadow: 0 18px 44px color-mix(in srgb, var(--primary) 12%, transparent); }
+  .pomodoro-clock::before { content: ""; position: absolute; inset: 10px; border-radius: inherit; background: radial-gradient(circle at 50% 34%, color-mix(in srgb, var(--primary) 8%, var(--surface-raised)), var(--surface-raised) 68%); }
+  .pomodoro-clock.is-running { box-shadow: 0 20px 52px color-mix(in srgb, var(--primary) 25%, transparent); }
+  .pomodoro-clock > div { position: relative; z-index: 1; display: grid; justify-items: center; gap: 3px; text-align: center; }
+  .pomodoro-clock span { color: var(--primary); font-size: 9px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+  .pomodoro-clock strong { font-size: clamp(37px, 5vw, 53px); line-height: 1; letter-spacing: -.055em; font-variant-numeric: tabular-nums; }
+  .pomodoro-clock small { color: var(--muted-foreground); font-size: 8px; }
+  .pomodoro-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 7px; }
+  .pomodoro-actions .app-button { min-width: 0; padding-inline: 8px; }
+  .pomodoro-actions button:disabled { opacity: .38; pointer-events: none; }
+  .activity-day-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-top: 13px; border-top: 1px solid var(--border); }
+  .activity-day-head > div { display: grid; gap: 2px; }
+  .activity-day-head span { color: var(--muted-foreground); font-size: 8px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+  .activity-day-head strong { font-size: 13px; text-transform: capitalize; }
+  .activity-day-head > b { color: var(--primary); font-size: 14px; }
+  .activity-totals, .activity-session-list { display: grid; gap: 7px; }
+  .activity-totals article, .activity-session-list > article { --activity-color: var(--primary); min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 9px 10px; border: 1px solid color-mix(in srgb, var(--activity-color) 18%, var(--border)); border-radius: 13px; background: color-mix(in srgb, var(--activity-color) 6%, var(--surface-soft)); }
+  .activity-totals article > i, .activity-session-list > article > i { width: 9px; height: 9px; border-radius: 50%; background: var(--activity-color); box-shadow: 0 0 0 4px color-mix(in srgb, var(--activity-color) 12%, transparent); }
+  .activity-totals article > div, .activity-session-list > article > div { min-width: 0; display: grid; gap: 2px; }
+  .activity-totals strong, .activity-session-list strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+  .activity-totals span, .activity-session-list span { display: flex; align-items: center; gap: 4px; color: var(--muted-foreground); font-size: 8px; }
+  .activity-totals b, .activity-session-list b { color: var(--activity-color); font-size: 10px; white-space: nowrap; }
+  .activity-session-list > article { grid-template-columns: auto minmax(0, 1fr) auto auto; background: var(--surface-soft); }
+  .pomodoro-session-summary { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border)); border-radius: 14px; color: var(--primary); background: color-mix(in srgb, var(--primary) 7%, var(--surface-soft)); }
+  .pomodoro-session-summary > div { display: grid; gap: 2px; }
+  .pomodoro-session-summary span { color: var(--muted-foreground); font-size: 9px; }
+  .pomodoro-session-summary strong { color: var(--foreground); font-size: 15px; }
   .day-picker { display: flex; flex-wrap: wrap; gap: 6px; }
   .day-picker button { width: 38px; height: 34px; border: 1px solid var(--border); border-radius: 10px; color: var(--muted-foreground); background: var(--secondary); font-size: 10px; font-weight: 800; }
   .day-picker button.is-active { color: white; border-color: var(--primary); background: var(--primary); }
@@ -678,6 +708,13 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .schedule-block-actions > img { width: 54px; height: 48px; }
   .schedule-block-column { padding: 9px; }
   .schedule-block-body { grid-template-columns: 1fr; }
+  .pomodoro-panel { position: static; max-height: none; padding: 14px; }
+  .pomodoro-clock { width: min(100%, 190px); }
+  .pomodoro-actions { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .pomodoro-actions > .icon-button { grid-column: 1 / -1; width: 100%; }
+  .activity-totals article, .activity-session-list > article { padding: 8px; }
+  .activity-session-list > article { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .activity-session-list > article > .icon-button { grid-column: 2 / -1; justify-self: end; }
   .month-calendar { padding: 11px; border-radius: 20px; }
   .month-calendar-head { align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
   .month-calendar-head h2 { font-size: 21px; }

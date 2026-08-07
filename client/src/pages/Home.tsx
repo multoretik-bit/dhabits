@@ -24,6 +24,7 @@ import { getBlockIllustration } from "@/lib/blockIllustrations";
 import { applyDayScheduleOverride, isHabitScheduledForDay } from "@/lib/schedule";
 import Calendar from "@/components/Calendar";
 import MonthCalendar from "@/components/MonthCalendar";
+import PomodoroTracker from "@/components/PomodoroTracker";
 import HabitRow from "@/components/HabitRow";
 import TaskRow from "@/components/TaskRow";
 import FormModal from "@/components/FormModal";
@@ -350,11 +351,7 @@ export default function Home() {
                 </div>
               )}
             </section>
-            <section className="app-surface schedule-tasks">
-              <SectionHeading icon={ListTodo} title="Задачи дня" meta={todayTasks.length} action={<button onClick={openTaskModal} className="icon-button is-small"><Plus className="size-4" /></button>} />
-              <p className="schedule-tasks-hint">Все задачи собраны здесь независимо от блока и отсортированы по времени.</p>
-              {todayTasks.length ? todayTasks.map((task) => <TaskRow key={task.id} task={task} dateStr={dateStr} isCondensed showTime />) : <EmptyState compact title="Задач на день нет" description="Добавьте задачу и укажите точное время выполнения." />}
-            </section>
+            <PomodoroTracker selectedDate={selectedDate} />
           </motion.div>
         ) : (
           <motion.div key="month" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>

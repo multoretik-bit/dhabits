@@ -24,6 +24,8 @@ export interface StorageData {
   daySnapshots?: Record<string, any[]>;
   dayScheduleOverrides?: Record<string, DayScheduleOverride>;
   monthEvents?: any[];
+  activitySessions?: any[];
+  activityTimer?: any;
   identityValues?: any[];
   identityValueFolders?: any[];
   identitySystems?: any[];

@@ -265,6 +265,27 @@ export interface MonthEvent {
   time?: string;
 }
 
+export interface ActivitySession {
+  id: string;
+  date: string;
+  title: string;
+  color: string;
+  startedAt: string;
+  endedAt: string;
+  durationSeconds: number;
+}
+
+export interface ActivityTimerState {
+  isRunning: boolean;
+  startedAt?: string;
+  accumulatedSeconds: number;
+}
+
+const DEFAULT_ACTIVITY_TIMER: ActivityTimerState = {
+  isRunning: false,
+  accumulatedSeconds: 0,
+};
+
 interface AppContextType {
   // ... existing ...
   wakeUpTimes: Record<string, string>;
@@ -282,6 +303,11 @@ interface AppContextType {
   monthEvents: MonthEvent[];
   saveMonthEvent: (event: MonthEvent) => void;
   deleteMonthEvent: (id: string) => void;
+  activitySessions: ActivitySession[];
+  activityTimer: ActivityTimerState;
+  saveActivityTimer: (timer: ActivityTimerState) => void;
+  addActivitySession: (session: ActivitySession) => void;
+  deleteActivitySession: (id: string) => void;
   // ... existing fields ...
   customColors: string[];
   addCustomColor: (color: string) => void;
@@ -430,6 +456,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [daySnapshots, setDaySnapshots] = useState<Record<string, SnapshotEntry[]>>({});
   const [dayScheduleOverrides, setDayScheduleOverrides] = useState<Record<string, DayScheduleOverride>>({});
   const [monthEvents, setMonthEvents] = useState<MonthEvent[]>([]);
+  const [activitySessions, setActivitySessions] = useState<ActivitySession[]>([]);
+  const [activityTimer, setActivityTimer] = useState<ActivityTimerState>({ ...DEFAULT_ACTIVITY_TIMER });
   const [identityValues, setIdentityValues] = useState<IdentityValue[]>([]);
   const [identityValueFolders, setIdentityValueFolders] = useState<IdentityValueFolder[]>([]);
   const [identitySystems, setIdentitySystems] = useState<IdentitySystem[]>(DEFAULT_IDENTITY_SYSTEMS);
@@ -448,7 +476,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // State ref to avoid stale closures in sync calls
   const currentStateRef = React.useRef({
-    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents,
+    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer,
     identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas
   });
 
@@ -458,10 +486,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     currentStateRef.current = {
-      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents,
+      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer,
       identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents,
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer,
       identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas]);
 
   useEffect(() => {
@@ -499,6 +527,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setDaySnapshots(savedData.daySnapshots || {});
     setDayScheduleOverrides(savedData.dayScheduleOverrides || {});
     setMonthEvents(savedData.monthEvents || []);
+    setActivitySessions(savedData.activitySessions || []);
+    setActivityTimer({ ...DEFAULT_ACTIVITY_TIMER, ...(savedData.activityTimer || {}) });
     setIdentityValues(savedData.identityValues || []);
     setIdentityValueFolders(savedData.identityValueFolders || []);
     if (savedData.identitySystems && savedData.identitySystems.length > 0) {
@@ -554,6 +584,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               setDaySnapshots(remoteData.daySnapshots || {});
               setDayScheduleOverrides(remoteData.dayScheduleOverrides || {});
               setMonthEvents(remoteData.monthEvents || []);
+              setActivitySessions(remoteData.activitySessions || []);
+              setActivityTimer({ ...DEFAULT_ACTIVITY_TIMER, ...(remoteData.activityTimer || {}) });
               setIdentityValues(remoteData.identityValues || []);
               setIdentityValueFolders(remoteData.identityValueFolders || []);
               if (remoteData.identitySystems) setIdentitySystems(remoteData.identitySystems);
@@ -622,6 +654,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   setDaySnapshots(newData.daySnapshots || {});
                   setDayScheduleOverrides(newData.dayScheduleOverrides || {});
                   setMonthEvents(newData.monthEvents || []);
+                  setActivitySessions(newData.activitySessions || []);
+                  setActivityTimer({ ...DEFAULT_ACTIVITY_TIMER, ...(newData.activityTimer || {}) });
                   setIdentityValues(newData.identityValues || []);
                   setIdentityValueFolders(newData.identityValueFolders || []);
                   if (newData.identitySystems) setIdentitySystems(newData.identitySystems);
@@ -691,7 +725,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, identityValues, identitySystems]);
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer, identityValues, identitySystems]);
 
   // Handle mobile wake/focus
   useEffect(() => {
@@ -777,6 +811,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setDaySnapshots(remoteData.daySnapshots || {});
       setDayScheduleOverrides(remoteData.dayScheduleOverrides || {});
       setMonthEvents(remoteData.monthEvents || []);
+      setActivitySessions(remoteData.activitySessions || []);
+      setActivityTimer({ ...DEFAULT_ACTIVITY_TIMER, ...(remoteData.activityTimer || {}) });
       setIdentityValues(remoteData.identityValues || []);
       setIdentityValueFolders(remoteData.identityValueFolders || []);
       if (remoteData.identitySystems) setIdentitySystems(remoteData.identitySystems);
@@ -869,6 +905,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       identitySystemIdeas: identitySystemIdeasValue || identitySystemIdeas,
       dayScheduleOverrides: dayScheduleOverridesValue || dayScheduleOverrides,
       monthEvents: monthEventsValue || monthEvents,
+      activitySessions,
+      activityTimer,
       progress: {},
       streaks: {},
       shop: [],
@@ -906,6 +944,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setDaySnapshots(remoteData.daySnapshots || {});
         setDayScheduleOverrides(remoteData.dayScheduleOverrides || {});
         setMonthEvents(remoteData.monthEvents || []);
+        setActivitySessions(remoteData.activitySessions || []);
+        setActivityTimer({ ...DEFAULT_ACTIVITY_TIMER, ...(remoteData.activityTimer || {}) });
         setIdentityValues(remoteData.identityValues || []);
         setIdentityValueFolders(remoteData.identityValueFolders || []);
         if (remoteData.identitySystems) setIdentitySystems(remoteData.identitySystems);
@@ -1600,6 +1640,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas, newOverrides);
   };
 
+  const saveActivityTimer = (timer: ActivityTimerState) => {
+    setActivityTimer(timer);
+    void pushImmediateSync({ activityTimer: timer });
+  };
+
+  const addActivitySession = (session: ActivitySession) => {
+    const newSessions = [session, ...activitySessions];
+    const resetTimer: ActivityTimerState = {
+      ...activityTimer,
+      isRunning: false,
+      startedAt: undefined,
+      accumulatedSeconds: 0,
+    };
+    setActivitySessions(newSessions);
+    setActivityTimer(resetTimer);
+    void pushImmediateSync({ activitySessions: newSessions, activityTimer: resetTimer });
+  };
+
+  const deleteActivitySession = (id: string) => {
+    const newSessions = activitySessions.filter((session) => session.id !== id);
+    setActivitySessions(newSessions);
+    void pushImmediateSync({ activitySessions: newSessions });
+  };
+
   const saveMonthEvent = (event: MonthEvent) => {
     const newEvents = monthEvents.some((item) => item.id === event.id)
       ? monthEvents.map((item) => item.id === event.id ? event : item)
@@ -1789,6 +1853,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         monthEvents,
         saveMonthEvent,
         deleteMonthEvent,
+        activitySessions,
+        activityTimer,
+        saveActivityTimer,
+        addActivitySession,
+        deleteActivitySession,
         identityValues,
         identityValueFolders,
         addIdentityValue,
