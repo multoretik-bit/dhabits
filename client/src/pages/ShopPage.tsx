@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useApp, getNextCharacterLevelCost, type ShopItem } from "@/contexts/AppContext";
 import { EmptyState, PageHeader, PageShell } from "@/components/AppUI";
 import ProfileDailyDashboard from "@/components/ProfileDailyDashboard";
+import BalanceWheelCard from "@/components/BalanceWheelCard";
 import CoinDisplay from "@/components/CoinDisplay";
 import FormModal from "@/components/FormModal";
 import { FormInput, FormSelect, FormTextArea } from "@/components/FormInputs";
@@ -148,6 +149,7 @@ export default function ShopPage() {
           </section>
 
           <ProfileDailyDashboard />
+          <BalanceWheelCard />
         </>
       ) : (
         <section className="profile-inventory-page">

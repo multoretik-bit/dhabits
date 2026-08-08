@@ -531,6 +531,7 @@
   .profile-color-group button { width: 25px; height: 25px; display: grid; place-items: center; border: 2px solid color-mix(in srgb, white 55%, transparent); border-radius: 8px; color: white; box-shadow: 0 3px 8px rgba(0,0,0,.12); }
   .profile-color-group button.is-active { outline: 2px solid var(--primary); outline-offset: 2px; }
   .profile-wheel-card { padding: 22px; }
+  .profile-balance-returned { margin-top: 18px; }
   .profile-wheel-body { display: grid; grid-template-columns: minmax(300px, .88fr) minmax(220px, .62fr); align-items: center; gap: 14px; margin-top: 8px; }
   .balance-wheel { width: min(100%, 380px); margin: 0 auto; overflow: visible; }
   .balance-grid { fill: color-mix(in srgb, var(--primary) 1%, transparent); stroke: color-mix(in srgb, var(--muted-foreground) 23%, transparent); stroke-width: 1; }
