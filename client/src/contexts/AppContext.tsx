@@ -183,6 +183,9 @@ export interface Goal {
   currentValue: number;
   color: string;
   deadline?: string;
+  progressType?: "manual" | "activity_minutes";
+  activityName?: string;
+  activityTrackingStartedAt?: string;
 }
 
 export interface GoalFolder {
@@ -306,6 +309,7 @@ export interface ActivitySession {
   startedAt: string;
   endedAt: string;
   durationSeconds: number;
+  createdAt?: string;
 }
 
 export interface ActivityTimerState {
@@ -318,6 +322,26 @@ const DEFAULT_ACTIVITY_TIMER: ActivityTimerState = {
   isRunning: false,
   accumulatedSeconds: 0,
 };
+
+function normalizeActivityName(value: string | undefined) {
+  return (value || "").trim().replace(/\s+/g, " ").toLocaleLowerCase("ru-RU");
+}
+
+function syncActivityGoalProgress(goalList: Goal[], sessions: ActivitySession[]) {
+  return goalList.map((goal) => {
+    if (goal.progressType !== "activity_minutes" || !goal.activityName?.trim()) return goal;
+    const activityName = normalizeActivityName(goal.activityName);
+    const trackingStartedAt = goal.activityTrackingStartedAt ? new Date(goal.activityTrackingStartedAt).getTime() : 0;
+    const totalSeconds = sessions.reduce((sum, session) => {
+      if (normalizeActivityName(session.title) !== activityName) return sum;
+      const recordedAt = new Date(session.createdAt || session.endedAt).getTime();
+      if (Number.isFinite(trackingStartedAt) && Number.isFinite(recordedAt) && recordedAt < trackingStartedAt) return sum;
+      return sum + Math.max(0, session.durationSeconds || 0);
+    }, 0);
+    const currentValue = Math.round(totalSeconds / 6) / 10;
+    return { ...goal, currentValue, completed: currentValue >= goal.targetValue };
+  });
+}
 
 interface AppContextType {
   // ... existing ...
@@ -339,7 +363,7 @@ interface AppContextType {
   activitySessions: ActivitySession[];
   activityTimer: ActivityTimerState;
   saveActivityTimer: (timer: ActivityTimerState) => void;
-  addActivitySession: (session: ActivitySession) => void;
+  addActivitySession: (session: ActivitySession, options?: { preserveTimer?: boolean }) => void;
   deleteActivitySession: (id: string) => void;
   // ... existing fields ...
   customColors: string[];
@@ -1678,8 +1702,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     void pushImmediateSync({ activityTimer: timer });
   };
 
-  const addActivitySession = (session: ActivitySession) => {
+  const addActivitySession = (session: ActivitySession, options?: { preserveTimer?: boolean }) => {
     const newSessions = [session, ...activitySessions];
+    const newGoals = syncActivityGoalProgress(goals, newSessions);
     const resetTimer: ActivityTimerState = {
       ...activityTimer,
       isRunning: false,
@@ -1687,14 +1712,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       accumulatedSeconds: 0,
     };
     setActivitySessions(newSessions);
-    setActivityTimer(resetTimer);
-    void pushImmediateSync({ activitySessions: newSessions, activityTimer: resetTimer });
+    setGoals(newGoals);
+    if (!options?.preserveTimer) setActivityTimer(resetTimer);
+    void pushImmediateSync({
+      activitySessions: newSessions,
+      goals: newGoals,
+      ...(!options?.preserveTimer ? { activityTimer: resetTimer } : {}),
+    });
   };
 
   const deleteActivitySession = (id: string) => {
     const newSessions = activitySessions.filter((session) => session.id !== id);
+    const newGoals = syncActivityGoalProgress(goals, newSessions);
     setActivitySessions(newSessions);
-    void pushImmediateSync({ activitySessions: newSessions });
+    setGoals(newGoals);
+    void pushImmediateSync({ activitySessions: newSessions, goals: newGoals });
   };
 
   const saveMonthEvent = (event: MonthEvent) => {

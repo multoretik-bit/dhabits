@@ -20,9 +20,10 @@ interface FormInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   type?: string;
+  list?: string;
 }
 
-export function FormInput({ label, value, onChange, placeholder, type = "text" }: FormInputProps) {
+export function FormInput({ label, value, onChange, placeholder, type = "text", list }: FormInputProps) {
   return (
     <FormField label={label}>
       <input
@@ -30,6 +31,7 @@ export function FormInput({ label, value, onChange, placeholder, type = "text" }
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        list={list}
         className="w-full px-3 py-2 bg-secondary border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent"
       />
     </FormField>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { ChevronDown, Clock3, Pause, Play, RotateCcw, Square, TimerReset, Trash2 } from "lucide-react";
+import { ChevronDown, Clock3, Pause, Play, Plus, RotateCcw, Square, TimerReset, Trash2 } from "lucide-react";
 import { nanoid } from "nanoid";
 import {
   useApp,
@@ -65,8 +65,12 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
   } = useApp();
   const [now, setNow] = useState(Date.now());
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+  const [isManualSessionModalOpen, setIsManualSessionModalOpen] = useState(false);
   const [sessionTitle, setSessionTitle] = useState("");
   const [sessionColor, setSessionColor] = useState("#315cff");
+  const [manualTitle, setManualTitle] = useState("");
+  const [manualMinutes, setManualMinutes] = useState("");
+  const [manualColor, setManualColor] = useState("#315cff");
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -108,6 +112,14 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
 
   const totalDaySeconds = dailySessions.reduce((sum, session) => sum + session.durationSeconds, 0);
   const hasActiveTime = elapsedSeconds > 0;
+  const activityTitles = useMemo(() => {
+    const titles = new Map<string, string>();
+    activitySessions.forEach((session) => {
+      const title = session.title.trim();
+      if (title) titles.set(title.toLocaleLowerCase("ru-RU"), title);
+    });
+    return Array.from(titles.values()).sort((a, b) => a.localeCompare(b, "ru-RU"));
+  }, [activitySessions]);
 
   const startTimer = () => {
     if (activityTimer.isRunning) return;
@@ -158,12 +170,38 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
       startedAt: new Date(endedAt.getTime() - durationSeconds * 1000).toISOString(),
       endedAt: endedAt.toISOString(),
       durationSeconds,
+      createdAt: new Date().toISOString(),
     };
 
     addActivitySession(session);
     setSessionTitle("");
     setIsSessionModalOpen(false);
     setNow(Date.now());
+  };
+
+  const saveManualSession = (event: React.FormEvent) => {
+    event.preventDefault();
+    const title = manualTitle.trim();
+    const minutes = Number.parseFloat(manualMinutes.replace(",", "."));
+    if (!title || !Number.isFinite(minutes) || minutes <= 0) return;
+
+    const nowDate = new Date();
+    const endedAt = new Date(selectedDate);
+    endedAt.setHours(nowDate.getHours(), nowDate.getMinutes(), nowDate.getSeconds(), nowDate.getMilliseconds());
+    const durationSeconds = Math.max(1, Math.round(minutes * 60));
+    addActivitySession({
+      id: nanoid(),
+      date: selectedDateString,
+      title,
+      color: manualColor,
+      startedAt: new Date(endedAt.getTime() - durationSeconds * 1000).toISOString(),
+      endedAt: endedAt.toISOString(),
+      durationSeconds,
+      createdAt: new Date().toISOString(),
+    }, { preserveTimer: true });
+    setManualTitle("");
+    setManualMinutes("");
+    setIsManualSessionModalOpen(false);
   };
 
   const timerStyle = { "--timer-progress": `${progress * 3.6}deg` } as CSSProperties;
@@ -197,7 +235,10 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
             <span>Итоги дня</span>
             <strong>{selectedDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}</strong>
           </div>
-          <b>{formatDuration(totalDaySeconds || 0)}</b>
+          <div className="activity-day-actions">
+            <button type="button" className="app-button is-secondary activity-manual-button" onClick={() => setIsManualSessionModalOpen(true)}><Plus className="size-4" /> Добавить минуты</button>
+            <b>{formatDuration(totalDaySeconds || 0)}</b>
+          </div>
         </div>
 
         {groupedTotals.length > 0 ? (
@@ -244,9 +285,26 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
           <Clock3 className="size-5" />
           <div><span>Продолжительность</span><strong>{formatDuration(getElapsedSeconds(activityTimer, Date.now()))}</strong></div>
         </div>
-        <FormInput label="Чем занимались" value={sessionTitle} onChange={setSessionTitle} placeholder="Например, английский или работа над проектом" />
+        <FormInput label="Чем занимались" value={sessionTitle} onChange={setSessionTitle} placeholder="Например, чтение или английский" list="activity-title-options" />
         <AdvancedColorPicker label="Цвет занятия" value={sessionColor} onChange={setSessionColor} />
       </FormModal>
+
+      <FormModal
+        title="Добавить время вручную"
+        isOpen={isManualSessionModalOpen}
+        onClose={() => setIsManualSessionModalOpen(false)}
+        onSubmit={saveManualSession}
+        submitText="Добавить минуты"
+      >
+        <p className="pomodoro-hint">Запись попадёт в итоги выбранного дня и автоматически увеличит связанные цели.</p>
+        <FormInput label="Занятие" value={manualTitle} onChange={setManualTitle} placeholder="Например, чтение" list="activity-title-options" />
+        <FormInput label="Сколько минут" value={manualMinutes} onChange={setManualMinutes} type="number" placeholder="30" />
+        <AdvancedColorPicker label="Цвет занятия" value={manualColor} onChange={setManualColor} />
+      </FormModal>
+
+      <datalist id="activity-title-options">
+        {activityTitles.map((title) => <option key={title} value={title} />)}
+      </datalist>
     </>
   );
 }

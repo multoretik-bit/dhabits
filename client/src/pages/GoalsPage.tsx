@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, ListTodo, Plus, Target, Trash2, Trophy } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Clock3, ListTodo, Plus, Target, Trash2, Trophy } from "lucide-react";
 import { useApp, type Goal, type Habit, type HabitFolder } from "@/contexts/AppContext";
 import HabitRow from "@/components/HabitRow";
 import FormModal from "@/components/FormModal";
@@ -19,28 +19,33 @@ function GoalCard({
 }) {
   const { updateGoal, deleteGoal, moveGoalUp, moveGoalDown } = useApp();
   const [expanded, setExpanded] = useState(false);
+  const isActivityGoal = goal.progressType === "activity_minutes";
+  const isCompleted = goal.completed || goal.currentValue >= goal.targetValue;
   const range = goal.targetValue - goal.startValue;
   const progress = Math.min(100, Math.max(0, range > 0 ? ((goal.currentValue - goal.startValue) / range) * 100 : 0));
   const linked = (goal.linkedHabits ?? []).map((id) => habits.find((habit) => habit.id === id)?.name).filter(Boolean);
 
   return (
-    <article className={`goal-card ${goal.completed ? "is-completed" : ""}`} style={{ "--goal-color": goal.color } as React.CSSProperties}>
+    <article className={`goal-card ${isCompleted ? "is-completed" : ""}`} style={{ "--goal-color": goal.color } as React.CSSProperties}>
       <div className="goal-card-top">
         <span className="goal-emoji">{goal.emoji || "🎯"}</span>
         <div className="goal-copy" onClick={() => setExpanded((value) => !value)}>
           <div className="flex items-center gap-2">
             <h3 className={expanded ? "" : "truncate"}>{goal.name}</h3>
-            {goal.completed && <span className="goal-done">Готово</span>}
+            {isCompleted && <span className="goal-done">Готово</span>}
           </div>
           <p className={expanded ? "" : "truncate"}>{goal.description || "Без описания"}</p>
         </div>
         <div className="goal-reward"><img src="/illustrations/reward-coin-v3.svg" alt="" /><strong>{goal.coins}</strong></div>
       </div>
-      <div className="goal-progress-copy"><span>{goal.currentValue} / {goal.targetValue}</span><strong>{Math.round(progress)}%</strong></div>
+      <div className="goal-progress-copy"><span>{goal.currentValue} / {goal.targetValue}{isActivityGoal ? " мин" : ""}</span><strong>{Math.round(progress)}%</strong></div>
       <div className="goal-progress"><i style={{ width: `${progress}%` }} /></div>
       {linked.length > 0 && <p className="goal-linked">Связано: {linked.join(", ")}</p>}
+      {isActivityGoal && <p className="goal-linked"><Clock3 className="size-3" /> Автоматически из занятия «{goal.activityName}»</p>}
       <div className="goal-actions">
-        <button onClick={() => onProgress(goal)} className="app-button"><Target className="size-4" /> Добавить прогресс</button>
+        {isActivityGoal
+          ? <span className="goal-auto-progress"><Clock3 className="size-4" /> Минуты считаются автоматически</span>
+          : <button onClick={() => onProgress(goal)} className="app-button"><Target className="size-4" /> Добавить прогресс</button>}
         <button onClick={() => moveGoalUp(goal.id)} className="icon-button is-small" aria-label="Переместить выше"><ArrowUp className="size-4" /></button>
         <button onClick={() => moveGoalDown(goal.id)} className="icon-button is-small" aria-label="Переместить ниже"><ArrowDown className="size-4" /></button>
         <button onClick={() => { if (window.confirm("Удалить цель навсегда?")) deleteGoal(goal.id); }} className="icon-button is-small subtle-danger" aria-label="Удалить цель"><Trash2 className="size-4" /></button>
@@ -63,7 +68,7 @@ export default function GoalsPage() {
   const dayOfWeek = today.getDay();
   const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const habitsForToday = useMemo(() => habits.filter((habit) => habit.daysOfWeek.includes(dayOfWeek)), [habits, dayOfWeek]);
-  const completedGoals = goals.filter((goal) => goal.completed).length;
+  const completedGoals = goals.filter((goal) => goal.completed || goal.currentValue >= goal.targetValue).length;
   const averageProgress = goals.length ? Math.round(goals.reduce((sum, goal) => {
     const range = goal.targetValue - goal.startValue;
     return sum + Math.min(100, Math.max(0, range > 0 ? ((goal.currentValue - goal.startValue) / range) * 100 : 0));
