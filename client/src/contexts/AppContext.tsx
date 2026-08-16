@@ -136,9 +136,17 @@ function prepareTasks(value: unknown): Task[] {
   return rollOverOverdueTasks(Array.isArray(value) ? value as Task[] : [], getTodayDateString());
 }
 
-function prepareTaskData<T extends { tasks?: Task[] }>(data: T): T & { tasks: Task[] } {
-  const preparedTasks = prepareTasks(data.tasks);
-  return preparedTasks === data.tasks ? data as T & { tasks: Task[] } : { ...data, tasks: preparedTasks };
+function prepareTaskData<T extends { tasks?: Task[]; deletedTaskIds?: string[] }>(data: T, protectedDeletedTaskIds: string[] = []): T & { tasks: Task[]; deletedTaskIds: string[] } {
+  const deletedTaskIds = Array.from(new Set([...(data.deletedTaskIds || []), ...protectedDeletedTaskIds]));
+  const deletedIds = new Set(deletedTaskIds);
+  const preparedTasks = prepareTasks(data.tasks).filter((task) => !deletedIds.has(task.id));
+  return { ...data, tasks: preparedTasks, deletedTaskIds };
+}
+
+function hasTaskDeletionConflict(source: { tasks?: Task[]; deletedTaskIds?: string[] }, prepared: { tasks: Task[]; deletedTaskIds: string[] }) {
+  const sourceTaskCount = prepareTasks(source.tasks).length;
+  const sourceDeletedCount = new Set(source.deletedTaskIds || []).size;
+  return prepared.tasks.length !== sourceTaskCount || prepared.deletedTaskIds.length !== sourceDeletedCount;
 }
 
 
@@ -504,6 +512,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [shopFolders, setShopFolders] = useState<ShopFolder[]>([]);
   const [characterState, setCharacterState] = useState<CharacterState>({});
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [deletedTaskIds, setDeletedTaskIds] = useState<string[]>([]);
   const [taskFolders, setTaskFolders] = useState<TaskFolder[]>([]);
   const [customColors, setCustomColors] = useState<string[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -530,10 +539,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const isRemoteUpdateRef = React.useRef(false);
   const syncTimerRef = React.useRef<NodeJS.Timeout | null>(null);
   const clientIdRef = React.useRef<string>(localStorage.getItem("dhabits_client_id") || Math.random().toString(36).substring(7));
+  const deletedTaskIdsRef = React.useRef<string[]>([]);
+
+  const rememberDeletedTaskIds = (ids: string[]) => {
+    deletedTaskIdsRef.current = ids;
+    setDeletedTaskIds(ids);
+  };
 
   // State ref to avoid stale closures in sync calls
   const currentStateRef = React.useRef({
-    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer,
+    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, deletedTaskIds, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer,
     identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas
   });
 
@@ -543,10 +558,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     currentStateRef.current = {
-      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer,
+      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, deletedTaskIds, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer,
       identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer,
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, deletedTaskIds, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer,
       identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas]);
 
   useEffect(() => {
@@ -574,7 +589,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setShopItems([...savedShopItems, ...newDefaults]);
     setShopFolders(savedData.shopFolders || []);
     setCharacterState(savedData.characterState || {});
-    setTasks(prepareTasks(savedData.tasks));
+    const preparedSavedTasks = prepareTaskData(savedData);
+    rememberDeletedTaskIds(preparedSavedTasks.deletedTaskIds);
+    setTasks(preparedSavedTasks.tasks);
     let tFolders = savedData.taskFolders || [];
     if (!tFolders.find((f: any) => f.id === "general")) {
       tFolders = [{ id: "general", name: "Общие", emoji: "📁", color: "#94a3b8", collapsed: false }, ...tFolders];
@@ -633,7 +650,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 vehicle: undefined,
                 ...(remoteData.characterState || {})
               });
-              const preparedRemoteData = prepareTaskData(remoteData);
+              const preparedRemoteData = prepareTaskData(remoteData, deletedTaskIdsRef.current);
+              rememberDeletedTaskIds(preparedRemoteData.deletedTaskIds);
               setTasks(preparedRemoteData.tasks);
               setTaskFolders(remoteData.taskFolders || []);
               setCustomColors(remoteData.customColors || []);
@@ -649,6 +667,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               setIdentitySystemFolders(remoteData.identitySystemFolders || []);
               setIdentitySystemIdeas(remoteData.identitySystemIdeas || []);
               storage.saveData(preparedRemoteData);
+              if (hasTaskDeletionConflict(remoteData, preparedRemoteData)) {
+                void pushImmediateSync({ tasks: preparedRemoteData.tasks, deletedTaskIds: preparedRemoteData.deletedTaskIds });
+              }
               setTimeout(() => { isRemoteUpdateRef.current = false; }, 200);
             }
           }
@@ -703,7 +724,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                     vehicle: undefined,
                     ...(newData.characterState || {})
                   });
-                  const preparedNewData = prepareTaskData(newData);
+                  const preparedNewData = prepareTaskData(newData, deletedTaskIdsRef.current);
+                  rememberDeletedTaskIds(preparedNewData.deletedTaskIds);
                   setTasks(preparedNewData.tasks);
                   setTaskFolders(newData.taskFolders || []);
                   setCustomColors(newData.customColors || []);
@@ -719,6 +741,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   setIdentitySystemFolders(newData.identitySystemFolders || []);
                   setIdentitySystemIdeas(newData.identitySystemIdeas || []);
                   storage.saveData(preparedNewData);
+                  if (hasTaskDeletionConflict(newData, preparedNewData)) {
+                    void pushImmediateSync({ tasks: preparedNewData.tasks, deletedTaskIds: preparedNewData.deletedTaskIds });
+                  }
                   setTimeout(() => { isRemoteUpdateRef.current = false; }, 500);
                 } else {
                   console.log("Sync: Ignoring OLDER or SAME remote data (Remote:", newData.lastUpdated, "Local:", currentData.lastUpdated, ")");
@@ -732,7 +757,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           });
       }
       const currentData = storage.getData();
-      const preparedCurrentData = prepareTaskData(currentData);
+      const preparedCurrentData = prepareTaskData(currentData, deletedTaskIdsRef.current);
+      rememberDeletedTaskIds(preparedCurrentData.deletedTaskIds);
       if (preparedCurrentData !== currentData) {
         storage.saveData({ ...preparedCurrentData, clientId: clientIdRef.current });
         setTasks(preparedCurrentData.tasks);
@@ -782,7 +808,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer, identityValues, identitySystems]);
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, deletedTaskIds, taskFolders, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer, identityValues, identitySystems]);
 
   // Handle mobile wake/focus
   useEffect(() => {
@@ -860,7 +886,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         vehicle: undefined,
         ...(remoteData.characterState || {})
       });
-      const preparedRemoteData = prepareTaskData(remoteData);
+      const preparedRemoteData = prepareTaskData(remoteData, deletedTaskIdsRef.current);
+      rememberDeletedTaskIds(preparedRemoteData.deletedTaskIds);
       setTasks(preparedRemoteData.tasks);
       setTaskFolders(remoteData.taskFolders || []);
       setCustomColors(remoteData.customColors || []);
@@ -876,6 +903,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setIdentitySystemFolders(remoteData.identitySystemFolders || []);
       setIdentitySystemIdeas(remoteData.identitySystemIdeas || []);
       storage.saveData(preparedRemoteData);
+      if (hasTaskDeletionConflict(remoteData, preparedRemoteData)) {
+        void pushImmediateSync({ tasks: preparedRemoteData.tasks, deletedTaskIds: preparedRemoteData.deletedTaskIds });
+      }
       
       logSyncEvent("Данные загружены из облака", "success");
       toast.success("Данные успешно загружены из облака!");
@@ -951,6 +981,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       character: {},
       characterState: characterStateValue,
       tasks: tasksValue,
+      deletedTaskIds: deletedTaskIdsRef.current,
       taskFolders: taskFoldersValue,
       customColors: customColorsValue,
       wakeUpTimes: wakeUpTimesValue || wakeUpTimes,
@@ -993,7 +1024,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setShopItems(remoteData.shopItems || []);
         setShopFolders(remoteData.shopFolders || []);
         setCharacterState(remoteData.characterState || {});
-        const preparedRemoteData = prepareTaskData(remoteData);
+        const preparedRemoteData = prepareTaskData(remoteData, deletedTaskIdsRef.current);
+        rememberDeletedTaskIds(preparedRemoteData.deletedTaskIds);
         setTasks(preparedRemoteData.tasks);
         setTaskFolders(remoteData.taskFolders || []);
         setCustomColors(remoteData.customColors || []);
@@ -1009,6 +1041,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setIdentitySystemFolders(remoteData.identitySystemFolders || []);
         setIdentitySystemIdeas(remoteData.identitySystemIdeas || []);
         storage.saveData(preparedRemoteData);
+        if (hasTaskDeletionConflict(remoteData, preparedRemoteData)) {
+          void pushImmediateSync({ tasks: preparedRemoteData.tasks, deletedTaskIds: preparedRemoteData.deletedTaskIds });
+        }
         setTimeout(() => { isRemoteUpdateRef.current = false; }, 500);
       }
     } catch (err) {
@@ -1336,7 +1371,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setShopItems(savedData.shopItems || []);
         setShopFolders(savedData.shopFolders || []);
         setCharacterState(savedData.characterState || {});
-        const preparedSavedData = prepareTaskData(savedData);
+        const preparedSavedData = prepareTaskData(savedData, deletedTaskIdsRef.current);
+        rememberDeletedTaskIds(preparedSavedData.deletedTaskIds);
         setTasks(preparedSavedData.tasks);
         setTaskFolders(savedData.taskFolders || []);
         setCustomColors(savedData.customColors || []);
@@ -1392,20 +1428,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const deleteTask = async (id: string) => {
+    if (!tasks.some((task) => task.id === id)) return;
     const newTasks = tasks.filter((t) => t.id !== id);
+    const nextDeletedTaskIds = Array.from(new Set([...deletedTaskIdsRef.current, id]));
     setTasks(newTasks);
-    const newData = storage.getData();
-    const updatedData = { ...newData, tasks: newTasks, lastUpdated: new Date().toISOString(), clientId: clientIdRef.current };
-    storage.saveData(updatedData);
-    // Immediately push to cloud to prevent overwrite
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        await syncSave(session.user.id, updatedData);
-      }
-    } catch (err) {
-      console.error("deleteTask sync error:", err);
-    }
+    rememberDeletedTaskIds(nextDeletedTaskIds);
+    await pushImmediateSync({ tasks: newTasks, deletedTaskIds: nextDeletedTaskIds });
+    toast.success("Задача удалена навсегда");
   };
 
   const completeTask = (id: string, dateStr?: string) => {

@@ -18,6 +18,7 @@ export interface StorageData {
   character: Record<string, any>;
   characterState?: Record<string, any>;
   tasks?: any[];
+  deletedTaskIds?: string[];
   taskFolders?: any[];
   customColors?: string[];
   wakeUpTimes?: Record<string, string>;
@@ -50,6 +51,7 @@ export const storage = {
       shop: [],
       character: {},
       characterState: {},
+      deletedTaskIds: [],
       lastUpdated: "1970-01-01T00:00:00.000Z",
     };
   },
