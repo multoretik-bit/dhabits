@@ -24,7 +24,6 @@ import { getBlockIllustration } from "@/lib/blockIllustrations";
 import { applyDayScheduleOverride, isHabitScheduledForDay } from "@/lib/schedule";
 import Calendar from "@/components/Calendar";
 import MonthCalendar from "@/components/MonthCalendar";
-import PomodoroTracker from "@/components/PomodoroTracker";
 import HabitRow from "@/components/HabitRow";
 import TaskRow from "@/components/TaskRow";
 import FormModal from "@/components/FormModal";
@@ -269,7 +268,7 @@ export default function Home() {
             </aside>
           </motion.div>
         ) : mode === "schedule" ? (
-          <motion.div key="schedule" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="schedule-layout">
+          <motion.div key="schedule" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="schedule-layout schedule-layout-without-timer">
             <section className="app-surface schedule-timeline">
               <SectionHeading
                 icon={Clock}
@@ -351,7 +350,6 @@ export default function Home() {
                 </div>
               )}
             </section>
-            <PomodoroTracker selectedDate={selectedDate} />
           </motion.div>
         ) : (
           <motion.div key="month" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>

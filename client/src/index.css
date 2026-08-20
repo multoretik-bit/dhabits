@@ -349,6 +349,7 @@
   .schedule-hidden-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; color: var(--foreground); background: var(--surface-raised); font-size: 10px; font-weight: 700; }
   .schedule-hidden-chip:hover { color: var(--primary); border-color: color-mix(in srgb, var(--primary) 30%, var(--border)); }
   .pomodoro-panel { position: sticky; top: 90px; max-height: calc(100vh - 112px); display: grid; gap: 14px; padding: 20px; overflow-y: auto; scrollbar-width: thin; }
+  .profile-page > .pomodoro-panel { position: static; max-height: none; margin-top: 18px; overflow: visible; }
   .pomodoro-panel > .section-heading { margin-bottom: 0; }
   .pomodoro-hint { margin-top: -7px; color: var(--muted-foreground); font-size: 9px; line-height: 1.5; }
   .pomodoro-clock { --timer-progress: 0deg; position: relative; width: min(100%, 220px); aspect-ratio: 1; display: grid; place-items: center; justify-self: center; padding: 15px; border-radius: 50%; background: conic-gradient(var(--primary) var(--timer-progress), color-mix(in srgb, var(--border) 70%, transparent) 0); box-shadow: 0 18px 44px color-mix(in srgb, var(--primary) 12%, transparent); }
@@ -361,6 +362,11 @@
   .pomodoro-actions { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 7px; }
   .pomodoro-actions .app-button { min-width: 0; padding-inline: 8px; }
   .pomodoro-actions button:disabled { opacity: .38; pointer-events: none; }
+  .activity-target-progress { --activity-color: var(--primary); display: grid; gap: 7px; }
+  .activity-target-progress > div:first-child { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted-foreground); font-size: 9px; }
+  .activity-target-progress > div:last-child { height: 9px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--activity-color) 12%, var(--border)); }
+  .activity-target-progress i { display: block; height: 100%; border-radius: inherit; background: var(--activity-color); transition: width .35s ease; }
+  .schedule-layout-without-timer { grid-template-columns: minmax(0, 1fr); }
   .activity-day-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding-top: 13px; border-top: 1px solid var(--border); }
   .activity-day-head > div { display: grid; gap: 2px; }
   .activity-day-head span { color: var(--muted-foreground); font-size: 8px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }

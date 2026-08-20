@@ -6,6 +6,7 @@ import { useApp, getNextCharacterLevelCost, type ShopItem } from "@/contexts/App
 import { EmptyState, PageHeader, PageShell } from "@/components/AppUI";
 import ProfileDailyDashboard from "@/components/ProfileDailyDashboard";
 import BalanceWheelCard from "@/components/BalanceWheelCard";
+import PomodoroTracker from "@/components/PomodoroTracker";
 import CoinDisplay from "@/components/CoinDisplay";
 import FormModal from "@/components/FormModal";
 import { FormInput, FormSelect, FormTextArea } from "@/components/FormInputs";
@@ -66,6 +67,7 @@ export default function ShopPage() {
   const [itemSlot, setItemSlot] = useState<NonNullable<ShopItem["slot"]>>("accessory");
   const [itemRarity, setItemRarity] = useState<ShopItem["rarity"]>("common");
   const [itemDescription, setItemDescription] = useState("");
+  const today = useMemo(() => new Date(), []);
 
   const safeShopItems = Array.isArray(shopItems) ? shopItems : [];
   const level = typeof characterState.level === "number" && Number.isFinite(characterState.level) ? characterState.level : 0;
@@ -149,6 +151,7 @@ export default function ShopPage() {
           </section>
 
           <ProfileDailyDashboard />
+          <PomodoroTracker selectedDate={today} />
           <BalanceWheelCard />
         </>
       ) : (

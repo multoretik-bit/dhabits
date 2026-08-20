@@ -324,6 +324,9 @@ export interface ActivityTimerState {
   isRunning: boolean;
   startedAt?: string;
   accumulatedSeconds: number;
+  targetMinutes?: number;
+  targetTitle?: string;
+  targetColor?: string;
 }
 
 const DEFAULT_ACTIVITY_TIMER: ActivityTimerState = {

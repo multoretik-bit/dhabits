@@ -2,10 +2,9 @@ import { useMemo, useState, type CSSProperties } from "react";
 import { BatteryCharging, Clock3, Flame, MoonStar, Plus, Sparkles, Trash2, Utensils } from "lucide-react";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
-import { useApp, type DailyFoodEntry, type DailyWellnessRecord } from "@/contexts/AppContext";
+import { useApp, type DailyEnergyRecord, type DailyFoodEntry, type DailyWellnessRecord } from "@/contexts/AppContext";
 import { formatDateToDateString } from "@/lib/dateUtils";
 import { SectionHeading } from "@/components/AppUI";
-import DailyEnergyCard from "@/components/DailyEnergyCard";
 import DmoneyCapitalCard from "@/components/DmoneyCapitalCard";
 import FormModal from "@/components/FormModal";
 import { FormInput } from "@/components/FormInputs";
@@ -40,13 +39,39 @@ export default function ProfileDailyDashboard() {
 
   const [isSleepOpen, setIsSleepOpen] = useState(false);
   const [isFoodOpen, setIsFoodOpen] = useState(false);
+  const [isEnergyOpen, setIsEnergyOpen] = useState(false);
   const [sleepHours, setSleepHours] = useState(String(record.sleepHours ?? 8));
+  const [energyValue, setEnergyValue] = useState(String(energyRecord?.current ?? characterState.attributes?.energy ?? 100));
   const [foodTitle, setFoodTitle] = useState("");
   const [foodGrams, setFoodGrams] = useState("100");
   const [foodCalories, setFoodCalories] = useState("");
 
   const saveWellness = (nextRecord: DailyWellnessRecord) => {
     updateCharacterState({ dailyWellness: { ...wellnessByDate, [dateKey]: nextRecord } });
+  };
+
+  const saveEnergy = (event: React.FormEvent) => {
+    event.preventDefault();
+    const numericValue = Number(energyValue);
+    if (!Number.isFinite(numericValue)) {
+      toast.error("Введите энергию от 0 до 100%");
+      return;
+    }
+    const value = Math.min(100, Math.max(0, Math.round(numericValue)));
+    const nextRecord: DailyEnergyRecord = {
+      date: dateKey,
+      initial: value,
+      current: value,
+      changes: [],
+      updatedAt: new Date().toISOString(),
+    };
+    updateCharacterState({
+      dailyEnergy: { ...(characterState.dailyEnergy || {}), [dateKey]: nextRecord },
+      attributes: { ...(characterState.attributes || {}), energy: value },
+    });
+    setEnergyValue(String(value));
+    setIsEnergyOpen(false);
+    toast.success(`Энергия на сегодня: ${value}%`);
   };
 
   const saveSleep = (event: React.FormEvent) => {
@@ -90,10 +115,10 @@ export default function ProfileDailyDashboard() {
         <div className="profile-metrics-grid">
           <DmoneyCapitalCard />
 
-          <article className="profile-metric-card is-energy" style={{ "--metric-color": "#ff9f1c" } as CSSProperties}>
-            <div className="profile-metric-top"><span className="profile-metric-icon"><BatteryCharging className="size-5" /></span><div><span>Энергия</span><small>Текущий запас</small></div></div>
-            <div className="profile-metric-value"><strong>{energyRecord ? `${energyRecord.current}%` : "—"}</strong><span>{energyRecord ? `Утром было ${energyRecord.initial}%` : "Укажите запас на сегодня ниже"}</span></div>
-          </article>
+          <button type="button" className="profile-metric-card is-energy" style={{ "--metric-color": "#ff9f1c" } as CSSProperties} onClick={() => { setEnergyValue(String(energyRecord?.current ?? characterState.attributes?.energy ?? 100)); setIsEnergyOpen(true); }}>
+            <div className="profile-metric-top"><span className="profile-metric-icon"><BatteryCharging className="size-5" /></span><div><span>Энергия</span><small>Нажмите, чтобы выбрать</small></div><Plus className="size-4 metric-add-icon" /></div>
+            <div className="profile-metric-value"><strong>{energyRecord ? `${energyRecord.current}%` : "—"}</strong><span>{energyRecord ? "Выбрано на сегодня" : "Сколько энергии у вас сегодня?"}</span></div>
+          </button>
 
           <button type="button" className="profile-metric-card is-sleep" style={{ "--metric-color": "#7765f5" } as CSSProperties} onClick={() => { setSleepHours(String(record.sleepHours ?? 8)); setIsSleepOpen(true); }}>
             <div className="profile-metric-top"><span className="profile-metric-icon"><MoonStar className="size-5" /></span><div><span>Сон</span><small>Нажмите, чтобы изменить</small></div></div>
@@ -106,12 +131,10 @@ export default function ProfileDailyDashboard() {
           </button>
 
           <article className="profile-metric-card is-useful" style={{ "--metric-color": "#19b37a" } as CSSProperties}>
-            <div className="profile-metric-top"><span className="profile-metric-icon"><Clock3 className="size-5" /></span><div><span>С пользой</span><small>Из секундомера в «Дне»</small></div></div>
+            <div className="profile-metric-top"><span className="profile-metric-icon"><Clock3 className="size-5" /></span><div><span>С пользой</span><small>Из таймера в профиле</small></div></div>
             <div className="profile-metric-value"><strong>{formatUsefulTime(usefulSeconds)}</strong><span>{activitySessions.filter(session => session.date === dateKey).length} завершённых сессий</span></div>
           </article>
         </div>
-
-        <DailyEnergyCard />
 
         <div className="profile-food-log">
           <div className="profile-food-head"><div><Flame className="size-4" /><span>Что я ел сегодня</span></div><button type="button" className="app-button is-secondary" onClick={() => setIsFoodOpen(true)}><Plus className="size-4" /> Добавить</button></div>
@@ -128,6 +151,11 @@ export default function ProfileDailyDashboard() {
           ) : <p className="profile-food-empty">Пока ничего не записано. Добавьте еду — калории посчитаются автоматически.</p>}
         </div>
       </section>
+
+      <FormModal title="Энергия на сегодня" isOpen={isEnergyOpen} onClose={() => setIsEnergyOpen(false)} onSubmit={saveEnergy} submitText="Сохранить энергию">
+        <FormInput label="Сколько энергии, %" value={energyValue} onChange={setEnergyValue} type="number" placeholder="Например, 75" />
+        <p className="profile-form-hint">Выберите своё состояние на сегодня от 0 до 100%. Значение можно изменить в любой момент.</p>
+      </FormModal>
 
       <FormModal title="Сон сегодня" isOpen={isSleepOpen} onClose={() => setIsSleepOpen(false)} onSubmit={saveSleep} submitText="Сохранить сон">
         <FormInput label="Сколько часов спали" value={sleepHours} onChange={setSleepHours} type="number" placeholder="Например, 7.5" />

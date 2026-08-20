@@ -64,6 +64,10 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
     deleteActivitySession,
   } = useApp();
   const [now, setNow] = useState(Date.now());
+  const [isTargetModalOpen, setIsTargetModalOpen] = useState(false);
+  const [targetTitle, setTargetTitle] = useState(activityTimer.targetTitle || "");
+  const [targetMinutes, setTargetMinutes] = useState(String(activityTimer.targetMinutes || 30));
+  const [targetColor, setTargetColor] = useState(activityTimer.targetColor || "#315cff");
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [isManualSessionModalOpen, setIsManualSessionModalOpen] = useState(false);
   const [sessionTitle, setSessionTitle] = useState("");
@@ -85,7 +89,9 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
   }, [activityTimer.isRunning]);
 
   const elapsedSeconds = getElapsedSeconds(activityTimer, now);
-  const progress = ((elapsedSeconds % 3600) / 3600) * 100;
+  const targetSeconds = Math.max(1, (activityTimer.targetMinutes || 0) * 60);
+  const progress = activityTimer.targetMinutes ? Math.min(100, (elapsedSeconds / targetSeconds) * 100) : 0;
+  const remainingSeconds = Math.max(0, targetSeconds - elapsedSeconds);
 
   const selectedDateString = formatDateToDateString(selectedDate);
   const dailySessions = useMemo(
@@ -123,8 +129,29 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
 
   const startTimer = () => {
     if (activityTimer.isRunning) return;
+    if (!activityTimer.targetMinutes || !activityTimer.targetTitle) {
+      setIsTargetModalOpen(true);
+      return;
+    }
     setNow(Date.now());
     saveActivityTimer({ ...activityTimer, isRunning: true, startedAt: new Date().toISOString() });
+  };
+
+  const saveTarget = (event: React.FormEvent) => {
+    event.preventDefault();
+    const title = targetTitle.trim();
+    const minutes = Math.max(1, Math.round(Number(targetMinutes)));
+    if (!title || !Number.isFinite(minutes)) return;
+    saveActivityTimer({
+      ...activityTimer,
+      targetTitle: title,
+      targetMinutes: minutes,
+      targetColor,
+    });
+    setTargetMinutes(String(minutes));
+    setSessionTitle(title);
+    setSessionColor(targetColor);
+    setIsTargetModalOpen(false);
   };
 
   const pauseTimer = () => {
@@ -142,6 +169,8 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
   const finishTimer = () => {
     if (!hasActiveTime) return;
     if (activityTimer.isRunning) pauseTimer();
+    setSessionTitle(activityTimer.targetTitle || "");
+    setSessionColor(activityTimer.targetColor || "#315cff");
     setIsSessionModalOpen(true);
   };
 
@@ -209,15 +238,20 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
   return (
     <>
       <section className="app-surface pomodoro-panel">
-        <SectionHeading icon={TimerReset} title="Секундомер" meta={activityTimer.isRunning ? "Идёт" : hasActiveTime ? "Пауза" : "Готов"} />
-        <p className="pomodoro-hint">Запустите секундомер, занимайтесь делом сколько нужно, а после завершения укажите его название и цвет.</p>
+        <SectionHeading icon={TimerReset} title="Таймер занятий" meta={activityTimer.isRunning ? "Идёт" : hasActiveTime ? "Пауза" : "Готов"} action={<button type="button" className="icon-button" onClick={() => { setTargetTitle(activityTimer.targetTitle || ""); setTargetMinutes(String(activityTimer.targetMinutes || 30)); setTargetColor(activityTimer.targetColor || "#315cff"); setIsTargetModalOpen(true); }} aria-label="Выбрать занятие и минуты"><Plus className="size-4" /></button>} />
+        <p className="pomodoro-hint">Нажмите плюс, выберите действие и сколько минут хотите им заниматься. Шкала заполнится по мере выполнения.</p>
 
-        <div className={`pomodoro-clock ${activityTimer.isRunning ? "is-running" : ""}`} style={timerStyle}>
+        <div className={`pomodoro-clock ${activityTimer.isRunning ? "is-running" : ""}`} style={{ ...timerStyle, "--primary": activityTimer.targetColor || "#315cff" } as CSSProperties} aria-label={`Выполнено ${Math.round(progress)}%`}>
           <div>
-            <span>{activityTimer.isRunning ? "В фокусе" : hasActiveTime ? "На паузе" : "Готов"}</span>
+            <span>{activityTimer.targetTitle || (activityTimer.isRunning ? "В фокусе" : hasActiveTime ? "На паузе" : "Выберите занятие")}</span>
             <strong>{formatClock(elapsedSeconds)}</strong>
-            <small>Считает время без ограничения</small>
+            <small>{activityTimer.targetMinutes ? (remainingSeconds > 0 ? `осталось ${formatDuration(remainingSeconds)} из ${activityTimer.targetMinutes} мин` : `цель ${activityTimer.targetMinutes} мин выполнена`) : "нажмите +, чтобы задать цель"}</small>
           </div>
+        </div>
+
+        <div className="activity-target-progress" style={{ "--activity-color": activityTimer.targetColor || "#315cff" } as CSSProperties}>
+          <div><span>Прогресс занятия</span><strong>{Math.round(progress)}%</strong></div>
+          <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}><i style={{ width: `${progress}%` }} /></div>
         </div>
 
         <div className="pomodoro-actions">
@@ -273,6 +307,18 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
           </div>
         ) : <EmptyState compact title="Пока нет занятий" description="Завершённые занятия появятся здесь и сохранятся в вашем аккаунте." />}
       </section>
+
+      <FormModal
+        title="Новое занятие"
+        isOpen={isTargetModalOpen}
+        onClose={() => setIsTargetModalOpen(false)}
+        onSubmit={saveTarget}
+        submitText="Выбрать занятие"
+      >
+        <FormInput label="Что будете делать" value={targetTitle} onChange={setTargetTitle} placeholder="Например, читать или учить английский" list="activity-title-options" />
+        <FormInput label="Сколько минут" value={targetMinutes} onChange={setTargetMinutes} type="number" placeholder="30" />
+        <AdvancedColorPicker label="Цвет шкалы" value={targetColor} onChange={setTargetColor} />
+      </FormModal>
 
       <FormModal
         title="Записать занятие"
