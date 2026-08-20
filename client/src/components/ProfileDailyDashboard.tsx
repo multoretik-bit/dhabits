@@ -1,5 +1,5 @@
 import { useMemo, useState, type CSSProperties } from "react";
-import { BatteryCharging, Clock3, Flame, MoonStar, Plus, Sparkles, Trash2, Utensils } from "lucide-react";
+import { BatteryCharging, Clock3, Flame, MoonStar, Plus, Sparkles, Utensils } from "lucide-react";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { useApp, type DailyEnergyRecord, type DailyFoodEntry, type DailyWellnessRecord } from "@/contexts/AppContext";
@@ -103,10 +103,6 @@ export default function ProfileDailyDashboard() {
     toast.success("Еда добавлена в дневник");
   };
 
-  const deleteFood = (id: string) => {
-    saveWellness({ ...record, foods: foods.filter(food => food.id !== id), updatedAt: new Date().toISOString() });
-  };
-
   return (
     <>
       <section className="profile-daily app-surface">
@@ -136,20 +132,6 @@ export default function ProfileDailyDashboard() {
           </article>
         </div>
 
-        <div className="profile-food-log">
-          <div className="profile-food-head"><div><Flame className="size-4" /><span>Что я ел сегодня</span></div><button type="button" className="app-button is-secondary" onClick={() => setIsFoodOpen(true)}><Plus className="size-4" /> Добавить</button></div>
-          {foods.length ? (
-            <div className="profile-food-list">
-              {[...foods].reverse().map(food => (
-                <article key={food.id}>
-                  <div><strong>{food.title}</strong><span>{food.grams} г · {food.caloriesPer100g} ккал на 100 г</span></div>
-                  <b>{food.calories} ккал</b>
-                  <button type="button" className="icon-button is-small subtle-danger" onClick={() => deleteFood(food.id)} aria-label={`Удалить ${food.title}`}><Trash2 className="size-3.5" /></button>
-                </article>
-              ))}
-            </div>
-          ) : <p className="profile-food-empty">Пока ничего не записано. Добавьте еду — калории посчитаются автоматически.</p>}
-        </div>
       </section>
 
       <FormModal title="Энергия на сегодня" isOpen={isEnergyOpen} onClose={() => setIsEnergyOpen(false)} onSubmit={saveEnergy} submitText="Сохранить энергию">

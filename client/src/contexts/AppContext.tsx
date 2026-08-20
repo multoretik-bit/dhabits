@@ -320,13 +320,18 @@ export interface ActivitySession {
   createdAt?: string;
 }
 
+export interface ActivityMicroGoal {
+  id: string;
+  title: string;
+  targetMinutes: number;
+  color: string;
+  createdAt: string;
+}
+
 export interface ActivityTimerState {
   isRunning: boolean;
   startedAt?: string;
   accumulatedSeconds: number;
-  targetMinutes?: number;
-  targetTitle?: string;
-  targetColor?: string;
 }
 
 const DEFAULT_ACTIVITY_TIMER: ActivityTimerState = {
@@ -372,6 +377,9 @@ interface AppContextType {
   saveMonthEvent: (event: MonthEvent) => void;
   deleteMonthEvent: (id: string) => void;
   activitySessions: ActivitySession[];
+  activityMicroGoals: ActivityMicroGoal[];
+  addActivityMicroGoal: (goal: ActivityMicroGoal) => void;
+  deleteActivityMicroGoal: (id: string) => void;
   activityTimer: ActivityTimerState;
   saveActivityTimer: (timer: ActivityTimerState) => void;
   addActivitySession: (session: ActivitySession, options?: { preserveTimer?: boolean }) => void;
@@ -526,6 +534,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [dayScheduleOverrides, setDayScheduleOverrides] = useState<Record<string, DayScheduleOverride>>({});
   const [monthEvents, setMonthEvents] = useState<MonthEvent[]>([]);
   const [activitySessions, setActivitySessions] = useState<ActivitySession[]>([]);
+  const [activityMicroGoals, setActivityMicroGoals] = useState<ActivityMicroGoal[]>([]);
   const [activityTimer, setActivityTimer] = useState<ActivityTimerState>({ ...DEFAULT_ACTIVITY_TIMER });
   const [identityValues, setIdentityValues] = useState<IdentityValue[]>([]);
   const [identityValueFolders, setIdentityValueFolders] = useState<IdentityValueFolder[]>([]);
@@ -551,7 +560,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // State ref to avoid stale closures in sync calls
   const currentStateRef = React.useRef({
-    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, deletedTaskIds, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer,
+    coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, deletedTaskIds, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityMicroGoals, activityTimer,
     identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas
   });
 
@@ -561,10 +570,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     currentStateRef.current = {
-      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, deletedTaskIds, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer,
+      coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, deletedTaskIds, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityMicroGoals, activityTimer,
       identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, deletedTaskIds, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer,
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, deletedTaskIds, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityMicroGoals, activityTimer,
       identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas]);
 
   useEffect(() => {
@@ -605,6 +614,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setDayScheduleOverrides(savedData.dayScheduleOverrides || {});
     setMonthEvents(savedData.monthEvents || []);
     setActivitySessions(savedData.activitySessions || []);
+    setActivityMicroGoals(savedData.activityMicroGoals || []);
     setActivityTimer({ ...DEFAULT_ACTIVITY_TIMER, ...(savedData.activityTimer || {}) });
     setIdentityValues(savedData.identityValues || []);
     setIdentityValueFolders(savedData.identityValueFolders || []);
@@ -663,6 +673,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               setDayScheduleOverrides(remoteData.dayScheduleOverrides || {});
               setMonthEvents(remoteData.monthEvents || []);
               setActivitySessions(remoteData.activitySessions || []);
+              setActivityMicroGoals(remoteData.activityMicroGoals || []);
               setActivityTimer({ ...DEFAULT_ACTIVITY_TIMER, ...(remoteData.activityTimer || {}) });
               setIdentityValues(remoteData.identityValues || []);
               setIdentityValueFolders(remoteData.identityValueFolders || []);
@@ -737,6 +748,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   setDayScheduleOverrides(newData.dayScheduleOverrides || {});
                   setMonthEvents(newData.monthEvents || []);
                   setActivitySessions(newData.activitySessions || []);
+                  setActivityMicroGoals(newData.activityMicroGoals || []);
                   setActivityTimer({ ...DEFAULT_ACTIVITY_TIMER, ...(newData.activityTimer || {}) });
                   setIdentityValues(newData.identityValues || []);
                   setIdentityValueFolders(newData.identityValueFolders || []);
@@ -811,7 +823,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, deletedTaskIds, taskFolders, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityTimer, identityValues, identitySystems]);
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, deletedTaskIds, taskFolders, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityMicroGoals, activityTimer, identityValues, identitySystems]);
 
   // Handle mobile wake/focus
   useEffect(() => {
@@ -899,6 +911,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setDayScheduleOverrides(remoteData.dayScheduleOverrides || {});
       setMonthEvents(remoteData.monthEvents || []);
       setActivitySessions(remoteData.activitySessions || []);
+      setActivityMicroGoals(remoteData.activityMicroGoals || []);
       setActivityTimer({ ...DEFAULT_ACTIVITY_TIMER, ...(remoteData.activityTimer || {}) });
       setIdentityValues(remoteData.identityValues || []);
       setIdentityValueFolders(remoteData.identityValueFolders || []);
@@ -997,6 +1010,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       dayScheduleOverrides: dayScheduleOverridesValue || dayScheduleOverrides,
       monthEvents: monthEventsValue || monthEvents,
       activitySessions,
+      activityMicroGoals,
       activityTimer,
       progress: {},
       streaks: {},
@@ -1037,6 +1051,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setDayScheduleOverrides(remoteData.dayScheduleOverrides || {});
         setMonthEvents(remoteData.monthEvents || []);
         setActivitySessions(remoteData.activitySessions || []);
+        setActivityMicroGoals(remoteData.activityMicroGoals || []);
         setActivityTimer({ ...DEFAULT_ACTIVITY_TIMER, ...(remoteData.activityTimer || {}) });
         setIdentityValues(remoteData.identityValues || []);
         setIdentityValueFolders(remoteData.identityValueFolders || []);
@@ -1729,6 +1744,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas, newOverrides);
   };
 
+  const addActivityMicroGoal = (goal: ActivityMicroGoal) => {
+    const newGoals = [...activityMicroGoals, goal];
+    setActivityMicroGoals(newGoals);
+    void pushImmediateSync({ activityMicroGoals: newGoals });
+  };
+
+  const deleteActivityMicroGoal = (id: string) => {
+    const newGoals = activityMicroGoals.filter((goal) => goal.id !== id);
+    setActivityMicroGoals(newGoals);
+    void pushImmediateSync({ activityMicroGoals: newGoals });
+  };
+
   const saveActivityTimer = (timer: ActivityTimerState) => {
     setActivityTimer(timer);
     void pushImmediateSync({ activityTimer: timer });
@@ -1951,6 +1978,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         saveMonthEvent,
         deleteMonthEvent,
         activitySessions,
+        activityMicroGoals,
+        addActivityMicroGoal,
+        deleteActivityMicroGoal,
         activityTimer,
         saveActivityTimer,
         addActivitySession,

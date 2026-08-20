@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { ChevronDown, Clock3, Pause, Play, Plus, RotateCcw, Square, TimerReset, Trash2 } from "lucide-react";
+import { CheckCircle2, ChevronDown, Clock3, Pause, Play, Plus, RotateCcw, Square, Target, TimerReset, Trash2 } from "lucide-react";
 import { nanoid } from "nanoid";
+import { toast } from "sonner";
 import {
   useApp,
   type ActivitySession,
@@ -58,16 +59,19 @@ function formatSessionCount(count: number) {
 export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }) {
   const {
     activitySessions,
+    activityMicroGoals,
+    addActivityMicroGoal,
+    deleteActivityMicroGoal,
     activityTimer,
     saveActivityTimer,
     addActivitySession,
     deleteActivitySession,
   } = useApp();
   const [now, setNow] = useState(Date.now());
-  const [isTargetModalOpen, setIsTargetModalOpen] = useState(false);
-  const [targetTitle, setTargetTitle] = useState(activityTimer.targetTitle || "");
-  const [targetMinutes, setTargetMinutes] = useState(String(activityTimer.targetMinutes || 30));
-  const [targetColor, setTargetColor] = useState(activityTimer.targetColor || "#315cff");
+  const [isMicroGoalModalOpen, setIsMicroGoalModalOpen] = useState(false);
+  const [microGoalTitle, setMicroGoalTitle] = useState("");
+  const [microGoalMinutes, setMicroGoalMinutes] = useState("30");
+  const [microGoalColor, setMicroGoalColor] = useState("#315cff");
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [isManualSessionModalOpen, setIsManualSessionModalOpen] = useState(false);
   const [sessionTitle, setSessionTitle] = useState("");
@@ -89,9 +93,7 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
   }, [activityTimer.isRunning]);
 
   const elapsedSeconds = getElapsedSeconds(activityTimer, now);
-  const targetSeconds = Math.max(1, (activityTimer.targetMinutes || 0) * 60);
-  const progress = activityTimer.targetMinutes ? Math.min(100, (elapsedSeconds / targetSeconds) * 100) : 0;
-  const remainingSeconds = Math.max(0, targetSeconds - elapsedSeconds);
+  const progress = ((elapsedSeconds % 3600) / 3600) * 100;
 
   const selectedDateString = formatDateToDateString(selectedDate);
   const dailySessions = useMemo(
@@ -118,40 +120,55 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
 
   const totalDaySeconds = dailySessions.reduce((sum, session) => sum + session.durationSeconds, 0);
   const hasActiveTime = elapsedSeconds > 0;
+  const microGoalProgress = useMemo(() => activityMicroGoals.map((goal) => {
+    const normalizedTitle = goal.title.trim().toLocaleLowerCase("ru-RU");
+    const completedSeconds = dailySessions
+      .filter((session) => session.title.trim().toLocaleLowerCase("ru-RU") === normalizedTitle)
+      .reduce((sum, session) => sum + session.durationSeconds, 0);
+    const targetSeconds = Math.max(60, goal.targetMinutes * 60);
+    return {
+      ...goal,
+      completedSeconds,
+      completedMinutes: Math.round(completedSeconds / 6) / 10,
+      progress: Math.min(100, (completedSeconds / targetSeconds) * 100),
+    };
+  }), [activityMicroGoals, dailySessions]);
   const activityTitles = useMemo(() => {
     const titles = new Map<string, string>();
+    activityMicroGoals.forEach((goal) => titles.set(goal.title.trim().toLocaleLowerCase("ru-RU"), goal.title.trim()));
     activitySessions.forEach((session) => {
       const title = session.title.trim();
       if (title) titles.set(title.toLocaleLowerCase("ru-RU"), title);
     });
     return Array.from(titles.values()).sort((a, b) => a.localeCompare(b, "ru-RU"));
-  }, [activitySessions]);
+  }, [activityMicroGoals, activitySessions]);
 
   const startTimer = () => {
     if (activityTimer.isRunning) return;
-    if (!activityTimer.targetMinutes || !activityTimer.targetTitle) {
-      setIsTargetModalOpen(true);
-      return;
-    }
     setNow(Date.now());
     saveActivityTimer({ ...activityTimer, isRunning: true, startedAt: new Date().toISOString() });
   };
 
-  const saveTarget = (event: React.FormEvent) => {
+  const saveMicroGoal = (event: React.FormEvent) => {
     event.preventDefault();
-    const title = targetTitle.trim();
-    const minutes = Math.max(1, Math.round(Number(targetMinutes)));
+    const title = microGoalTitle.trim();
+    const minutes = Math.max(1, Math.round(Number(microGoalMinutes)));
     if (!title || !Number.isFinite(minutes)) return;
-    saveActivityTimer({
-      ...activityTimer,
-      targetTitle: title,
+    if (activityMicroGoals.some((goal) => goal.title.trim().toLocaleLowerCase("ru-RU") === title.toLocaleLowerCase("ru-RU"))) {
+      toast.error("Микроцель с таким названием уже есть");
+      return;
+    }
+    addActivityMicroGoal({
+      id: nanoid(),
+      title,
       targetMinutes: minutes,
-      targetColor,
+      color: microGoalColor,
+      createdAt: new Date().toISOString(),
     });
-    setTargetMinutes(String(minutes));
-    setSessionTitle(title);
-    setSessionColor(targetColor);
-    setIsTargetModalOpen(false);
+    setMicroGoalTitle("");
+    setMicroGoalMinutes("30");
+    setIsMicroGoalModalOpen(false);
+    toast.success("Ежедневная микроцель добавлена");
   };
 
   const pauseTimer = () => {
@@ -169,8 +186,6 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
   const finishTimer = () => {
     if (!hasActiveTime) return;
     if (activityTimer.isRunning) pauseTimer();
-    setSessionTitle(activityTimer.targetTitle || "");
-    setSessionColor(activityTimer.targetColor || "#315cff");
     setIsSessionModalOpen(true);
   };
 
@@ -238,20 +253,15 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
   return (
     <>
       <section className="app-surface pomodoro-panel">
-        <SectionHeading icon={TimerReset} title="Таймер занятий" meta={activityTimer.isRunning ? "Идёт" : hasActiveTime ? "Пауза" : "Готов"} action={<button type="button" className="icon-button" onClick={() => { setTargetTitle(activityTimer.targetTitle || ""); setTargetMinutes(String(activityTimer.targetMinutes || 30)); setTargetColor(activityTimer.targetColor || "#315cff"); setIsTargetModalOpen(true); }} aria-label="Выбрать занятие и минуты"><Plus className="size-4" /></button>} />
-        <p className="pomodoro-hint">Нажмите плюс, выберите действие и сколько минут хотите им заниматься. Шкала заполнится по мере выполнения.</p>
+        <SectionHeading icon={TimerReset} title="Таймер занятий" meta={activityTimer.isRunning ? "Идёт" : hasActiveTime ? "Пауза" : "Готов"} />
+        <p className="pomodoro-hint">Запустите таймер, а после завершения укажите, чем занимались. Время автоматически попадёт в одноимённую микроцель.</p>
 
-        <div className={`pomodoro-clock ${activityTimer.isRunning ? "is-running" : ""}`} style={{ ...timerStyle, "--primary": activityTimer.targetColor || "#315cff" } as CSSProperties} aria-label={`Выполнено ${Math.round(progress)}%`}>
+        <div className={`pomodoro-clock ${activityTimer.isRunning ? "is-running" : ""}`} style={timerStyle}>
           <div>
-            <span>{activityTimer.targetTitle || (activityTimer.isRunning ? "В фокусе" : hasActiveTime ? "На паузе" : "Выберите занятие")}</span>
+            <span>{activityTimer.isRunning ? "В фокусе" : hasActiveTime ? "На паузе" : "Готов"}</span>
             <strong>{formatClock(elapsedSeconds)}</strong>
-            <small>{activityTimer.targetMinutes ? (remainingSeconds > 0 ? `осталось ${formatDuration(remainingSeconds)} из ${activityTimer.targetMinutes} мин` : `цель ${activityTimer.targetMinutes} мин выполнена`) : "нажмите +, чтобы задать цель"}</small>
+            <small>Фактическое время занятия</small>
           </div>
-        </div>
-
-        <div className="activity-target-progress" style={{ "--activity-color": activityTimer.targetColor || "#315cff" } as CSSProperties}>
-          <div><span>Прогресс занятия</span><strong>{Math.round(progress)}%</strong></div>
-          <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)}><i style={{ width: `${progress}%` }} /></div>
         </div>
 
         <div className="pomodoro-actions">
@@ -262,6 +272,33 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
           )}
           <button type="button" className="app-button is-secondary" onClick={finishTimer} disabled={!hasActiveTime}><Square className="size-4" /> Завершить</button>
           <button type="button" className="icon-button" onClick={resetTimer} disabled={!hasActiveTime} aria-label="Сбросить таймер"><RotateCcw className="size-4" /></button>
+        </div>
+
+        <div className="micro-goals-section">
+          <div className="micro-goals-head">
+            <div><Target className="size-4" /><div><strong>Ежедневные микроцели</strong><span>Обнуляются каждый новый день</span></div></div>
+            <button type="button" className="app-button is-secondary" onClick={() => setIsMicroGoalModalOpen(true)}><Plus className="size-4" /> Микроцель</button>
+          </div>
+          {microGoalProgress.length ? (
+            <div className="micro-goals-grid">
+              {microGoalProgress.map((goal) => {
+                const isComplete = goal.progress >= 100;
+                return (
+                  <article key={goal.id} className={`micro-goal-card ${isComplete ? "is-complete" : ""}`} style={{ "--micro-goal-color": goal.color } as CSSProperties}>
+                    <div className="micro-goal-top">
+                      <i>{isComplete ? <CheckCircle2 className="size-4" /> : <Target className="size-4" />}</i>
+                      <div><strong>{goal.title}</strong><span>{isComplete ? "Готово на сегодня" : `${goal.completedMinutes} из ${goal.targetMinutes} мин`}</span></div>
+                      <b>{Math.round(goal.progress)}%</b>
+                      <button type="button" className="icon-button is-small subtle-danger" onClick={() => deleteActivityMicroGoal(goal.id)} aria-label={`Удалить микроцель ${goal.title}`}><Trash2 className="size-3.5" /></button>
+                    </div>
+                    <div className="micro-goal-progress" role="progressbar" aria-label={`Прогресс микроцели ${goal.title}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(goal.progress)}><i style={{ width: `${goal.progress}%` }} /></div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <button type="button" className="micro-goals-empty" onClick={() => setIsMicroGoalModalOpen(true)}><Plus className="size-5" /><div><strong>Добавьте первую микроцель</strong><span>Например: 30 минут чтения каждый день</span></div></button>
+          )}
         </div>
 
         <div className="activity-day-head">
@@ -309,15 +346,16 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
       </section>
 
       <FormModal
-        title="Новое занятие"
-        isOpen={isTargetModalOpen}
-        onClose={() => setIsTargetModalOpen(false)}
-        onSubmit={saveTarget}
-        submitText="Выбрать занятие"
+        title="Новая ежедневная микроцель"
+        isOpen={isMicroGoalModalOpen}
+        onClose={() => setIsMicroGoalModalOpen(false)}
+        onSubmit={saveMicroGoal}
+        submitText="Добавить микроцель"
       >
-        <FormInput label="Что будете делать" value={targetTitle} onChange={setTargetTitle} placeholder="Например, читать или учить английский" list="activity-title-options" />
-        <FormInput label="Сколько минут" value={targetMinutes} onChange={setTargetMinutes} type="number" placeholder="30" />
-        <AdvancedColorPicker label="Цвет шкалы" value={targetColor} onChange={setTargetColor} />
+        <p className="pomodoro-hint">Цель повторяется каждый день. Сессии с таким же названием автоматически заполняют её прогресс.</p>
+        <FormInput label="Название" value={microGoalTitle} onChange={setMicroGoalTitle} placeholder="Например, Чтение" />
+        <FormInput label="Минут в день" value={microGoalMinutes} onChange={setMicroGoalMinutes} type="number" placeholder="30" />
+        <AdvancedColorPicker label="Цвет микроцели" value={microGoalColor} onChange={setMicroGoalColor} />
       </FormModal>
 
       <FormModal
@@ -331,7 +369,14 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
           <Clock3 className="size-5" />
           <div><span>Продолжительность</span><strong>{formatDuration(getElapsedSeconds(activityTimer, Date.now()))}</strong></div>
         </div>
-        <FormInput label="Чем занимались" value={sessionTitle} onChange={setSessionTitle} placeholder="Например, чтение или английский" list="activity-title-options" />
+        <p className="pomodoro-hint">Чтобы время попало в микроцель, выберите или напишите её название без изменений.</p>
+        {activityMicroGoals.length > 0 && (
+          <div className="micro-goal-session-choices">
+            <span>Добавить время в микроцель</span>
+            <div>{activityMicroGoals.map((goal) => <button key={goal.id} type="button" style={{ "--micro-goal-color": goal.color } as CSSProperties} onClick={() => { setSessionTitle(goal.title); setSessionColor(goal.color); }}>{goal.title}</button>)}</div>
+          </div>
+        )}
+        <FormInput label="Чем занимались" value={sessionTitle} onChange={setSessionTitle} placeholder="Например, Чтение" list="activity-title-options" />
         <AdvancedColorPicker label="Цвет занятия" value={sessionColor} onChange={setSessionColor} />
       </FormModal>
 
