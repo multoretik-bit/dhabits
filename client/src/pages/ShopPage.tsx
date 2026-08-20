@@ -151,8 +151,10 @@ export default function ShopPage() {
           </section>
 
           <ProfileDailyDashboard />
-          <PomodoroTracker selectedDate={today} />
-          <BalanceWheelCard />
+          <div className="profile-tools-grid">
+            <PomodoroTracker selectedDate={today} />
+            <BalanceWheelCard />
+          </div>
         </>
       ) : (
         <section className="profile-inventory-page">

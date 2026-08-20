@@ -32,6 +32,7 @@ export default function ProfileDailyDashboard() {
   };
   const foods = Array.isArray(record.foods) ? record.foods : [];
   const energyRecord = characterState.dailyEnergy?.[dateKey];
+  const energySpentToday = energyRecord ? Math.max(0, energyRecord.initial - energyRecord.current) : 0;
   const usefulSeconds = activitySessions
     .filter(session => session.date === dateKey)
     .reduce((sum, session) => sum + session.durationSeconds, 0);
@@ -41,7 +42,8 @@ export default function ProfileDailyDashboard() {
   const [isFoodOpen, setIsFoodOpen] = useState(false);
   const [isEnergyOpen, setIsEnergyOpen] = useState(false);
   const [sleepHours, setSleepHours] = useState(String(record.sleepHours ?? 8));
-  const [energyValue, setEnergyValue] = useState(String(energyRecord?.current ?? characterState.attributes?.energy ?? 100));
+  const [energyValue, setEnergyValue] = useState(String(energyRecord?.initial ?? characterState.attributes?.energy ?? 100));
+  const [energySpent, setEnergySpent] = useState(String(energySpentToday));
   const [foodTitle, setFoodTitle] = useState("");
   const [foodGrams, setFoodGrams] = useState("100");
   const [foodCalories, setFoodCalories] = useState("");
@@ -53,25 +55,30 @@ export default function ProfileDailyDashboard() {
   const saveEnergy = (event: React.FormEvent) => {
     event.preventDefault();
     const numericValue = Number(energyValue);
-    if (!Number.isFinite(numericValue)) {
-      toast.error("Введите энергию от 0 до 100%");
+    const numericSpent = Number(energySpent);
+    if (!Number.isFinite(numericValue) || !Number.isFinite(numericSpent)) {
+      toast.error("Введите энергию и расход от 0 до 100%");
       return;
     }
-    const value = Math.min(100, Math.max(0, Math.round(numericValue)));
+    const dailyValue = Math.min(100, Math.max(0, Math.round(numericValue)));
+    const spentValue = Math.min(dailyValue, Math.max(0, Math.round(numericSpent)));
+    const currentValue = dailyValue - spentValue;
+    const nowIso = new Date().toISOString();
     const nextRecord: DailyEnergyRecord = {
       date: dateKey,
-      initial: value,
-      current: value,
-      changes: [],
-      updatedAt: new Date().toISOString(),
+      initial: dailyValue,
+      current: currentValue,
+      changes: spentValue > 0 ? [{ id: nanoid(), delta: -spentValue, note: "Потрачено за день", createdAt: nowIso }] : [],
+      updatedAt: nowIso,
     };
     updateCharacterState({
       dailyEnergy: { ...(characterState.dailyEnergy || {}), [dateKey]: nextRecord },
-      attributes: { ...(characterState.attributes || {}), energy: value },
+      attributes: { ...(characterState.attributes || {}), energy: currentValue },
     });
-    setEnergyValue(String(value));
+    setEnergyValue(String(dailyValue));
+    setEnergySpent(String(spentValue));
     setIsEnergyOpen(false);
-    toast.success(`Энергия на сегодня: ${value}%`);
+    toast.success(`Осталось энергии: ${currentValue}%`);
   };
 
   const saveSleep = (event: React.FormEvent) => {
@@ -111,9 +118,9 @@ export default function ProfileDailyDashboard() {
         <div className="profile-metrics-grid">
           <DmoneyCapitalCard />
 
-          <button type="button" className="profile-metric-card is-energy" style={{ "--metric-color": "#ff9f1c" } as CSSProperties} onClick={() => { setEnergyValue(String(energyRecord?.current ?? characterState.attributes?.energy ?? 100)); setIsEnergyOpen(true); }}>
-            <div className="profile-metric-top"><span className="profile-metric-icon"><BatteryCharging className="size-5" /></span><div><span>Энергия</span><small>Нажмите, чтобы выбрать</small></div><Plus className="size-4 metric-add-icon" /></div>
-            <div className="profile-metric-value"><strong>{energyRecord ? `${energyRecord.current}%` : "—"}</strong><span>{energyRecord ? "Выбрано на сегодня" : "Сколько энергии у вас сегодня?"}</span></div>
+          <button type="button" className="profile-metric-card is-energy" style={{ "--metric-color": "#ff9f1c" } as CSSProperties} onClick={() => { setEnergyValue(String(energyRecord?.initial ?? characterState.attributes?.energy ?? 100)); setEnergySpent(String(energySpentToday)); setIsEnergyOpen(true); }}>
+            <div className="profile-metric-top"><span className="profile-metric-icon"><BatteryCharging className="size-5" /></span><div><span>Энергия</span><small>Выбрать запас и расход</small></div><Plus className="size-4 metric-add-icon" /></div>
+            <div className="profile-metric-value"><strong>{energyRecord ? `${energyRecord.current}%` : "—"}</strong><span>{energyRecord ? `Потрачено ${energySpentToday}% из ${energyRecord.initial}%` : "Сколько энергии у вас сегодня?"}</span></div>
           </button>
 
           <button type="button" className="profile-metric-card is-sleep" style={{ "--metric-color": "#7765f5" } as CSSProperties} onClick={() => { setSleepHours(String(record.sleepHours ?? 8)); setIsSleepOpen(true); }}>
@@ -135,8 +142,15 @@ export default function ProfileDailyDashboard() {
       </section>
 
       <FormModal title="Энергия на сегодня" isOpen={isEnergyOpen} onClose={() => setIsEnergyOpen(false)} onSubmit={saveEnergy} submitText="Сохранить энергию">
-        <FormInput label="Сколько энергии, %" value={energyValue} onChange={setEnergyValue} type="number" placeholder="Например, 75" />
-        <p className="profile-form-hint">Выберите своё состояние на сегодня от 0 до 100%. Значение можно изменить в любой момент.</p>
+        <div className="profile-energy-form-row">
+          <FormInput label="Энергия на день, %" value={energyValue} onChange={setEnergyValue} type="number" placeholder="Например, 80" />
+          <FormInput label="Потрачено за день, %" value={energySpent} onChange={setEnergySpent} type="number" placeholder="Например, 25" />
+        </div>
+        <div className="profile-energy-preview">
+          <BatteryCharging className="size-5" />
+          <div><span>Останется энергии</span><strong>{Math.max(0, Math.min(100, Math.round(Number(energyValue) || 0)) - Math.max(0, Math.round(Number(energySpent) || 0)))}%</strong></div>
+        </div>
+        <p className="profile-form-hint">Можно открыть карточку снова и исправить как дневной запас, так и потраченную энергию.</p>
       </FormModal>
 
       <FormModal title="Сон сегодня" isOpen={isSleepOpen} onClose={() => setIsSleepOpen(false)} onSubmit={saveSleep} submitText="Сохранить сон">
