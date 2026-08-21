@@ -317,6 +317,7 @@ export interface ActivitySession {
   startedAt: string;
   endedAt: string;
   durationSeconds: number;
+  earnedCoins?: number;
   createdAt?: string;
 }
 
@@ -324,6 +325,7 @@ export interface ActivityMicroGoal {
   id: string;
   title: string;
   targetMinutes: number;
+  rewardPerMinute?: number;
   color: string;
   createdAt: string;
 }
@@ -379,6 +381,7 @@ interface AppContextType {
   activitySessions: ActivitySession[];
   activityMicroGoals: ActivityMicroGoal[];
   addActivityMicroGoal: (goal: ActivityMicroGoal) => void;
+  updateActivityMicroGoal: (id: string, updates: Partial<ActivityMicroGoal>) => void;
   deleteActivityMicroGoal: (id: string) => void;
   activityTimer: ActivityTimerState;
   saveActivityTimer: (timer: ActivityTimerState) => void;
@@ -1750,6 +1753,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     void pushImmediateSync({ activityMicroGoals: newGoals });
   };
 
+  const updateActivityMicroGoal = (id: string, updates: Partial<ActivityMicroGoal>) => {
+    const newGoals = activityMicroGoals.map((goal) => goal.id === id ? { ...goal, ...updates } : goal);
+    setActivityMicroGoals(newGoals);
+    void pushImmediateSync({ activityMicroGoals: newGoals });
+  };
+
   const deleteActivityMicroGoal = (id: string) => {
     const newGoals = activityMicroGoals.filter((goal) => goal.id !== id);
     setActivityMicroGoals(newGoals);
@@ -1762,8 +1771,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const addActivitySession = (session: ActivitySession, options?: { preserveTimer?: boolean }) => {
-    const newSessions = [session, ...activitySessions];
+    const matchingMicroGoal = activityMicroGoals.find((goal) => normalizeActivityName(goal.title) === normalizeActivityName(session.title));
+    const rewardPerMinute = Math.max(0, matchingMicroGoal?.rewardPerMinute || 0);
+    const earnedCoins = Math.round((Math.max(0, session.durationSeconds) / 60) * rewardPerMinute * 100) / 100;
+    const recordedSession = earnedCoins > 0 ? { ...session, earnedCoins } : session;
+    const newSessions = [recordedSession, ...activitySessions];
     const newGoals = syncActivityGoalProgress(goals, newSessions);
+    const newCoins = Math.round((coins + earnedCoins) * 100) / 100;
     const resetTimer: ActivityTimerState = {
       ...activityTimer,
       isRunning: false,
@@ -1772,20 +1786,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setActivitySessions(newSessions);
     setGoals(newGoals);
+    if (earnedCoins > 0) setCoins(newCoins);
     if (!options?.preserveTimer) setActivityTimer(resetTimer);
     void pushImmediateSync({
       activitySessions: newSessions,
       goals: newGoals,
+      ...(earnedCoins > 0 ? { coins: newCoins } : {}),
       ...(!options?.preserveTimer ? { activityTimer: resetTimer } : {}),
     });
+    if (earnedCoins > 0) toast.success(`+${earnedCoins.toLocaleString("ru-RU")} монет за ${session.title}`);
   };
 
   const deleteActivitySession = (id: string) => {
+    const deletedSession = activitySessions.find((session) => session.id === id);
+    const returnedCoins = Math.max(0, deletedSession?.earnedCoins || 0);
+    const newCoins = Math.max(0, Math.round((coins - returnedCoins) * 100) / 100);
     const newSessions = activitySessions.filter((session) => session.id !== id);
     const newGoals = syncActivityGoalProgress(goals, newSessions);
     setActivitySessions(newSessions);
     setGoals(newGoals);
-    void pushImmediateSync({ activitySessions: newSessions, goals: newGoals });
+    if (returnedCoins > 0) setCoins(newCoins);
+    void pushImmediateSync({ activitySessions: newSessions, goals: newGoals, ...(returnedCoins > 0 ? { coins: newCoins } : {}) });
   };
 
   const saveMonthEvent = (event: MonthEvent) => {
@@ -1980,6 +2001,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         activitySessions,
         activityMicroGoals,
         addActivityMicroGoal,
+        updateActivityMicroGoal,
         deleteActivityMicroGoal,
         activityTimer,
         saveActivityTimer,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
-import { CheckCircle2, ChevronDown, Clock3, Pause, Play, Plus, RotateCcw, Square, Target, TimerReset, Trash2 } from "lucide-react";
+import { CheckCircle2, ChevronDown, Clock3, Coins, Pause, Pencil, Play, Plus, RotateCcw, Square, Target, TimerReset, Trash2 } from "lucide-react";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import {
@@ -61,6 +61,7 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
     activitySessions,
     activityMicroGoals,
     addActivityMicroGoal,
+    updateActivityMicroGoal,
     deleteActivityMicroGoal,
     activityTimer,
     saveActivityTimer,
@@ -69,8 +70,10 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
   } = useApp();
   const [now, setNow] = useState(Date.now());
   const [isMicroGoalModalOpen, setIsMicroGoalModalOpen] = useState(false);
+  const [editingMicroGoalId, setEditingMicroGoalId] = useState<string | null>(null);
   const [microGoalTitle, setMicroGoalTitle] = useState("");
   const [microGoalMinutes, setMicroGoalMinutes] = useState("30");
+  const [microGoalReward, setMicroGoalReward] = useState("0,1");
   const [microGoalColor, setMicroGoalColor] = useState("#315cff");
   const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
   const [isManualSessionModalOpen, setIsManualSessionModalOpen] = useState(false);
@@ -130,6 +133,9 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
       ...goal,
       completedSeconds,
       completedMinutes: Math.round(completedSeconds / 6) / 10,
+      earnedCoins: dailySessions
+        .filter((session) => session.title.trim().toLocaleLowerCase("ru-RU") === normalizedTitle)
+        .reduce((sum, session) => sum + Math.max(0, session.earnedCoins || 0), 0),
       progress: Math.min(100, (completedSeconds / targetSeconds) * 100),
     };
   }), [activityMicroGoals, dailySessions]);
@@ -153,22 +159,48 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
     event.preventDefault();
     const title = microGoalTitle.trim();
     const minutes = Math.max(1, Math.round(Number(microGoalMinutes)));
-    if (!title || !Number.isFinite(minutes)) return;
-    if (activityMicroGoals.some((goal) => goal.title.trim().toLocaleLowerCase("ru-RU") === title.toLocaleLowerCase("ru-RU"))) {
+    const rewardPerMinute = Math.max(0, Math.round(Number(microGoalReward.replace(",", ".")) * 1000) / 1000);
+    if (!title || !Number.isFinite(minutes) || !Number.isFinite(rewardPerMinute)) return;
+    if (activityMicroGoals.some((goal) => goal.id !== editingMicroGoalId && goal.title.trim().toLocaleLowerCase("ru-RU") === title.toLocaleLowerCase("ru-RU"))) {
       toast.error("Микроцель с таким названием уже есть");
       return;
     }
-    addActivityMicroGoal({
-      id: nanoid(),
-      title,
-      targetMinutes: minutes,
-      color: microGoalColor,
-      createdAt: new Date().toISOString(),
-    });
+    if (editingMicroGoalId) {
+      updateActivityMicroGoal(editingMicroGoalId, { title, targetMinutes: minutes, rewardPerMinute, color: microGoalColor });
+    } else {
+      addActivityMicroGoal({
+        id: nanoid(),
+        title,
+        targetMinutes: minutes,
+        rewardPerMinute,
+        color: microGoalColor,
+        createdAt: new Date().toISOString(),
+      });
+    }
     setMicroGoalTitle("");
     setMicroGoalMinutes("30");
+    setMicroGoalReward("0,1");
+    setEditingMicroGoalId(null);
     setIsMicroGoalModalOpen(false);
-    toast.success("Ежедневная микроцель добавлена");
+    toast.success(editingMicroGoalId ? "Микроцель обновлена" : "Ежедневная микроцель добавлена");
+  };
+
+  const openNewMicroGoal = () => {
+    setEditingMicroGoalId(null);
+    setMicroGoalTitle("");
+    setMicroGoalMinutes("30");
+    setMicroGoalReward("0,1");
+    setMicroGoalColor("#315cff");
+    setIsMicroGoalModalOpen(true);
+  };
+
+  const openMicroGoalEditor = (goal: typeof activityMicroGoals[number]) => {
+    setEditingMicroGoalId(goal.id);
+    setMicroGoalTitle(goal.title);
+    setMicroGoalMinutes(String(goal.targetMinutes));
+    setMicroGoalReward(String(goal.rewardPerMinute || 0).replace(".", ","));
+    setMicroGoalColor(goal.color);
+    setIsMicroGoalModalOpen(true);
   };
 
   const pauseTimer = () => {
@@ -277,7 +309,7 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
         <div className="micro-goals-section">
           <div className="micro-goals-head">
             <div><Target className="size-4" /><div><strong>Ежедневные микроцели</strong><span>Обнуляются каждый новый день</span></div></div>
-            <button type="button" className="app-button is-secondary" onClick={() => setIsMicroGoalModalOpen(true)}><Plus className="size-4" /> Микроцель</button>
+            <button type="button" className="app-button is-secondary" onClick={openNewMicroGoal}><Plus className="size-4" /> Микроцель</button>
           </div>
           {microGoalProgress.length ? (
             <div className="micro-goals-grid">
@@ -289,15 +321,17 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
                       <i>{isComplete ? <CheckCircle2 className="size-4" /> : <Target className="size-4" />}</i>
                       <div><strong>{goal.title}</strong><span>{isComplete ? "Готово на сегодня" : `${goal.completedMinutes} из ${goal.targetMinutes} мин`}</span></div>
                       <b>{Math.round(goal.progress)}%</b>
+                      <button type="button" className="icon-button is-small" onClick={() => openMicroGoalEditor(goal)} aria-label={`Изменить микроцель ${goal.title}`}><Pencil className="size-3.5" /></button>
                       <button type="button" className="icon-button is-small subtle-danger" onClick={() => deleteActivityMicroGoal(goal.id)} aria-label={`Удалить микроцель ${goal.title}`}><Trash2 className="size-3.5" /></button>
                     </div>
+                    <div className="micro-goal-reward"><Coins className="size-3.5" /><span>{(goal.rewardPerMinute || 0).toLocaleString("ru-RU")} мон. за минуту</span><b>+{goal.earnedCoins.toLocaleString("ru-RU", { maximumFractionDigits: 2 })} сегодня</b></div>
                     <div className="micro-goal-progress" role="progressbar" aria-label={`Прогресс микроцели ${goal.title}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(goal.progress)}><i style={{ width: `${goal.progress}%` }} /></div>
                   </article>
                 );
               })}
             </div>
           ) : (
-            <button type="button" className="micro-goals-empty" onClick={() => setIsMicroGoalModalOpen(true)}><Plus className="size-5" /><div><strong>Добавьте первую микроцель</strong><span>Например: 30 минут чтения каждый день</span></div></button>
+            <button type="button" className="micro-goals-empty" onClick={openNewMicroGoal}><Plus className="size-5" /><div><strong>Добавьте первую микроцель</strong><span>Например: 30 минут чтения каждый день</span></div></button>
           )}
         </div>
 
@@ -333,7 +367,7 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
                     {item.sessions.map((session) => (
                       <div key={session.id} className="activity-session-row">
                         <div><Clock3 className="size-3" /><span>{formatTime(session.startedAt)}–{formatTime(session.endedAt)}</span></div>
-                        <b>{formatDuration(session.durationSeconds)}</b>
+                        <b>{formatDuration(session.durationSeconds)}{session.earnedCoins ? ` · +${session.earnedCoins.toLocaleString("ru-RU")} мон.` : ""}</b>
                         <button type="button" className="icon-button is-small subtle-danger" onClick={() => deleteActivitySession(session.id)} aria-label={`Удалить сессию ${session.title}`}><Trash2 className="size-3.5" /></button>
                       </div>
                     ))}
@@ -346,15 +380,16 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
       </section>
 
       <FormModal
-        title="Новая ежедневная микроцель"
+        title={editingMicroGoalId ? "Изменить микроцель" : "Новая ежедневная микроцель"}
         isOpen={isMicroGoalModalOpen}
-        onClose={() => setIsMicroGoalModalOpen(false)}
+        onClose={() => { setIsMicroGoalModalOpen(false); setEditingMicroGoalId(null); }}
         onSubmit={saveMicroGoal}
-        submitText="Добавить микроцель"
+        submitText={editingMicroGoalId ? "Сохранить изменения" : "Добавить микроцель"}
       >
-        <p className="pomodoro-hint">Цель повторяется каждый день. Сессии с таким же названием автоматически заполняют её прогресс.</p>
+        <p className="pomodoro-hint">Цель повторяется каждый день. Минуты занятия заполняют прогресс и автоматически приносят заданное количество монет.</p>
         <FormInput label="Название" value={microGoalTitle} onChange={setMicroGoalTitle} placeholder="Например, Чтение" />
         <FormInput label="Минут в день" value={microGoalMinutes} onChange={setMicroGoalMinutes} type="number" placeholder="30" />
+        <FormInput label="Монет за 1 минуту" value={microGoalReward} onChange={setMicroGoalReward} placeholder="Например, 0,1" />
         <AdvancedColorPicker label="Цвет микроцели" value={microGoalColor} onChange={setMicroGoalColor} />
       </FormModal>
 

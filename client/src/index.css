@@ -375,12 +375,15 @@
   .micro-goals-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
   .micro-goal-card { --micro-goal-color: var(--primary); min-width: 0; display: grid; gap: 10px; padding: 11px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--micro-goal-color) 20%, var(--border)); border-radius: 15px; background: color-mix(in srgb, var(--micro-goal-color) 6%, var(--surface-raised)); }
   .micro-goal-card.is-complete { background: color-mix(in srgb, var(--micro-goal-color) 11%, var(--surface-raised)); }
-  .micro-goal-top { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 8px; }
+  .micro-goal-top { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; align-items: center; gap: 8px; }
   .micro-goal-top > i { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 10px; color: var(--micro-goal-color); background: color-mix(in srgb, var(--micro-goal-color) 13%, transparent); }
   .micro-goal-top > div { min-width: 0; display: grid; gap: 2px; }
   .micro-goal-top strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
   .micro-goal-top span { color: var(--muted-foreground); font-size: 8px; }
   .micro-goal-top > b { color: var(--micro-goal-color); font-size: 10px; }
+  .micro-goal-reward { display: flex; align-items: center; gap: 6px; color: var(--micro-goal-color); font-size: 8px; font-weight: 800; }
+  .micro-goal-reward span { margin-right: auto; }
+  .micro-goal-reward b { padding: 4px 7px; border-radius: 999px; color: var(--micro-goal-color); background: color-mix(in srgb, var(--micro-goal-color) 12%, transparent); font-size: 8px; }
   .micro-goal-progress { height: 8px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--micro-goal-color) 12%, var(--border)); }
   .micro-goal-progress i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, color-mix(in srgb, var(--micro-goal-color) 76%, white), var(--micro-goal-color)); box-shadow: 0 0 12px color-mix(in srgb, var(--micro-goal-color) 38%, transparent); transition: width .35s ease; }
   .micro-goals-empty { width: 100%; min-height: 74px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px; border: 1px dashed color-mix(in srgb, var(--primary) 30%, var(--border)); border-radius: 14px; color: var(--primary); background: color-mix(in srgb, var(--primary) 4%, transparent); text-align: left; }
