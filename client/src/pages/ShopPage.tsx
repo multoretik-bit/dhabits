@@ -68,6 +68,11 @@ export default function ShopPage() {
   const [itemRarity, setItemRarity] = useState<ShopItem["rarity"]>("common");
   const [itemDescription, setItemDescription] = useState("");
   const today = useMemo(() => new Date(), []);
+  const lifeDay = useMemo(() => {
+    const birthDateUtc = Date.UTC(2004, 8, 14);
+    const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    return Math.floor((todayUtc - birthDateUtc) / 86_400_000) + 1;
+  }, [today]);
 
   const safeShopItems = Array.isArray(shopItems) ? shopItems : [];
   const level = typeof characterState.level === "number" && Number.isFinite(characterState.level) ? characterState.level : 0;
@@ -137,9 +142,9 @@ export default function ShopPage() {
             <span className="profile-avatar-glow is-two" />
             <div className="profile-avatar-frame"><img src="/profile-avatar.png" alt="Мой 2D-персонаж" /></div>
             <div className="profile-avatar-copy">
-              <span className="profile-avatar-kicker"><Sparkles className="size-4" /> Мой цифровой персонаж</span>
-              <h2>Это твой день.<br />Собери его по-своему.</h2>
-              <p>Здесь видно состояние, энергию, сон, питание, полезное время и финансовый прогресс.</p>
+              <span className="profile-avatar-kicker"><Sparkles className="size-4" /> День {lifeDay.toLocaleString("ru-RU")} · с 14 сентября 2004 года</span>
+              <h2>Добрый день, Денис.<br />Сегодня ваш <span className="profile-life-day">{lifeDay.toLocaleString("ru-RU")}-й день.</span></h2>
+              <p>Ваш капитал, полезное время и энергия сегодня — всё самое важное в одном месте.</p>
               <div className="profile-avatar-stats">
                 <div><span>Уровень</span><strong>{level || 1}</strong></div>
                 <div><span>В коллекции</span><strong>{purchasedCount}</strong></div>

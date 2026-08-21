@@ -26,6 +26,7 @@ import Calendar from "@/components/Calendar";
 import MonthCalendar from "@/components/MonthCalendar";
 import HabitRow from "@/components/HabitRow";
 import TaskRow from "@/components/TaskRow";
+import PomodoroTracker from "@/components/PomodoroTracker";
 import FormModal from "@/components/FormModal";
 import EmojiPicker from "@/components/EmojiPicker";
 import AdvancedColorPicker from "@/components/AdvancedColorPicker";
@@ -268,7 +269,7 @@ export default function Home() {
             </aside>
           </motion.div>
         ) : mode === "schedule" ? (
-          <motion.div key="schedule" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="schedule-layout schedule-layout-without-timer">
+          <motion.div key="schedule" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="schedule-layout">
             <section className="app-surface schedule-timeline">
               <SectionHeading
                 icon={Clock}
@@ -350,6 +351,7 @@ export default function Home() {
                 </div>
               )}
             </section>
+            <PomodoroTracker selectedDate={selectedDate} />
           </motion.div>
         ) : (
           <motion.div key="month" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>

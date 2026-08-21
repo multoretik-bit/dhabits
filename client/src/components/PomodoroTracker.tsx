@@ -287,6 +287,11 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
       <section className="app-surface pomodoro-panel">
         <SectionHeading icon={TimerReset} title="Таймер занятий" meta={activityTimer.isRunning ? "Идёт" : hasActiveTime ? "Пауза" : "Готов"} />
         <p className="pomodoro-hint">Запустите таймер, а после завершения укажите, чем занимались. Время автоматически попадёт в одноимённую микроцель.</p>
+        <div className="pomodoro-day-total">
+          <Clock3 className="size-4" />
+          <div><span>Всего за {selectedDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}</span><strong>{formatDuration(totalDaySeconds)}</strong></div>
+          <small>{formatSessionCount(dailySessions.length)}</small>
+        </div>
 
         <div className={`pomodoro-clock ${activityTimer.isRunning ? "is-running" : ""}`} style={timerStyle}>
           <div>
