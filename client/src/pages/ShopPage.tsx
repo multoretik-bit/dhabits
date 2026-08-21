@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, ChevronRight, Home, Map, Package, PawPrint, Plus, Shirt, ShoppingBag, Sparkles, Star, UserRound, Zap } from "lucide-react";
+import { Check, ChevronRight, Home, Package, PawPrint, Plus, Shirt, ShoppingBag, Sparkles, Star, UserRound, Zap } from "lucide-react";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { useApp, getNextCharacterLevelCost, type ShopItem } from "@/contexts/AppContext";
@@ -7,7 +7,6 @@ import { EmptyState, PageHeader, PageShell } from "@/components/AppUI";
 import ProfileDailyDashboard from "@/components/ProfileDailyDashboard";
 import BalanceWheelCard from "@/components/BalanceWheelCard";
 import PomodoroTracker from "@/components/PomodoroTracker";
-import WorldCity from "@/components/WorldCity";
 import CoinDisplay from "@/components/CoinDisplay";
 import FormModal from "@/components/FormModal";
 import { FormInput, FormSelect, FormTextArea } from "@/components/FormInputs";
@@ -16,10 +15,11 @@ import { RarityBadge } from "@/components/RarityBadge";
 
 const CATEGORIES = [
   { value: "all", label: "Все покупки" },
-  { value: "clothing", label: "Одежда" },
+  { value: "costume", label: "Костюмы" },
+  { value: "pants", label: "Штаны" },
+  { value: "headwear", label: "Головные уборы" },
   { value: "pets", label: "Питомцы" },
   { value: "background", label: "Дома и квартиры" },
-  { value: "vehicle", label: "Машины и транспорт" },
   { value: "reward", label: "Награды" },
 ] as const;
 
@@ -43,7 +43,7 @@ function ItemPreview({ item }: { item: ShopItem }) {
   return <span>{item.emoji}</span>;
 }
 
-type ProfileTab = "profile" | "world" | "purchases";
+type ProfileTab = "profile" | "purchases";
 type InventoryStatus = "purchased" | "available" | "all";
 
 export default function ShopPage() {
@@ -88,7 +88,7 @@ export default function ShopPage() {
     if (inventoryStatus === "available") return !item.purchased;
     return true;
   }).sort((a, b) => {
-    const order = ["clothing", "pets", "background", "vehicle", "reward", "character"];
+    const order = ["costume", "pants", "headwear", "pets", "background", "reward"];
     const categoryDiff = order.indexOf(a.category) - order.indexOf(b.category);
     if (categoryDiff) return categoryDiff;
     const family = (item: ShopItem) => item.id.includes("tshirt") ? "cloth-tshirt" : item.id.split("-v")[0].replace(/-(classic|modern|cozy|cyberpunk).*$/, "");
@@ -98,17 +98,21 @@ export default function ShopPage() {
   }), [safeShopItems, inventoryCategory, inventoryStatus]);
 
   const equipped = useMemo(() => ({
-    body: safeShopItems.find(item => item.id === characterState.body),
+    costume: safeShopItems.find(item => item.id === characterState.body),
+    pants: safeShopItems.find(item => item.id === characterState.feet),
+    headwear: safeShopItems.find(item => item.id === characterState.head),
     pet: safeShopItems.find(item => item.id === characterState.pet),
     background: safeShopItems.find(item => item.id === characterState.background),
     vehicle: safeShopItems.find(item => item.id === characterState.vehicle),
-  }), [safeShopItems, characterState.body, characterState.pet, characterState.background, characterState.vehicle]);
+  }), [safeShopItems, characterState.body, characterState.feet, characterState.head, characterState.pet, characterState.background, characterState.vehicle]);
 
-  const openPurchases = (category: string) => {
+  const showCategory = (category: string) => {
     setInventoryCategory(category);
     setInventoryStatus("all");
-    setActiveTab("purchases");
   };
+
+  const baseAvatarPath = equipped.costume?.avatarPath || equipped.pants?.avatarPath || "/profile-avatar.png";
+  const baseAvatarName = equipped.costume?.name || equipped.pants?.name || "Базовый образ";
 
   const handleLevelUp = () => {
     if (!levelUpCharacter()) toast.error("Недостаточно монет для нового уровня");
@@ -148,41 +152,32 @@ export default function ShopPage() {
     <PageShell className="profile-page">
       <PageHeader
         eyebrow="Личный центр"
-        title={activeTab === "profile" ? "Мой профиль" : activeTab === "world" ? "Мой мир" : "Покупки"}
-        description={activeTab === "profile" ? "Ваш живой персонаж и всё важное о сегодняшнем дне." : activeTab === "world" ? "Ваши реальные занятия превращаются в живой город." : "Одежда, питомцы, жильё и транспорт — собраны по понятным коллекциям."}
+        title={activeTab === "profile" ? "Мой профиль" : "Покупки"}
+        description={activeTab === "profile" ? "Персонаж и всё важное о сегодняшнем дне — в одном месте." : "Костюмы, штаны, головные уборы, питомцы, жильё и награды."}
         actions={<div className="profile-balance"><span>Баланс</span><CoinDisplay amount={coins} size="lg" /></div>}
       />
 
       <nav className="profile-page-tabs" aria-label="Разделы профиля">
         <button type="button" className={activeTab === "profile" ? "is-active" : ""} onClick={() => setActiveTab("profile")}><UserRound className="size-4" /> Профиль</button>
-        <button type="button" className={activeTab === "world" ? "is-active" : ""} onClick={() => setActiveTab("world")}><Map className="size-4" /> Мир</button>
         <button type="button" className={activeTab === "purchases" ? "is-active" : ""} onClick={() => setActiveTab("purchases")}><ShoppingBag className="size-4" /> Покупки <span>{safeShopItems.length}</span></button>
       </nav>
 
       {activeTab === "profile" ? (
         <>
-          <section className="profile-avatar-hero profile-world-hero app-surface">
-            <div className="profile-sky" aria-hidden="true"><span className="profile-cloud cloud-one" /><span className="profile-cloud cloud-two" /><span className="profile-cloud cloud-three" /><span className="profile-sun" /></div>
-            <div className="profile-scene-copy">
+          <section className="profile-avatar-hero app-surface">
+            <span className="profile-avatar-glow is-one" />
+            <span className="profile-avatar-glow is-two" />
+            <div className="profile-avatar-frame"><img src="/profile-avatar.png" alt="Мой 2D-персонаж" /></div>
+            <div className="profile-avatar-copy">
               <span className="profile-avatar-kicker"><Sparkles className="size-4" /> День {lifeDay.toLocaleString("ru-RU")} · с 14 сентября 2004 года</span>
               <h2>Добрый день, Денис.<br />Сегодня ваш <span className="profile-life-day">{lifeDay.toLocaleString("ru-RU")}-й день.</span></h2>
-              <p>Это ваше пространство. Всё, что вы надеваете и покупаете, появляется прямо здесь.</p>
+              <p>Ваш капитал, полезное время и энергия сегодня — всё самое важное в одном месте.</p>
               <div className="profile-avatar-stats">
                 <div><span>Уровень</span><strong>{level || 1}</strong></div>
                 <div><span>В коллекции</span><strong>{purchasedCount}</strong></div>
                 <div><span>До уровня</span><strong>{nextLevelCost} монет</strong></div>
               </div>
               <button type="button" className="app-button profile-level-button" onClick={handleLevelUp}><Zap className="size-4" /> Повысить уровень</button>
-            </div>
-            <div className="profile-game-scene">
-              <div className="profile-scene-ground" aria-hidden="true"><i /><i /><i /><i /><i /><i /></div>
-              {equipped.background ? <button type="button" className="profile-scene-object is-home" onClick={() => openPurchases("background")}><ItemPreview item={equipped.background} /><span>{equipped.background.name}</span></button> : <button type="button" className="profile-scene-empty is-home" onClick={() => openPurchases("background")}><Home className="size-5" /> Выбрать жильё</button>}
-              {equipped.vehicle ? <button type="button" className="profile-scene-object is-vehicle" onClick={() => openPurchases("vehicle")}><ItemPreview item={equipped.vehicle} /><span>{equipped.vehicle.name}</span></button> : <button type="button" className="profile-scene-empty is-vehicle" onClick={() => openPurchases("vehicle")}><Sparkles className="size-5" /> Выбрать машину</button>}
-              <button type="button" className="profile-scene-avatar" onClick={() => openPurchases("clothing")} aria-label="Выбрать одежду">
-                <img className={equipped.body?.avatarPath ? "has-outfit-model" : ""} src={equipped.body?.avatarPath || "/profile-avatar.png"} alt={equipped.body ? `Денис в одежде «${equipped.body.name}»` : "Денис"} />
-                <span><Shirt className="size-3" /> {equipped.body?.name || "Базовый образ"}</span>
-              </button>
-              {equipped.pet ? <button type="button" className="profile-scene-object is-pet" onClick={() => openPurchases("pets")}><ItemPreview item={equipped.pet} /><span>{equipped.pet.name}</span></button> : <button type="button" className="profile-scene-empty is-pet" onClick={() => openPurchases("pets")}><PawPrint className="size-5" /> Выбрать питомца</button>}
             </div>
             <div className="profile-level-orbit"><Star className="size-4" /> LVL {level || 1}</div>
           </section>
@@ -193,10 +188,33 @@ export default function ShopPage() {
             <BalanceWheelCard />
           </div>
         </>
-      ) : activeTab === "world" ? (
-        <WorldCity />
       ) : (
         <section className="profile-inventory-page profile-purchases-page">
+          <div className="profile-purchases-scene app-surface">
+            <div className="profile-sky" aria-hidden="true"><span className="profile-cloud cloud-one" /><span className="profile-cloud cloud-two" /><span className="profile-cloud cloud-three" /><span className="profile-sun" /></div>
+            <div className="profile-purchases-scene-copy">
+              <span><Sparkles className="size-4" /> Моя игровая коллекция</span>
+              <h2>Ваш образ и пространство</h2>
+              <p>Надевайте вещи — Денис, питомцы и купленные предметы сразу появляются в этой сцене.</p>
+              <div className="profile-wardrobe-shortcuts">
+                <button type="button" onClick={() => showCategory("costume")}><Shirt className="size-4" /> Костюмы</button>
+                <button type="button" onClick={() => showCategory("pants")}>👖 Штаны</button>
+                <button type="button" onClick={() => showCategory("headwear")}>🧢 Головные уборы</button>
+              </div>
+            </div>
+            <div className="profile-game-scene">
+              <div className="profile-scene-ground" aria-hidden="true"><i /><i /><i /><i /><i /><i /></div>
+              {equipped.background ? <button type="button" className="profile-scene-object is-home" onClick={() => showCategory("background")}><ItemPreview item={equipped.background} /><span>{equipped.background.name}</span></button> : <button type="button" className="profile-scene-empty is-home" onClick={() => showCategory("background")}><Home className="size-5" /> Выбрать жильё</button>}
+              {equipped.vehicle ? <button type="button" className="profile-scene-object is-vehicle" onClick={() => showCategory("reward")}><ItemPreview item={equipped.vehicle} /><span>{equipped.vehicle.name}</span></button> : null}
+              <button type="button" className="profile-scene-avatar" onClick={() => showCategory("costume")} aria-label="Выбрать костюм">
+                <img className={baseAvatarPath !== "/profile-avatar.png" ? "has-outfit-model" : ""} src={baseAvatarPath} alt={`Денис: ${baseAvatarName}`} />
+                {equipped.headwear?.avatarPath ? <img className="profile-headwear-layer" src={equipped.headwear.avatarPath} alt="" /> : null}
+                <span><Shirt className="size-3" /> {baseAvatarName}</span>
+              </button>
+              {equipped.pet ? <button type="button" className="profile-scene-object is-pet" onClick={() => showCategory("pets")}><ItemPreview item={equipped.pet} /><span>{equipped.pet.name}</span></button> : <button type="button" className="profile-scene-empty is-pet" onClick={() => showCategory("pets")}><PawPrint className="size-5" /> Выбрать питомца</button>}
+            </div>
+          </div>
+
           <div className="profile-section-head">
             <div><p className="page-eyebrow">Мои покупки</p><h2>Соберите своё пространство</h2><small>Похожие предметы стоят рядом — от простых моделей к редким.</small></div>
             <button type="button" className="app-button is-secondary" onClick={() => setShowCreateItem(true)}><Plus className="size-4" /> Свой предмет</button>

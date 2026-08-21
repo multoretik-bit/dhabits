@@ -217,7 +217,7 @@ export interface ShopItem {
   name: string;
   emoji: string;
   price: number;
-  category: "reward" | "clothing" | "background" | "vehicle" | "pets" | "character";
+  category: "costume" | "pants" | "headwear" | "pets" | "background" | "reward";
   folder: string;
   purchased: boolean;
   assetPath?: string;
@@ -234,7 +234,10 @@ function withCurrentShopModels(items: ShopItem[] | undefined): ShopItem[] {
   const defaultsById = new Map(defaultShopItems.map((item) => [item.id, item]));
   const merged = savedItems.map((item) => {
     const current = defaultsById.get(item.id);
-    return current ? { ...item, name: current.name, description: current.description, assetPath: current.assetPath, avatarPath: current.avatarPath, category: current.category, slot: current.slot } : item;
+    if (current) return { ...item, name: current.name, description: current.description, assetPath: current.assetPath, avatarPath: current.avatarPath, category: current.category, slot: current.slot };
+    const legacyCategory = String(item.category);
+    const category = legacyCategory === "clothing" ? "costume" : legacyCategory === "vehicle" || legacyCategory === "character" ? "reward" : item.category;
+    return { ...item, category } as ShopItem;
   });
   const savedIds = new Set(savedItems.map((item) => item.id));
   return [...merged, ...defaultShopItems.filter((item) => !savedIds.has(item.id))];
@@ -1342,6 +1345,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const item = shopItems.find((i) => i.id === itemId);
     if (!item || !item.slot) return;
     const newCharacterState = { ...characterState, [item.slot]: itemId };
+    if (item.category === "costume") delete newCharacterState.feet;
+    if (item.category === "pants") delete newCharacterState.body;
     setCharacterState(newCharacterState);
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, newCharacterState, tasks, taskFolders, customColors);
   };

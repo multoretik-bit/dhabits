@@ -666,7 +666,7 @@
   .profile-item-copy p { display: -webkit-box; overflow: hidden; color: var(--muted-foreground); font-size: 9px; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .profile-item-card > .app-button { width: 100%; min-height: 37px; padding: 7px 9px; font-size: 9px; box-shadow: none; }
   .profile-item-card > .app-button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
-  .profile-page-tabs { width: fit-content; display: grid; grid-template-columns: repeat(3, minmax(135px, 1fr)); gap: 5px; margin-bottom: 18px; padding: 5px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-soft); }
+  .profile-page-tabs { width: fit-content; display: grid; grid-template-columns: repeat(2, minmax(150px, 1fr)); gap: 5px; margin-bottom: 18px; padding: 5px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface-soft); }
   .profile-page-tabs button { min-height: 39px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 14px; border-radius: 12px; color: var(--muted-foreground); font-size: 10px; font-weight: 850; }
   .profile-page-tabs button > span { min-width: 20px; padding: 2px 6px; border-radius: 999px; background: var(--secondary); font-size: 8px; }
   .profile-page-tabs button.is-active { color: white; background: var(--primary); box-shadow: 0 8px 18px color-mix(in srgb, var(--primary) 23%, transparent); }
@@ -726,6 +726,16 @@
   .profile-world-hero .profile-level-orbit { color: #775a00; border-color: rgba(139,102,0,.18); background: rgba(255,244,173,.68); }
   .profile-purchases-page .profile-section-head > div { display: grid; gap: 4px; }
   .profile-purchases-page .profile-section-head small { color: var(--muted-foreground); font-size: 9px; }
+  .profile-purchases-scene { position: relative; min-height: 580px; display: grid; grid-template-columns: minmax(290px, .68fr) minmax(520px, 1.32fr); overflow: hidden; border-color: rgba(80,154,90,.24); background: linear-gradient(180deg, #8fd6ff 0 57%, #65bb58 57%); box-shadow: 0 28px 70px rgba(45,102,80,.2); isolation: isolate; }
+  .profile-purchases-scene-copy { position: relative; z-index: 8; align-self: center; display: grid; justify-items: start; gap: 12px; padding: 44px 10px 44px 38px; color: #10233d; }
+  .profile-purchases-scene-copy > span { display: inline-flex; align-items: center; gap: 6px; color: #225d67; font-size: 9px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+  .profile-purchases-scene-copy h2 { max-width: 390px; font-size: clamp(32px, 3.7vw, 52px); line-height: .98; letter-spacing: -.05em; }
+  .profile-purchases-scene-copy p { max-width: 410px; color: rgba(16,35,61,.68); font-size: 10px; line-height: 1.6; }
+  .profile-wardrobe-shortcuts { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 4px; }
+  .profile-wardrobe-shortcuts button { min-height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 11px; border: 1px solid rgba(16,35,61,.12); border-radius: 12px; color: #163e4b; background: rgba(255,255,255,.55); font-size: 8px; font-weight: 900; box-shadow: 0 8px 18px rgba(35,92,68,.08); backdrop-filter: blur(8px); }
+  .profile-purchases-scene > .profile-game-scene { min-height: 580px; }
+  .profile-scene-avatar .profile-headwear-layer { position: absolute; z-index: 2; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; clip-path: inset(0 0 64% 0); -webkit-mask: url('/profile-avatar.png') center bottom / contain no-repeat; mask: url('/profile-avatar.png') center bottom / contain no-repeat; filter: none; pointer-events: none; }
+  .profile-purchases-page { gap: 18px; }
   .profile-daily { display: grid; gap: 15px; margin-top: 18px; padding: 20px; }
   .profile-daily > .section-heading { margin-bottom: 0; }
   .profile-metrics-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
@@ -1076,7 +1086,7 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .profile-wheel-body { grid-template-columns: 1fr; }
   .profile-sphere-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .profile-attributes { padding: 14px; }
-  .profile-page-tabs { width: 100%; grid-template-columns: repeat(3, 1fr); }
+  .profile-page-tabs { width: 100%; grid-template-columns: repeat(2, 1fr); }
   .profile-avatar-hero { min-height: 0; grid-template-columns: 1fr; }
   .profile-avatar-frame { min-height: 420px; }
   .profile-avatar-frame img { height: 430px; }
@@ -1093,6 +1103,10 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .profile-scene-object.is-vehicle { width: 155px; height: 100px; right: -8px; }
   .profile-scene-object.is-pet { width: 105px; height: 115px; left: -3px; }
   .profile-scene-empty.is-home { right: 4%; top: 47%; } .profile-scene-empty.is-vehicle { right: 2%; bottom: 7%; } .profile-scene-empty.is-pet { left: 4%; bottom: 9%; }
+  .profile-purchases-scene { display: block; min-height: 740px; }
+  .profile-purchases-scene-copy { position: relative; min-height: 0; padding: 56px 18px 14px; }
+  .profile-purchases-scene-copy h2 { max-width: 330px; font-size: clamp(30px, 9vw, 42px); }
+  .profile-purchases-scene > .profile-game-scene { position: absolute; inset: 0; min-height: 0; }
   .profile-level-orbit { right: 12px; top: 12px; }
   .profile-daily { padding: 14px; }
   .profile-metrics-grid { grid-template-columns: 1fr; }
