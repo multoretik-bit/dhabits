@@ -259,6 +259,32 @@ export interface DailyWellnessRecord {
   updatedAt: string;
 }
 
+export interface WorldFloor {
+  id: string;
+  name: string;
+  activityName: string;
+  color: string;
+  createdAt: string;
+}
+
+export interface WorldResident {
+  id: string;
+  name: string;
+  emoji: string;
+  role: string;
+  buildingId: string;
+  cost: number;
+  purchasedAt: string;
+}
+
+export interface WorldCityState {
+  homeLevel: number;
+  homeInvestedCoins: number;
+  buildingInvestments: Record<string, number>;
+  floors: Record<string, WorldFloor[]>;
+  residents: WorldResident[];
+}
+
 export interface CharacterState {
   head?: string;
   body?: string;
@@ -279,6 +305,7 @@ export interface CharacterState {
   attributes?: Record<string, number>;
   dailyEnergy?: Record<string, DailyEnergyRecord>;
   dailyWellness?: Record<string, DailyWellnessRecord>;
+  worldCity?: WorldCityState;
 }
 
 export function getNextCharacterLevelCost(currentLevel: number): number {
@@ -424,6 +451,7 @@ interface AppContextType {
   shopFolders: ShopFolder[];
   characterState: CharacterState;
   updateCharacterState: (updates: Partial<CharacterState>) => void;
+  updateWorldCity: (worldCity: WorldCityState, coinCost?: number) => boolean;
   addShopItem: (item: ShopItem) => void;
   updateShopItem: (id: string, item: Partial<ShopItem>) => void;
   deleteShopItem: (id: string) => void;
@@ -1324,6 +1352,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, newCharacterState, tasks, taskFolders, customColors);
   };
 
+  const updateWorldCity = (worldCity: WorldCityState, coinCost = 0): boolean => {
+    const safeCost = Math.max(0, Math.round(coinCost * 100) / 100);
+    if (coins < safeCost) return false;
+    const newCoins = Math.round((coins - safeCost) * 100) / 100;
+    const newCharacterState = { ...characterState, worldCity };
+    setCoins(newCoins);
+    setCharacterState(newCharacterState);
+    saveAllData(newCoins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, newCharacterState, tasks, taskFolders, customColors);
+    return true;
+  };
+
   const unequipItem = (slot: keyof CharacterState) => {
     const newCharacterState = { ...characterState };
     delete newCharacterState[slot];
@@ -1945,6 +1984,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         resetUnitsForHabit,
         characterState,
         updateCharacterState,
+        updateWorldCity,
         equipItem,
         unequipItem,
         levelUpCharacter,

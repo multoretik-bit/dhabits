@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, ChevronRight, Package, Plus, ShoppingBag, Sparkles, Star, UserRound, Zap } from "lucide-react";
+import { Check, ChevronRight, Map, Package, Plus, ShoppingBag, Sparkles, Star, UserRound, Zap } from "lucide-react";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { useApp, getNextCharacterLevelCost, type ShopItem } from "@/contexts/AppContext";
@@ -7,6 +7,7 @@ import { EmptyState, PageHeader, PageShell } from "@/components/AppUI";
 import ProfileDailyDashboard from "@/components/ProfileDailyDashboard";
 import BalanceWheelCard from "@/components/BalanceWheelCard";
 import PomodoroTracker from "@/components/PomodoroTracker";
+import WorldCity from "@/components/WorldCity";
 import CoinDisplay from "@/components/CoinDisplay";
 import FormModal from "@/components/FormModal";
 import { FormInput, FormSelect, FormTextArea } from "@/components/FormInputs";
@@ -41,7 +42,7 @@ function ItemPreview({ item }: { item: ShopItem }) {
   return <span>{item.emoji}</span>;
 }
 
-type ProfileTab = "profile" | "inventory";
+type ProfileTab = "profile" | "world" | "inventory";
 type InventoryStatus = "purchased" | "available" | "all";
 
 export default function ShopPage() {
@@ -125,13 +126,14 @@ export default function ShopPage() {
     <PageShell className="profile-page">
       <PageHeader
         eyebrow="Личный центр"
-        title={activeTab === "profile" ? "Мой профиль" : "Инвентарь"}
-        description={activeTab === "profile" ? "Персонаж и всё важное о сегодняшнем дне — в одном месте." : "Купленные награды, доступные предметы и вся ваша коллекция."}
+        title={activeTab === "profile" ? "Мой профиль" : activeTab === "world" ? "Мой мир" : "Инвентарь"}
+        description={activeTab === "profile" ? "Персонаж и всё важное о сегодняшнем дне — в одном месте." : activeTab === "world" ? "Ваши реальные занятия превращаются в живой город." : "Купленные награды, доступные предметы и вся ваша коллекция."}
         actions={<div className="profile-balance"><span>Баланс</span><CoinDisplay amount={coins} size="lg" /></div>}
       />
 
       <nav className="profile-page-tabs" aria-label="Разделы профиля">
         <button type="button" className={activeTab === "profile" ? "is-active" : ""} onClick={() => setActiveTab("profile")}><UserRound className="size-4" /> Профиль</button>
+        <button type="button" className={activeTab === "world" ? "is-active" : ""} onClick={() => setActiveTab("world")}><Map className="size-4" /> Мир</button>
         <button type="button" className={activeTab === "inventory" ? "is-active" : ""} onClick={() => setActiveTab("inventory")}><Package className="size-4" /> Инвентарь <span>{purchasedCount}</span></button>
       </nav>
 
@@ -161,6 +163,8 @@ export default function ShopPage() {
             <BalanceWheelCard />
           </div>
         </>
+      ) : activeTab === "world" ? (
+        <WorldCity />
       ) : (
         <section className="profile-inventory-page">
           <div className="profile-section-head">
