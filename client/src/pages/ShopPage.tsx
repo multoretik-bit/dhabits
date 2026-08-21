@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, ChevronRight, Map, Package, Plus, ShoppingBag, Sparkles, Star, UserRound, Zap } from "lucide-react";
+import { Check, ChevronRight, Home, Map, Package, PawPrint, Plus, Shirt, ShoppingBag, Sparkles, Star, UserRound, Zap } from "lucide-react";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { useApp, getNextCharacterLevelCost, type ShopItem } from "@/contexts/AppContext";
@@ -15,11 +15,11 @@ import EmojiPicker from "@/components/EmojiPicker";
 import { RarityBadge } from "@/components/RarityBadge";
 
 const CATEGORIES = [
-  { value: "all", label: "Все категории" },
+  { value: "all", label: "Все покупки" },
   { value: "clothing", label: "Одежда" },
   { value: "pets", label: "Питомцы" },
-  { value: "background", label: "Пространство" },
-  { value: "vehicle", label: "Транспорт" },
+  { value: "background", label: "Дома и квартиры" },
+  { value: "vehicle", label: "Машины и транспорт" },
   { value: "reward", label: "Награды" },
 ] as const;
 
@@ -36,13 +36,14 @@ const ITEM_SLOTS = [
 ];
 
 function ItemPreview({ item }: { item: ShopItem }) {
+  if (item.avatarPath) return <img className="profile-shop-avatar-model" src={item.avatarPath} alt="" />;
   const assetPath = typeof item.assetPath === "string" ? item.assetPath : "";
   if (assetPath && /\.(png|svg|jpe?g|webp)$/i.test(assetPath)) return <img src={assetPath} alt="" />;
   if (assetPath.trim().startsWith("<")) return <svg viewBox="0 0 100 150" aria-hidden="true"><g dangerouslySetInnerHTML={{ __html: assetPath }} /></svg>;
   return <span>{item.emoji}</span>;
 }
 
-type ProfileTab = "profile" | "world" | "inventory";
+type ProfileTab = "profile" | "world" | "purchases";
 type InventoryStatus = "purchased" | "available" | "all";
 
 export default function ShopPage() {
@@ -58,7 +59,7 @@ export default function ShopPage() {
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<ProfileTab>("profile");
-  const [inventoryStatus, setInventoryStatus] = useState<InventoryStatus>("purchased");
+  const [inventoryStatus, setInventoryStatus] = useState<InventoryStatus>("all");
   const [inventoryCategory, setInventoryCategory] = useState("all");
   const [showCreateItem, setShowCreateItem] = useState(false);
   const [itemName, setItemName] = useState("");
@@ -86,7 +87,28 @@ export default function ShopPage() {
     if (inventoryStatus === "purchased") return item.purchased;
     if (inventoryStatus === "available") return !item.purchased;
     return true;
+  }).sort((a, b) => {
+    const order = ["clothing", "pets", "background", "vehicle", "reward", "character"];
+    const categoryDiff = order.indexOf(a.category) - order.indexOf(b.category);
+    if (categoryDiff) return categoryDiff;
+    const family = (item: ShopItem) => item.id.includes("tshirt") ? "cloth-tshirt" : item.id.split("-v")[0].replace(/-(classic|modern|cozy|cyberpunk).*$/, "");
+    const familyA = family(a);
+    const familyB = family(b);
+    return familyA.localeCompare(familyB, "ru") || a.price - b.price;
   }), [safeShopItems, inventoryCategory, inventoryStatus]);
+
+  const equipped = useMemo(() => ({
+    body: safeShopItems.find(item => item.id === characterState.body),
+    pet: safeShopItems.find(item => item.id === characterState.pet),
+    background: safeShopItems.find(item => item.id === characterState.background),
+    vehicle: safeShopItems.find(item => item.id === characterState.vehicle),
+  }), [safeShopItems, characterState.body, characterState.pet, characterState.background, characterState.vehicle]);
+
+  const openPurchases = (category: string) => {
+    setInventoryCategory(category);
+    setInventoryStatus("all");
+    setActiveTab("purchases");
+  };
 
   const handleLevelUp = () => {
     if (!levelUpCharacter()) toast.error("Недостаточно монет для нового уровня");
@@ -117,7 +139,7 @@ export default function ShopPage() {
 
   const purchase = (item: ShopItem) => {
     if (!purchaseItem(item.id)) toast.error("Недостаточно монет");
-    else toast.success(`${item.name} теперь в инвентаре`);
+    else toast.success(`${item.name} теперь в покупках`);
   };
 
   const isEquipped = (item: ShopItem) => Boolean(item.slot && characterState[item.slot] === item.id);
@@ -126,33 +148,41 @@ export default function ShopPage() {
     <PageShell className="profile-page">
       <PageHeader
         eyebrow="Личный центр"
-        title={activeTab === "profile" ? "Мой профиль" : activeTab === "world" ? "Мой мир" : "Инвентарь"}
-        description={activeTab === "profile" ? "Персонаж и всё важное о сегодняшнем дне — в одном месте." : activeTab === "world" ? "Ваши реальные занятия превращаются в живой город." : "Купленные награды, доступные предметы и вся ваша коллекция."}
+        title={activeTab === "profile" ? "Мой профиль" : activeTab === "world" ? "Мой мир" : "Покупки"}
+        description={activeTab === "profile" ? "Ваш живой персонаж и всё важное о сегодняшнем дне." : activeTab === "world" ? "Ваши реальные занятия превращаются в живой город." : "Одежда, питомцы, жильё и транспорт — собраны по понятным коллекциям."}
         actions={<div className="profile-balance"><span>Баланс</span><CoinDisplay amount={coins} size="lg" /></div>}
       />
 
       <nav className="profile-page-tabs" aria-label="Разделы профиля">
         <button type="button" className={activeTab === "profile" ? "is-active" : ""} onClick={() => setActiveTab("profile")}><UserRound className="size-4" /> Профиль</button>
         <button type="button" className={activeTab === "world" ? "is-active" : ""} onClick={() => setActiveTab("world")}><Map className="size-4" /> Мир</button>
-        <button type="button" className={activeTab === "inventory" ? "is-active" : ""} onClick={() => setActiveTab("inventory")}><Package className="size-4" /> Инвентарь <span>{purchasedCount}</span></button>
+        <button type="button" className={activeTab === "purchases" ? "is-active" : ""} onClick={() => setActiveTab("purchases")}><ShoppingBag className="size-4" /> Покупки <span>{safeShopItems.length}</span></button>
       </nav>
 
       {activeTab === "profile" ? (
         <>
-          <section className="profile-avatar-hero app-surface">
-            <span className="profile-avatar-glow is-one" />
-            <span className="profile-avatar-glow is-two" />
-            <div className="profile-avatar-frame"><img src="/profile-avatar.png" alt="Мой 2D-персонаж" /></div>
-            <div className="profile-avatar-copy">
+          <section className="profile-avatar-hero profile-world-hero app-surface">
+            <div className="profile-sky" aria-hidden="true"><span className="profile-cloud cloud-one" /><span className="profile-cloud cloud-two" /><span className="profile-cloud cloud-three" /><span className="profile-sun" /></div>
+            <div className="profile-scene-copy">
               <span className="profile-avatar-kicker"><Sparkles className="size-4" /> День {lifeDay.toLocaleString("ru-RU")} · с 14 сентября 2004 года</span>
               <h2>Добрый день, Денис.<br />Сегодня ваш <span className="profile-life-day">{lifeDay.toLocaleString("ru-RU")}-й день.</span></h2>
-              <p>Ваш капитал, полезное время и энергия сегодня — всё самое важное в одном месте.</p>
+              <p>Это ваше пространство. Всё, что вы надеваете и покупаете, появляется прямо здесь.</p>
               <div className="profile-avatar-stats">
                 <div><span>Уровень</span><strong>{level || 1}</strong></div>
                 <div><span>В коллекции</span><strong>{purchasedCount}</strong></div>
                 <div><span>До уровня</span><strong>{nextLevelCost} монет</strong></div>
               </div>
               <button type="button" className="app-button profile-level-button" onClick={handleLevelUp}><Zap className="size-4" /> Повысить уровень</button>
+            </div>
+            <div className="profile-game-scene">
+              <div className="profile-scene-ground" aria-hidden="true"><i /><i /><i /><i /><i /><i /></div>
+              {equipped.background ? <button type="button" className="profile-scene-object is-home" onClick={() => openPurchases("background")}><ItemPreview item={equipped.background} /><span>{equipped.background.name}</span></button> : <button type="button" className="profile-scene-empty is-home" onClick={() => openPurchases("background")}><Home className="size-5" /> Выбрать жильё</button>}
+              {equipped.vehicle ? <button type="button" className="profile-scene-object is-vehicle" onClick={() => openPurchases("vehicle")}><ItemPreview item={equipped.vehicle} /><span>{equipped.vehicle.name}</span></button> : <button type="button" className="profile-scene-empty is-vehicle" onClick={() => openPurchases("vehicle")}><Sparkles className="size-5" /> Выбрать машину</button>}
+              <button type="button" className="profile-scene-avatar" onClick={() => openPurchases("clothing")} aria-label="Выбрать одежду">
+                <img className={equipped.body?.avatarPath ? "has-outfit-model" : ""} src={equipped.body?.avatarPath || "/profile-avatar.png"} alt={equipped.body ? `Денис в одежде «${equipped.body.name}»` : "Денис"} />
+                <span><Shirt className="size-3" /> {equipped.body?.name || "Базовый образ"}</span>
+              </button>
+              {equipped.pet ? <button type="button" className="profile-scene-object is-pet" onClick={() => openPurchases("pets")}><ItemPreview item={equipped.pet} /><span>{equipped.pet.name}</span></button> : <button type="button" className="profile-scene-empty is-pet" onClick={() => openPurchases("pets")}><PawPrint className="size-5" /> Выбрать питомца</button>}
             </div>
             <div className="profile-level-orbit"><Star className="size-4" /> LVL {level || 1}</div>
           </section>
@@ -166,9 +196,9 @@ export default function ShopPage() {
       ) : activeTab === "world" ? (
         <WorldCity />
       ) : (
-        <section className="profile-inventory-page">
+        <section className="profile-inventory-page profile-purchases-page">
           <div className="profile-section-head">
-            <div><p className="page-eyebrow">Моя коллекция</p><h2>Предметы и награды</h2></div>
+            <div><p className="page-eyebrow">Мои покупки</p><h2>Соберите своё пространство</h2><small>Похожие предметы стоят рядом — от простых моделей к редким.</small></div>
             <button type="button" className="app-button is-secondary" onClick={() => setShowCreateItem(true)}><Plus className="size-4" /> Свой предмет</button>
           </div>
 

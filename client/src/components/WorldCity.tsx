@@ -3,13 +3,10 @@ import {
   ArrowUp,
   BookOpen,
   BriefcaseBusiness,
-  Castle,
   Clock3,
   Coins,
-  Crown,
   Dumbbell,
   HeartHandshake,
-  Home,
   Leaf,
   Palette,
   Plus,
@@ -31,7 +28,7 @@ import FormModal from "@/components/FormModal";
 import { FormInput } from "@/components/FormInputs";
 
 type BuildingId = "study" | "work" | "health" | "creativity" | "relationships" | "rest";
-type SelectedPlace = BuildingId | "home";
+type SelectedPlace = BuildingId;
 
 interface BuildingDefinition {
   id: BuildingId;
@@ -94,16 +91,16 @@ function getLevel(hours: number) {
   return level;
 }
 
-function WorldBuildingArt({ level, investment, color, Icon, isHome = false }: { level: number; investment: number; color: string; Icon: LucideIcon; isHome?: boolean }) {
+function WorldBuildingArt({ level, investment, color, Icon }: { level: number; investment: number; color: string; Icon: LucideIcon }) {
   const visibleFloors = level === 0 ? 0 : Math.min(7, Math.max(1, level + Math.min(2, investment)));
   const style = { "--building-color": color, "--building-floors": visibleFloors } as CSSProperties;
   return (
-    <span className={`world-building-art level-${level} ${isHome ? "is-home" : ""}`} style={style} aria-hidden="true">
+    <span className={`world-building-art level-${level}`} style={style} aria-hidden="true">
       {visibleFloors === 0 ? (
         <span className="world-building-site"><span /><span /><span /></span>
       ) : (
         <span className="world-building-stack">
-          <span className="world-building-roof">{isHome && level >= 4 ? <Crown className="size-4" /> : null}</span>
+          <span className="world-building-roof" />
           {Array.from({ length: visibleFloors }).map((_, index) => <span key={index} className="world-building-floor"><i /><i /><i /></span>)}
           <span className="world-building-door" />
           <span className="world-building-sign"><Icon className="size-4" /></span>
@@ -147,10 +144,10 @@ export default function WorldCity() {
     return { ...building, floors, matchingSessions, seconds, hours, level, next, progress };
   }), [activitySessions, world.floors]);
 
-  const selectedBuilding = selectedPlace === "home" ? null : buildingStats.find((building) => building.id === selectedPlace) || buildingStats[0];
+  const selectedBuilding = buildingStats.find((building) => building.id === selectedPlace) || buildingStats[0];
   const selectedResidents = world.residents.filter((resident) => resident.buildingId === selectedPlace);
   const totalSeconds = activitySessions.reduce((sum, session) => sum + Math.max(0, session.durationSeconds), 0);
-  const cityLevel = Math.max(1, Math.floor(buildingStats.reduce((sum, building) => sum + building.level, 0) / 3) + world.homeLevel + 1);
+  const cityLevel = Math.max(1, Math.floor(buildingStats.reduce((sum, building) => sum + building.level, 0) / 3) + 1);
 
   const saveWorld = (nextWorld: WorldCityState, cost: number, successMessage: string) => {
     if (!updateWorldCity(nextWorld, cost)) {
@@ -202,12 +199,6 @@ export default function WorldCity() {
     saveWorld({ ...world, buildingInvestments: { ...world.buildingInvestments, [selectedBuilding.id]: current + 1 } }, cost, `${selectedBuilding.name} украшен и улучшен`);
   };
 
-  const upgradeHome = () => {
-    if (world.homeLevel >= 6) return;
-    const cost = 25 * (world.homeLevel + 1);
-    saveWorld({ ...world, homeLevel: world.homeLevel + 1, homeInvestedCoins: world.homeInvestedCoins + cost }, cost, "Главный дом вырос на новый уровень");
-  };
-
   const buyResident = (template: typeof RESIDENT_SHOP[number]) => {
     if (world.residents.some((resident) => resident.buildingId === selectedPlace && resident.role === template.role)) return;
     saveWorld({
@@ -219,7 +210,7 @@ export default function WorldCity() {
   return (
     <section className="world-game">
       <header className="world-game-header">
-        <div><span className="world-game-eyebrow"><Sparkles className="size-4" /> Экспериментальный режим</span><h2>Город вашей жизни</h2><p>Каждый час строит здания. Монеты превращают прогресс в жителей, детали и новые уровни дома.</p></div>
+        <div><span className="world-game-eyebrow"><Sparkles className="size-4" /> Экспериментальный режим</span><h2>Город вашей жизни</h2><p>Каждый час строит тематические здания. Монеты превращают прогресс в жителей, детали и новые уровни кварталов.</p></div>
         <div className="world-game-stats">
           <div><Trophy className="size-4" /><span>Уровень города</span><strong>{cityLevel}</strong></div>
           <div><Clock3 className="size-4" /><span>Полезного времени</span><strong>{formatHours(totalSeconds)}</strong></div>
@@ -243,17 +234,11 @@ export default function WorldCity() {
               </button>
             );
           })}
-          <button type="button" className={`world-map-building plot-home ${selectedPlace === "home" ? "is-selected" : ""}`} onClick={() => setSelectedPlace("home")} aria-label={`Главный дом, уровень ${world.homeLevel + 1}`}>
-            <WorldBuildingArt level={world.homeLevel + 1} investment={world.homeLevel} color="#e7a72e" Icon={Home} isHome />
-            <span className="world-map-label is-home"><strong>Дом Дениса</strong><small>ур. {world.homeLevel + 1} · вложено {world.homeInvestedCoins}</small></span>
-            {world.residents.some((resident) => resident.buildingId === "home") && <span className="world-resident-bubble">{world.residents.filter((resident) => resident.buildingId === "home").map((resident) => resident.emoji).join("")}</span>}
-          </button>
           <div className="world-map-legend"><span><i className="is-time" /> Часы строят</span><span><i className="is-coins" /> Монеты оживляют</span></div>
         </div>
 
         <aside className="world-building-panel" style={{ "--building-color": selectedBuilding?.color || "#e7a72e" } as CSSProperties}>
-          {selectedBuilding ? (
-            <>
+          <>
               <div className="world-panel-title"><span><selectedBuilding.icon className="size-5" /></span><div><small>{selectedBuilding.district}</small><h3>{selectedBuilding.name}</h3></div><b>ур. {selectedBuilding.level}</b></div>
               <p>{selectedBuilding.description}</p>
               <div className="world-level-card"><div><span>{LEVELS[selectedBuilding.level].name}</span><strong>{formatHours(selectedBuilding.seconds)}</strong></div><div className="world-level-track"><i style={{ width: `${selectedBuilding.progress}%` }} /></div><small>{selectedBuilding.next ? `До «${selectedBuilding.next.name}» ещё ${Math.max(0, selectedBuilding.next.hours - selectedBuilding.hours).toLocaleString("ru-RU", { maximumFractionDigits: 1 })} ч` : "Высшая форма здания достигнута"}</small></div>
@@ -265,15 +250,7 @@ export default function WorldCity() {
                 }) : <button type="button" className="world-empty-floor" onClick={openFloorModal}><Plus className="size-4" /><span><strong>Заложить первый этаж</strong><small>Например, «Испанский» в доме учёбы</small></span></button>}
               </div>
               <button type="button" className="world-invest-button" onClick={investInBuilding} disabled={(world.buildingInvestments[selectedBuilding.id] || 0) >= 5}><ArrowUp className="size-4" /><span><strong>Улучшить оформление</strong><small>Декор и дополнительная высота</small></span><CoinDisplay amount={15 * ((world.buildingInvestments[selectedBuilding.id] || 0) + 1)} size="sm" /></button>
-            </>
-          ) : (
-            <>
-              <div className="world-panel-title"><span><Castle className="size-5" /></span><div><small>Центральная площадь</small><h3>Дом Дениса</h3></div><b>ур. {world.homeLevel + 1}</b></div>
-              <p>Главный дом растёт за монеты и становится сердцем города. Здесь живут ваши первые помощники.</p>
-              <div className="world-home-progress"><Crown className="size-6" /><div><span>Вложено в дом</span><strong>{world.homeInvestedCoins.toLocaleString("ru-RU")} монет</strong></div></div>
-              <button type="button" className="world-invest-button is-primary" onClick={upgradeHome} disabled={world.homeLevel >= 6}><ArrowUp className="size-4" /><span><strong>{world.homeLevel >= 6 ? "Дом полностью улучшен" : "Новый уровень дома"}</strong><small>Больше этажей и статуса</small></span>{world.homeLevel < 6 && <CoinDisplay amount={25 * (world.homeLevel + 1)} size="sm" />}</button>
-            </>
-          )}
+          </>
 
           <div className="world-panel-section-head"><div><span>Жители этого места</span><small>{selectedResidents.length ? selectedResidents.map((resident) => resident.name).join(", ") : "Пока здесь тихо"}</small></div><Users className="size-4" /></div>
           <div className="world-resident-shop">

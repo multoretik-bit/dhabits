@@ -82,7 +82,7 @@ export const defaultShopItems: ShopItem[] = [
   // --- LEGACY ITEMS (Before Update) ---
   {
     id: "cloth-red-tshirt",
-    name: "Red T-Shirt",
+    name: "Красная футболка",
     emoji: "👕",
     price: 20,
     category: "clothing",
@@ -90,13 +90,14 @@ export const defaultShopItems: ShopItem[] = [
     folder: "default",
     purchased: false,
     assetPath: clothingSVGs.redTshirt,
+    avatarPath: "/avatar-world/denis-red-shirt.png",
     createdAt: LEGACY_DATE,
     rarity: "legacy",
     description: "Классическая красная футболка из оригинальной коллекции.",
   },
   {
     id: "cloth-blue-tshirt",
-    name: "Blue T-Shirt",
+    name: "Синяя футболка",
     emoji: "👕",
     price: 20,
     category: "clothing",
@@ -104,13 +105,14 @@ export const defaultShopItems: ShopItem[] = [
     folder: "default",
     purchased: false,
     assetPath: clothingSVGs.blueTshirt,
+    avatarPath: "/avatar-world/denis-blue-shirt.png",
     createdAt: LEGACY_DATE,
     rarity: "legacy",
     description: "Классическая синяя футболка из оригинальной коллекции.",
   },
   {
     id: "pet-robot-dog-classic",
-    name: "Robot Dog (Classic)",
+    name: "Робо-пёс · Классик",
     emoji: "🤖",
     price: 1500,
     category: "pets",
@@ -124,7 +126,7 @@ export const defaultShopItems: ShopItem[] = [
   },
   {
     id: "house-castle-classic",
-    name: "Medieval Castle",
+    name: "Средневековый замок",
     emoji: "🏰",
     price: 5000,
     category: "background",
@@ -141,7 +143,7 @@ export const defaultShopItems: ShopItem[] = [
   // Robot Dog Variations
   {
     id: "pet-robot-dog-v1",
-    name: "Robot Dog MK-1",
+    name: "Робо-пёс · MK-1",
     emoji: "🤖",
     price: 600,
     category: "pets",
@@ -156,7 +158,7 @@ export const defaultShopItems: ShopItem[] = [
   },
   {
     id: "pet-robot-dog-v2",
-    name: "Robot Dog MK-2",
+    name: "Робо-пёс · MK-2",
     emoji: "🤖",
     price: 1200,
     category: "pets",
@@ -171,7 +173,7 @@ export const defaultShopItems: ShopItem[] = [
   },
   {
     id: "pet-robot-dog-v3",
-    name: "Robot Dog Prime",
+    name: "Робо-пёс · Прайм",
     emoji: "🤖",
     price: 3000,
     category: "pets",
@@ -186,7 +188,7 @@ export const defaultShopItems: ShopItem[] = [
   },
   {
     id: "pet-robot-dog-v4",
-    name: "Robot Dog Zenith",
+    name: "Робо-пёс · Зенит",
     emoji: "🤖",
     price: 7500,
     category: "pets",
@@ -203,7 +205,7 @@ export const defaultShopItems: ShopItem[] = [
   // Galaxy Cat Variations
   {
     id: "pet-galaxy-cat-v1",
-    name: "Starry Cat",
+    name: "Звёздный кот",
     emoji: "🐱",
     price: 800,
     category: "pets",
@@ -217,7 +219,7 @@ export const defaultShopItems: ShopItem[] = [
   },
   {
     id: "pet-galaxy-cat-v2",
-    name: "Nebula Cat",
+    name: "Кот Туманность",
     emoji: "🐱",
     price: 1800,
     category: "pets",
@@ -231,7 +233,7 @@ export const defaultShopItems: ShopItem[] = [
   },
   {
     id: "pet-galaxy-cat-v3",
-    name: "Galaxy Cat",
+    name: "Галактический кот",
     emoji: "🌌",
     price: 4500,
     category: "pets",
@@ -245,7 +247,7 @@ export const defaultShopItems: ShopItem[] = [
   },
   {
     id: "pet-galaxy-cat-v4",
-    name: "Universal Overlord",
+    name: "Повелитель Вселенной",
     emoji: "👑",
     price: 12000,
     category: "pets",
@@ -261,7 +263,7 @@ export const defaultShopItems: ShopItem[] = [
   // Clothing Variations
   {
     id: "cloth-cyber-suit-v1",
-    name: "Cyber Vest",
+    name: "Кибержилет",
     emoji: "🦺",
     price: 150,
     category: "clothing",
@@ -269,13 +271,14 @@ export const defaultShopItems: ShopItem[] = [
     folder: "default",
     purchased: false,
     assetPath: "/shop/cyber-vest.svg",
+    avatarPath: "/avatar-world/denis-cyber-vest.png",
     createdAt: TODAY_DATE,
     rarity: "rare",
     description: "Кибернетический жилет для начинающих хакеров.",
   },
   {
     id: "cloth-cyber-suit-v2",
-    name: "Exo-Skeleton",
+    name: "Экзоскелет",
     emoji: "🦾",
     price: 800,
     category: "clothing",
@@ -283,13 +286,14 @@ export const defaultShopItems: ShopItem[] = [
     folder: "default",
     purchased: false,
     assetPath: "/shop/exo-skeleton.svg",
+    avatarPath: "/avatar-world/denis-exoskeleton.png",
     createdAt: TODAY_DATE,
     rarity: "epic",
     description: "Полноценный экзоскелет, увеличивающий силу и стиль.",
   },
   {
     id: "cloth-cyber-suit-v3",
-    name: "God-Speed Armor",
+    name: "Броня God-Speed",
     emoji: "⚡",
     price: 5000,
     category: "clothing",
@@ -297,6 +301,7 @@ export const defaultShopItems: ShopItem[] = [
     folder: "default",
     purchased: false,
     assetPath: "/shop/godspeed-armor.svg",
+    avatarPath: "/avatar-world/denis-godspeed.png",
     createdAt: TODAY_DATE,
     rarity: "legendary",
     description: "Броня, позволяющая двигаться быстрее света. Почти.",
@@ -305,7 +310,7 @@ export const defaultShopItems: ShopItem[] = [
   // Other previous items moved to legacy/new
   {
     id: "house-modern-villa",
-    name: "Modern Villa",
+    name: "Современная вилла",
     emoji: "🏘️",
     price: 2500,
     category: "background",
@@ -319,7 +324,7 @@ export const defaultShopItems: ShopItem[] = [
   },
   {
     id: "trans-supercar",
-    name: "Supercar",
+    name: "Суперкар",
     emoji: "🏎️",
     price: 3000,
     category: "vehicle",
@@ -333,7 +338,7 @@ export const defaultShopItems: ShopItem[] = [
   },
   {
     id: "house-cozy-cottage",
-    name: "Cozy Cottage",
+    name: "Уютный коттедж",
     emoji: "🏡",
     price: 1200,
     category: "background",
@@ -347,7 +352,7 @@ export const defaultShopItems: ShopItem[] = [
   },
   {
     id: "house-cyberpunk-apartment",
-    name: "Cyberpunk Apartment",
+    name: "Киберпанк-квартира",
     emoji: "🏙️",
     price: 3500,
     category: "background",
@@ -361,7 +366,7 @@ export const defaultShopItems: ShopItem[] = [
   },
   {
     id: "trans-helicopter",
-    name: "Helicopter",
+    name: "Личный вертолёт",
     emoji: "🚁",
     price: 4200,
     category: "vehicle",

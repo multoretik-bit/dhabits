@@ -221,11 +221,23 @@ export interface ShopItem {
   folder: string;
   purchased: boolean;
   assetPath?: string;
+  avatarPath?: string;
   slot?: "head" | "body" | "hands" | "feet" | "accessory" | "background" | "vehicle" | "pet";
   createdAt: string;
   rarity: "common" | "rare" | "epic" | "legendary" | "legacy";
   version?: string | number;
   description?: string;
+}
+
+function withCurrentShopModels(items: ShopItem[] | undefined): ShopItem[] {
+  const savedItems = Array.isArray(items) ? items : [];
+  const defaultsById = new Map(defaultShopItems.map((item) => [item.id, item]));
+  const merged = savedItems.map((item) => {
+    const current = defaultsById.get(item.id);
+    return current ? { ...item, name: current.name, description: current.description, assetPath: current.assetPath, avatarPath: current.avatarPath, category: current.category, slot: current.slot } : item;
+  });
+  const savedIds = new Set(savedItems.map((item) => item.id));
+  return [...merged, ...defaultShopItems.filter((item) => !savedIds.has(item.id))];
 }
 
 export interface DailyEnergyChange {
@@ -626,10 +638,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
     setGoals(savedData.goals || []);
     setGoalFolders(gFolders);
-    const savedShopItems = savedData.shopItems || [];
-    const savedIds = new Set(savedShopItems.map((i: ShopItem) => i.id));
-    const newDefaults = defaultShopItems.filter((d: ShopItem) => !savedIds.has(d.id));
-    setShopItems([...savedShopItems, ...newDefaults]);
+    setShopItems(withCurrentShopModels(savedData.shopItems));
     setShopFolders(savedData.shopFolders || []);
     setCharacterState(savedData.characterState || {});
     const preparedSavedTasks = prepareTaskData(savedData);
@@ -682,10 +691,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               setHabitFolders(remoteData.habitFolders || []);
               setGoals(remoteData.goals || []);
               setGoalFolders(remoteData.goalFolders || []);
-              const remoteShopItems = remoteData.shopItems || [];
-              const rsIds = new Set(remoteShopItems.map((i: ShopItem) => i.id));
-              const rNewDefaults = defaultShopItems.filter((d: ShopItem) => !rsIds.has(d.id));
-              setShopItems([...remoteShopItems, ...rNewDefaults]);
+              setShopItems(withCurrentShopModels(remoteData.shopItems));
               
               setShopFolders(remoteData.shopFolders || []);
               setCharacterState({
@@ -757,10 +763,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   setHabitFolders(newData.habitFolders || []);
                   setGoals(newData.goals || []);
                   setGoalFolders(newData.goalFolders || []);
-                  const pushShopItems = newData.shopItems || [];
-                  const psIds = new Set(pushShopItems.map((i: ShopItem) => i.id));
-                  const pNewDefaults = defaultShopItems.filter((d: ShopItem) => !psIds.has(d.id));
-                  setShopItems([...pushShopItems, ...pNewDefaults]);
+                  setShopItems(withCurrentShopModels(newData.shopItems));
 
                   setShopFolders(newData.shopFolders || []);
                   setCharacterState({
@@ -920,10 +923,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setHabitFolders(remoteData.habitFolders || []);
       setGoals(remoteData.goals || []);
       setGoalFolders(remoteData.goalFolders || []);
-      const fSyncShopItems = remoteData.shopItems || [];
-      const fsIds = new Set(fSyncShopItems.map((i: ShopItem) => i.id));
-      const fNewDefaults = defaultShopItems.filter((d: ShopItem) => !fsIds.has(d.id));
-      setShopItems([...fSyncShopItems, ...fNewDefaults]);
+      setShopItems(withCurrentShopModels(remoteData.shopItems));
 
       setShopFolders(remoteData.shopFolders || []);
       setCharacterState({
@@ -1069,7 +1069,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setHabitFolders(remoteData.habitFolders || []);
         setGoals(remoteData.goals || []);
         setGoalFolders(remoteData.goalFolders || []);
-        setShopItems(remoteData.shopItems || []);
+        setShopItems(withCurrentShopModels(remoteData.shopItems));
         setShopFolders(remoteData.shopFolders || []);
         setCharacterState(remoteData.characterState || {});
         const preparedRemoteData = prepareTaskData(remoteData, deletedTaskIdsRef.current);
@@ -1428,7 +1428,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setHabitFolders(savedData.habitFolders || []);
         setGoals(savedData.goals || []);
         setGoalFolders(savedData.goalFolders || []);
-        setShopItems(savedData.shopItems || []);
+        setShopItems(withCurrentShopModels(savedData.shopItems));
         setShopFolders(savedData.shopFolders || []);
         setCharacterState(savedData.characterState || {});
         const preparedSavedData = prepareTaskData(savedData, deletedTaskIdsRef.current);
