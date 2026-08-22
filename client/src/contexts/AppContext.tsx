@@ -229,8 +229,18 @@ export interface ShopItem {
   description?: string;
 }
 
+const RETIRED_SHOP_ITEM_IDS = new Set([
+  "cloth-cyber-suit",
+  "cloth-astronaut",
+  "cloth-royal",
+  "cloth-stealth",
+  "cloth-black-pants",
+  "cloth-red-cap",
+  "cloth-sunglasses",
+]);
+
 function withCurrentShopModels(items: ShopItem[] | undefined): ShopItem[] {
-  const savedItems = Array.isArray(items) ? items : [];
+  const savedItems = (Array.isArray(items) ? items : []).filter((item) => item && !RETIRED_SHOP_ITEM_IDS.has(item.id));
   const defaultsById = new Map(defaultShopItems.map((item) => [item.id, item]));
   const merged = savedItems.map((item) => {
     const current = defaultsById.get(item.id);

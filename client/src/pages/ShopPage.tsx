@@ -36,7 +36,12 @@ const ITEM_SLOTS = [
 ];
 
 function ItemPreview({ item }: { item: ShopItem }) {
-  if (item.avatarPath) return <img className="profile-shop-avatar-model" src={item.avatarPath} alt="" />;
+  if (item.avatarPath) return (
+    <span className="profile-shop-avatar-stack">
+      <img className={`profile-shop-avatar-model ${item.category === "costume" || item.category === "pants" ? "is-outfit-model" : ""}`} src={item.avatarPath} alt="" />
+      {item.category === "costume" || item.category === "pants" ? <img className="profile-shop-head-layer" src="/profile-avatar.png" alt="" /> : null}
+    </span>
+  );
   const assetPath = typeof item.assetPath === "string" ? item.assetPath : "";
   if (assetPath && /\.(png|svg|jpe?g|webp)$/i.test(assetPath)) return <img src={assetPath} alt="" />;
   if (assetPath.trim().startsWith("<")) return <svg viewBox="0 0 100 150" aria-hidden="true"><g dangerouslySetInnerHTML={{ __html: assetPath }} /></svg>;
@@ -208,6 +213,7 @@ export default function ShopPage() {
               {equipped.vehicle ? <button type="button" className="profile-scene-object is-vehicle" onClick={() => showCategory("reward")}><ItemPreview item={equipped.vehicle} /><span>{equipped.vehicle.name}</span></button> : null}
               <button type="button" className="profile-scene-avatar" onClick={() => showCategory("costume")} aria-label="Выбрать костюм">
                 <img className={baseAvatarPath !== "/profile-avatar.png" ? "has-outfit-model" : ""} src={baseAvatarPath} alt={`Денис: ${baseAvatarName}`} />
+                {baseAvatarPath !== "/profile-avatar.png" ? <img className="profile-character-head-layer" src="/profile-avatar.png" alt="" /> : null}
                 {equipped.headwear?.avatarPath ? <img className="profile-headwear-layer" src={equipped.headwear.avatarPath} alt="" /> : null}
                 <span><Shirt className="size-3" /> {baseAvatarName}</span>
               </button>
