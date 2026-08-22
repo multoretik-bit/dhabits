@@ -239,12 +239,24 @@ const RETIRED_SHOP_ITEM_IDS = new Set([
   "cloth-sunglasses",
 ]);
 
+const LEGACY_SHOP_MODEL_OVERRIDES: Record<string, Partial<ShopItem>> = {
+  "default-apartment": { assetPath: "/residences/apartment-v2.png" },
+  "default-big-house": { assetPath: "/residences/big-house-v2.png" },
+  "default-small-house": { assetPath: "/residences/small-house-v2.png" },
+  "house-castle": { assetPath: "/residences/medieval-castle-v2.png" },
+  "house-cyber-apartment": { assetPath: "/residences/cyberpunk-apartment-v2.png" },
+  "house-temple": { assetPath: "/residences/japanese-temple-v2.png" },
+  "house-underwater": { assetPath: "/residences/underwater-base-v2.png" },
+};
+
 function withCurrentShopModels(items: ShopItem[] | undefined): ShopItem[] {
   const savedItems = (Array.isArray(items) ? items : []).filter((item) => item && !RETIRED_SHOP_ITEM_IDS.has(item.id));
   const defaultsById = new Map(defaultShopItems.map((item) => [item.id, item]));
   const merged = savedItems.map((item) => {
     const current = defaultsById.get(item.id);
     if (current) return { ...item, name: current.name, description: current.description, assetPath: current.assetPath, avatarPath: current.avatarPath, category: current.category, slot: current.slot };
+    const legacyModel = LEGACY_SHOP_MODEL_OVERRIDES[item.id];
+    if (legacyModel) return { ...item, ...legacyModel };
     const legacyCategory = String(item.category);
     const category = legacyCategory === "clothing" ? "costume" : legacyCategory === "vehicle" || legacyCategory === "character" ? "reward" : item.category;
     return { ...item, category } as ShopItem;
