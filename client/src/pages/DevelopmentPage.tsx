@@ -11,6 +11,8 @@ import {
   Compass,
   ExternalLink,
   Gauge,
+  Globe2,
+  Headphones,
   Layers3,
   Pencil,
   Plus,
@@ -377,11 +379,23 @@ export default function DevelopmentPage() {
           <span className={selectedAspect.id === "10" ? "development-soon is-ready" : "development-soon"}>{selectedAspect.id === "10" ? "Доступно" : "Скоро"}</span>
         </div>
         {selectedAspect.id === "10" ? (
-          <a className="study-tool-card" href="https://den-english-10000.tivishka.chatgpt.site/" target="_blank" rel="noreferrer">
-            <span className="study-tool-icon"><BookOpenText className="size-7" /></span>
-            <span className="study-tool-copy"><small>English vocabulary</small><strong>10 000 английских слов</strong><span>Открывайте тренажёр, повторяйте слова и расширяйте словарный запас.</span></span>
-            <span className="study-tool-open">Открыть <ExternalLink className="size-4" /></span>
-          </a>
+          <div className="study-tools-grid">
+            <a className="study-tool-card" href="https://den-english-10000.tivishka.chatgpt.site/" target="_blank" rel="noreferrer">
+              <span className="study-tool-icon"><BookOpenText className="size-7" /></span>
+              <span className="study-tool-copy"><small>Английский · словарь</small><strong>10 000 английских слов</strong><span>Повторяйте слова и постепенно расширяйте словарный запас.</span></span>
+              <span className="study-tool-open">Открыть <ExternalLink className="size-4" /></span>
+            </a>
+            <a className="study-tool-card" href="https://kinogomy.net/cartoons/555-griffiny-hd-mvisionstv13-v54.html" target="_blank" rel="noreferrer">
+              <span className="study-tool-icon"><Headphones className="size-7" /></span>
+              <span className="study-tool-copy"><small>Английский · аудирование</small><strong>Слушанье Гриффинов</strong><span>Тренируйте понимание живой английской речи на слух.</span></span>
+              <span className="study-tool-open">Смотреть <ExternalLink className="size-4" /></span>
+            </a>
+            <a className="study-tool-card" href="https://new.artforintrovert.ru/course/vsemirnaya-istoriya" target="_blank" rel="noreferrer">
+              <span className="study-tool-icon"><Globe2 className="size-7" /></span>
+              <span className="study-tool-copy"><small>История · курс</small><strong>История мира</strong><span>Изучайте ключевые события и связи всемирной истории.</span></span>
+              <span className="study-tool-open">Перейти <ExternalLink className="size-4" /></span>
+            </a>
+          </div>
         ) : <div className="tools-placeholder"><Wrench className="size-5" /><p><strong>Здесь появятся ваши инструменты</strong><span>Мы добавим их отдельно под каждый аспект.</span></p></div>}
       </section>
 
