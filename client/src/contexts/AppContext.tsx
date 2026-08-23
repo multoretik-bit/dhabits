@@ -874,7 +874,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     };
-  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, deletedTaskIds, taskFolders, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityMicroGoals, activityTimer, identityValues, identitySystems]);
+  }, [coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, deletedTaskIds, taskFolders, customColors, wakeUpTimes, daySnapshots, dayScheduleOverrides, monthEvents, activitySessions, activityMicroGoals, activityTimer,
+      identityValues, identityValueFolders, identitySystems, identitySystemFolders, identitySystemIdeas]);
 
   // Handle mobile wake/focus
   useEffect(() => {
@@ -1885,26 +1886,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const newValue = { id: nanoid(), text, folderId };
     const newValues = [...identityValues, newValue];
     setIdentityValues(newValues);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, newValues);
+    void pushImmediateSync({ identityValues: newValues });
   };
 
   const updateIdentityValue = (id: string, text: string) => {
     const newValues = identityValues.map(v => v.id === id ? { ...v, text } : v);
     setIdentityValues(newValues);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, newValues);
+    void pushImmediateSync({ identityValues: newValues });
   };
 
   const deleteIdentityValue = (id: string) => {
     const newValues = identityValues.filter(v => v.id !== id);
     setIdentityValues(newValues);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, newValues);
+    void pushImmediateSync({ identityValues: newValues });
   };
 
   const addIdentityValueFolder = (name: string) => {
     const newFolder = { id: nanoid(), name };
     const newFolders = [...identityValueFolders, newFolder];
     setIdentityValueFolders(newFolders);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, newFolders);
+    void pushImmediateSync({ identityValueFolders: newFolders });
   };
 
   const deleteIdentityValueFolder = (id: string) => {
@@ -1912,20 +1913,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const newValues = identityValues.map(v => v.folderId === id ? { ...v, folderId: undefined } : v);
     setIdentityValueFolders(newFolders);
     setIdentityValues(newValues);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, newValues, newFolders);
+    void pushImmediateSync({ identityValues: newValues, identityValueFolders: newFolders });
   };
 
   const addIdentitySystemFolder = (aspectId: string, name: string) => {
     const newFolder = { id: nanoid(), aspectId, name };
     const newFolders = [...identitySystemFolders, newFolder];
     setIdentitySystemFolders(newFolders);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, newFolders);
+    void pushImmediateSync({ identitySystemFolders: newFolders });
   };
 
   const updateIdentitySystem = (id: string, updates: Partial<IdentitySystem>) => {
     const newSystems = identitySystems.map(system => system.id === id ? { ...system, ...updates } : system);
     setIdentitySystems(newSystems);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, newSystems);
+    void pushImmediateSync({ identitySystems: newSystems });
   };
 
   const deleteIdentitySystemFolder = (id: string) => {
@@ -1933,27 +1934,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const newIdeas = identitySystemIdeas.map(i => i.folderId === id ? { ...i, folderId: undefined } : i);
     setIdentitySystemFolders(newFolders);
     setIdentitySystemIdeas(newIdeas);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, newFolders, newIdeas);
+    void pushImmediateSync({ identitySystemFolders: newFolders, identitySystemIdeas: newIdeas });
   };
 
   const addIdentitySystemIdea = (aspectId: string, text: string, folderId?: string, deadline?: string) => {
     const newIdea = { id: nanoid(), aspectId, text, folderId, deadline, completed: false };
     const newIdeas = [...identitySystemIdeas, newIdea];
     setIdentitySystemIdeas(newIdeas);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, newIdeas);
+    void pushImmediateSync({ identitySystemIdeas: newIdeas });
   };
 
   const updateIdentitySystemIdea = (id: string, updates: string | Partial<IdentitySystemIdea>) => {
     const normalizedUpdates = typeof updates === "string" ? { text: updates } : updates;
     const newIdeas = identitySystemIdeas.map(i => i.id === id ? { ...i, ...normalizedUpdates } : i);
     setIdentitySystemIdeas(newIdeas);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, newIdeas);
+    void pushImmediateSync({ identitySystemIdeas: newIdeas });
   };
 
   const deleteIdentitySystemIdea = (id: string) => {
     const newIdeas = identitySystemIdeas.filter(i => i.id !== id);
     setIdentitySystemIdeas(newIdeas);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, newIdeas);
+    void pushImmediateSync({ identitySystemIdeas: newIdeas });
   };
 
   return (
