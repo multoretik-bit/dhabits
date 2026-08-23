@@ -20,7 +20,7 @@ import {
 import { Link } from "wouter";
 import { PageHeader, PageShell } from "@/components/AppUI";
 import { useApp } from "@/contexts/AppContext";
-import { colorBelongsToLifeAspect, LIFE_ASPECT_GROUPS, LIFE_ASPECTS } from "@/lib/lifeAspects";
+import { colorBelongsToLifeAspect, getTimerActivityAspectId, LIFE_ASPECT_GROUPS, LIFE_ASPECTS } from "@/lib/lifeAspects";
 
 function getDefaultDeadline() {
   const date = new Date();
@@ -77,7 +77,7 @@ export default function DevelopmentPage() {
     if (!selectedAspect) return 0;
     const totalSeconds = activitySessions.reduce((sum, session) => {
       const sessionYear = Number(session.date?.slice(0, 4)) || new Date(session.endedAt).getFullYear();
-      if (sessionYear !== currentYear || !colorBelongsToLifeAspect(session.color, selectedAspect.id)) return sum;
+      if (sessionYear !== currentYear || getTimerActivityAspectId(session.title, session.color) !== selectedAspect.id) return sum;
       return sum + Math.max(0, session.durationSeconds || 0);
     }, 0);
     return Math.floor(totalSeconds / 60);

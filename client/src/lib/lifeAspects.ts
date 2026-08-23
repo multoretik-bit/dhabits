@@ -51,3 +51,21 @@ export function colorBelongsToLifeAspect(color: string | undefined, aspectId: st
   const normalized = color.toLowerCase();
   return aspect.color.toLowerCase() === normalized || aspect.legacyColors.some((legacy) => legacy.toLowerCase() === normalized);
 }
+
+function normalizeActivityTitle(title: string) {
+  return title.trim().toLocaleLowerCase("ru-RU").replace(/ё/g, "е");
+}
+
+export function getTimerActivityAspectId(title: string, color?: string) {
+  const normalizedTitle = normalizeActivityTitle(title);
+
+  if (normalizedTitle.includes("работ")) return "8";
+  if (normalizedTitle.includes("спорт") || normalizedTitle.includes("хожден")) return "2";
+  if (
+    normalizedTitle.includes("англий") ||
+    normalizedTitle.includes("истори") ||
+    normalizedTitle.includes("чтен")
+  ) return "10";
+
+  return LIFE_ASPECTS.find((aspect) => colorBelongsToLifeAspect(color, aspect.id))?.id;
+}
