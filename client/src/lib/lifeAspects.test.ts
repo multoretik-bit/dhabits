@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getTimerActivityAspectId } from "./lifeAspects";
+import { getTimerActivityAspectId, getTimerMinutesForAspectInYear, getTimerMinutesForAspectOnDate } from "./lifeAspects";
 
 describe("getTimerActivityAspectId", () => {
   it.each(["Английский", "История России", "Чтение книги"])("routes %s to study", (title) => {
@@ -20,5 +20,24 @@ describe("getTimerActivityAspectId", () => {
 
   it("keeps legacy yellow sessions in study", () => {
     expect(getTimerActivityAspectId("Конспект", "#facc15")).toBe("10");
+  });
+
+  it("sums only today's sessions for the selected aspect", () => {
+    const sessions = [
+      { date: "2026-08-23", title: "Английский", color: "#ffd814", durationSeconds: 30 * 60 },
+      { date: "2026-08-23", title: "История", color: "#ffd814", durationSeconds: 45 * 60 },
+      { date: "2026-08-22", title: "Чтение", color: "#ffd814", durationSeconds: 60 * 60 },
+      { date: "2026-08-23", title: "Работа", color: "#ffd814", durationSeconds: 20 * 60 },
+    ];
+    expect(getTimerMinutesForAspectOnDate(sessions, "10", "2026-08-23")).toBe(75);
+  });
+
+  it("sums an aspect across the selected calendar year", () => {
+    const sessions = [
+      { date: "2026-01-10", title: "Спорт", color: "#2815ff", durationSeconds: 20 * 60 },
+      { date: "2026-08-23", title: "Хождение", color: "#2815ff", durationSeconds: 35 * 60 },
+      { date: "2025-12-31", title: "Спорт", color: "#2815ff", durationSeconds: 50 * 60 },
+    ];
+    expect(getTimerMinutesForAspectInYear(sessions, "2", 2026)).toBe(55);
   });
 });

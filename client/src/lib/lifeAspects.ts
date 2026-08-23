@@ -69,3 +69,28 @@ export function getTimerActivityAspectId(title: string, color?: string) {
 
   return LIFE_ASPECTS.find((aspect) => colorBelongsToLifeAspect(color, aspect.id))?.id;
 }
+
+export interface TimerActivityRecord {
+  date: string;
+  title: string;
+  color?: string;
+  durationSeconds: number;
+  endedAt?: string;
+}
+
+export function getTimerMinutesForAspectOnDate(sessions: TimerActivityRecord[], aspectId: string, date: string) {
+  const seconds = sessions.reduce((sum, session) => {
+    if (session.date !== date || getTimerActivityAspectId(session.title, session.color) !== aspectId) return sum;
+    return sum + Math.max(0, session.durationSeconds || 0);
+  }, 0);
+  return Math.floor(seconds / 60);
+}
+
+export function getTimerMinutesForAspectInYear(sessions: TimerActivityRecord[], aspectId: string, year: number) {
+  const seconds = sessions.reduce((sum, session) => {
+    const sessionYear = Number(session.date?.slice(0, 4)) || new Date(session.endedAt || "").getFullYear();
+    if (sessionYear !== year || getTimerActivityAspectId(session.title, session.color) !== aspectId) return sum;
+    return sum + Math.max(0, session.durationSeconds || 0);
+  }, 0);
+  return Math.floor(seconds / 60);
+}

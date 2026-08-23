@@ -95,6 +95,7 @@ export interface IdentitySystem {
   aspect: string;
   color: string;
   notionUrl?: string;
+  dailyTargetMinutes?: number;
 }
 
 export interface IdentitySystemFolder {
