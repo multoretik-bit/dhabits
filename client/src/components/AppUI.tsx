@@ -1,10 +1,10 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function PageShell({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("page-shell", className)}>{children}</div>;
+export function PageShell({ children, className, style }: { children: ReactNode; className?: string; style?: CSSProperties }) {
+  return <div className={cn("page-shell", className)} style={style}>{children}</div>;
 }
 
 export function PageHeader({

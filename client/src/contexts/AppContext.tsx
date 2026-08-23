@@ -6,22 +6,19 @@ import { syncSave, syncLoad } from "@/lib/sync";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import { rollOverOverdueTasks } from "@/lib/taskRollover";
+import { LIFE_ASPECTS } from "@/lib/lifeAspects";
 
 export { getCurrentBlock } from "@/lib/schedule";
 export type { DayScheduleOverride, DayBlockTimeOverride } from "@/lib/schedule";
 import type { DayScheduleOverride } from "@/lib/schedule";
 
 // Color palette for folders/goals/blocks
-export const FOLDER_COLORS = [
-  { name: "cyan", border: "#00d9ff", text: "#00d9ff", bg: "rgba(0, 217, 255, 0.1)" },
-  { name: "blue", border: "#0066ff", text: "#0066ff", bg: "rgba(0, 102, 255, 0.1)" },
-  { name: "purple", border: "#cc00ff", text: "#cc00ff", bg: "rgba(204, 0, 255, 0.1)" },
-  { name: "green", border: "#00cc00", text: "#00cc00", bg: "rgba(0, 204, 0, 0.1)" },
-  { name: "yellow", border: "#ffcc00", text: "#ffcc00", bg: "rgba(255, 204, 0, 0.1)" },
-  { name: "red", border: "#ff0000", text: "#ff0000", bg: "rgba(255, 0, 0, 0.1)" },
-  { name: "pink", border: "#ff00ff", text: "#ff00ff", bg: "rgba(255, 0, 255, 0.1)" },
-  { name: "orange", border: "#ff6600", text: "#ff6600", bg: "rgba(255, 102, 0, 0.1)" },
-];
+export const FOLDER_COLORS = LIFE_ASPECTS.map((aspect) => ({
+  name: aspect.name,
+  border: aspect.color,
+  text: aspect.color,
+  bg: `color-mix(in srgb, ${aspect.color} 12%, transparent)`,
+}));
 
 export function getFolderColor(index: number) {
   return FOLDER_COLORS[index % FOLDER_COLORS.length];
@@ -112,6 +109,8 @@ export interface IdentitySystemIdea {
   aspectId: string;
   folderId?: string;
   text: string;
+  deadline?: string;
+  completed?: boolean;
 }
 
 export interface Task {
@@ -549,8 +548,8 @@ interface AppContextType {
   identitySystemIdeas: IdentitySystemIdea[];
   addIdentitySystemFolder: (aspectId: string, name: string) => void;
   deleteIdentitySystemFolder: (id: string) => void;
-  addIdentitySystemIdea: (aspectId: string, text: string, folderId?: string) => void;
-  updateIdentitySystemIdea: (id: string, text: string) => void;
+  addIdentitySystemIdea: (aspectId: string, text: string, folderId?: string, deadline?: string) => void;
+  updateIdentitySystemIdea: (id: string, updates: string | Partial<IdentitySystemIdea>) => void;
   deleteIdentitySystemIdea: (id: string) => void;
 }
 
@@ -567,18 +566,11 @@ function migrateHabit(habit: any): Habit {
   return habit as Habit;
 }
 
-const DEFAULT_IDENTITY_SYSTEMS: IdentitySystem[] = [
-  { id: "1", aspect: "Моя внешность", color: "#5eead4" },
-  { id: "2", aspect: "Здоровье", color: "#2563eb" },
-  { id: "3", aspect: "Отношения", color: "#f43f5e" },
-  { id: "4", aspect: "Семья", color: "#f97316" },
-  { id: "5", aspect: "Окружение", color: "#84cc16" },
-  { id: "6", aspect: "Отдых", color: "#fecaca" },
-  { id: "7", aspect: "Стремления", color: "#7c3aed" },
-  { id: "8", aspect: "Бизнес и работа", color: "#ef4444" },
-  { id: "9", aspect: "Финансы", color: "#064e3b" },
-  { id: "10", aspect: "Учёба", color: "#facc15" },
-];
+const DEFAULT_IDENTITY_SYSTEMS: IdentitySystem[] = LIFE_ASPECTS.map((aspect) => ({
+  id: aspect.id,
+  aspect: aspect.name,
+  color: aspect.color,
+}));
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [coins, setCoins] = useState(0);
@@ -1944,15 +1936,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, newFolders, newIdeas);
   };
 
-  const addIdentitySystemIdea = (aspectId: string, text: string, folderId?: string) => {
-    const newIdea = { id: nanoid(), aspectId, text, folderId };
+  const addIdentitySystemIdea = (aspectId: string, text: string, folderId?: string, deadline?: string) => {
+    const newIdea = { id: nanoid(), aspectId, text, folderId, deadline, completed: false };
     const newIdeas = [...identitySystemIdeas, newIdea];
     setIdentitySystemIdeas(newIdeas);
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, newIdeas);
   };
 
-  const updateIdentitySystemIdea = (id: string, text: string) => {
-    const newIdeas = identitySystemIdeas.map(i => i.id === id ? { ...i, text } : i);
+  const updateIdentitySystemIdea = (id: string, updates: string | Partial<IdentitySystemIdea>) => {
+    const normalizedUpdates = typeof updates === "string" ? { text: updates } : updates;
+    const newIdeas = identitySystemIdeas.map(i => i.id === id ? { ...i, ...normalizedUpdates } : i);
     setIdentitySystemIdeas(newIdeas);
     saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, characterState, tasks, taskFolders, customColors, wakeUpTimes, daySnapshots, identityValues, identityValueFolders, identitySystems, identitySystemFolders, newIdeas);
   };

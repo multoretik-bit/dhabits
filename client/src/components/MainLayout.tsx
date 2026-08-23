@@ -10,6 +10,7 @@ import {
   Settings,
   Sun,
   Target,
+  TrendingUp,
   UserRound,
   X,
 } from "lucide-react";
@@ -74,11 +75,11 @@ export default function MainLayout({ children, onSignOut }: { children: ReactNod
         </nav>
 
         <div className="app-sidebar-footer">
-          <Link href="/identity" className="identity-card">
-            <div className="identity-icon"><UserRound className="size-5" /></div>
+          <Link href="/development" className={cn("identity-card", location === "/development" && "is-active")} onClick={() => setMobileMenuOpen(false)}>
+            <div className="identity-icon"><TrendingUp className="size-5" /></div>
             <div>
-              <span className="identity-title">Моя идентичность</span>
-              <span className="identity-caption">Ценности и системы</span>
+              <span className="identity-title">Развитие</span>
+              <span className="identity-caption">10 аспектов жизни</span>
             </div>
           </Link>
           <p className="app-version">dHabits · персональная система роста</p>

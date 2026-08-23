@@ -15,7 +15,7 @@ const GoalsPage = lazy(() => import("./pages/GoalsPage"));
 const ProfilePage = lazy(() => import("./pages/ShopPage"));
 const StatsPage = lazy(() => import("./pages/StatsPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
-const IdentityPage = lazy(() => import("./pages/IdentityPage"));
+const DevelopmentPage = lazy(() => import("./pages/DevelopmentPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function RouteLoader() {
@@ -34,7 +34,8 @@ function Router({ onSignOut }: { onSignOut: () => void }) {
           <Route path="/shop" component={ProfilePage} />
           <Route path="/stats" component={StatsPage} />
           <Route path="/settings" component={SettingsPage} />
-          <Route path="/identity" component={IdentityPage} />
+          <Route path="/development" component={DevelopmentPage} />
+          <Route path="/identity" component={DevelopmentPage} />
           <Route path="/404" component={NotFound} />
           <Route component={NotFound} />
         </Switch>
