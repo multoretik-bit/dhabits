@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getTimerActivityAspectId, getTimerMinutesForAspectInYear, getTimerMinutesForAspectOnDate } from "./lifeAspects";
+import { getTimerActivityAspectId, getTimerMinutesForAspectInYear, getTimerMinutesForAspectOnDate, getTimerMinutesForAspectPartsOnDate } from "./lifeAspects";
 
 describe("getTimerActivityAspectId", () => {
   it.each(["Английский", "История России", "Чтение книги"])("routes %s to study", (title) => {
@@ -39,5 +39,25 @@ describe("getTimerActivityAspectId", () => {
       { date: "2025-12-31", title: "Спорт", color: "#2815ff", durationSeconds: 50 * 60 },
     ];
     expect(getTimerMinutesForAspectInYear(sessions, "2", 2026)).toBe(55);
+  });
+
+  it("splits an aspect into independently filled daily parts", () => {
+    const sessions = [
+      { date: "2026-08-23", title: "История России", color: "#ffd814", durationSeconds: 25 * 60 },
+      { date: "2026-08-23", title: "Английский слова", color: "#ffd814", durationSeconds: 40 * 60 },
+      { date: "2026-08-23", title: "Чтение книги", color: "#ffd814", durationSeconds: 15 * 60 },
+      { date: "2026-08-23", title: "Конспект", color: "#ffd814", durationSeconds: 50 * 60 },
+    ];
+    const parts = [
+      { id: "history", name: "История", targetMinutes: 30 },
+      { id: "english", name: "Английский", targetMinutes: 40 },
+      { id: "reading", name: "Чтение", targetMinutes: 20 },
+    ];
+
+    expect(getTimerMinutesForAspectPartsOnDate(sessions, "10", "2026-08-23", parts)).toEqual([
+      { ...parts[0], actualMinutes: 25 },
+      { ...parts[1], actualMinutes: 40 },
+      { ...parts[2], actualMinutes: 15 },
+    ]);
   });
 });

@@ -20,9 +20,10 @@ import {
   X,
 } from "lucide-react";
 import { Link } from "wouter";
+import { nanoid } from "nanoid";
 import { PageHeader, PageShell } from "@/components/AppUI";
 import { useApp } from "@/contexts/AppContext";
-import { colorBelongsToLifeAspect, getTimerMinutesForAspectInYear, getTimerMinutesForAspectOnDate, LIFE_ASPECT_GROUPS, LIFE_ASPECTS } from "@/lib/lifeAspects";
+import { colorBelongsToLifeAspect, getTimerMinutesForAspectInYear, getTimerMinutesForAspectOnDate, getTimerMinutesForAspectPartsOnDate, LIFE_ASPECT_GROUPS, LIFE_ASPECTS, type LifeAspectDailyPart } from "@/lib/lifeAspects";
 
 function getDefaultDeadline() {
   const date = new Date();
@@ -66,6 +67,7 @@ export default function DevelopmentPage() {
   const [editingVisionId, setEditingVisionId] = useState<string | null>(null);
   const [editingDailyTarget, setEditingDailyTarget] = useState(false);
   const [dailyTargetDraft, setDailyTargetDraft] = useState("");
+  const [dailyPartsDraft, setDailyPartsDraft] = useState<LifeAspectDailyPart[]>([]);
 
   const systems = useMemo(() => LIFE_ASPECTS.map((fallback) => {
     const saved = identitySystems.find((system) => system.id === fallback.id);
@@ -83,18 +85,31 @@ export default function DevelopmentPage() {
     return getTimerMinutesForAspectInYear(activitySessions, selectedAspect.id, currentYear);
   }, [activitySessions, currentYear, selectedAspect]);
 
-  const dailyAspectProgress = useMemo(() => systems.map((aspect) => ({
-    ...aspect,
-    target: Math.max(0, Math.round(aspect.dailyTargetMinutes || 0)),
-    actual: getTimerMinutesForAspectOnDate(activitySessions, aspect.id, todayString),
-  })), [activitySessions, systems, todayString]);
+  const dailyAspectProgress = useMemo(() => systems.map((aspect) => {
+    const configuredParts = (aspect.dailyParts || []).filter((part) => part.name.trim() && part.targetMinutes > 0);
+    const parts = getTimerMinutesForAspectPartsOnDate(activitySessions, aspect.id, todayString, configuredParts);
+    return {
+      ...aspect,
+      parts,
+      target: parts.length
+        ? parts.reduce((sum, part) => sum + part.targetMinutes, 0)
+        : Math.max(0, Math.round(aspect.dailyTargetMinutes || 0)),
+      actual: parts.length
+        ? parts.reduce((sum, part) => sum + part.actualMinutes, 0)
+        : getTimerMinutesForAspectOnDate(activitySessions, aspect.id, todayString),
+    };
+  }), [activitySessions, systems, todayString]);
   const targetedDailyAspects = dailyAspectProgress.filter((aspect) => aspect.target > 0);
   const totalDailyTarget = targetedDailyAspects.reduce((sum, aspect) => sum + aspect.target, 0);
   const totalDailyActual = targetedDailyAspects.reduce((sum, aspect) => sum + aspect.actual, 0);
-  const creditedDailyMinutes = targetedDailyAspects.reduce((sum, aspect) => sum + Math.min(aspect.actual, aspect.target), 0);
+  const creditedDailyMinutes = targetedDailyAspects.reduce((sum, aspect) => sum + (aspect.parts.length
+    ? aspect.parts.reduce((partSum, part) => partSum + Math.min(part.actualMinutes, part.targetMinutes), 0)
+    : Math.min(aspect.actual, aspect.target)), 0);
   const satisfactionPercent = totalDailyTarget ? Math.round((creditedDailyMinutes / totalDailyTarget) * 100) : 0;
   const totalDailyPercent = totalDailyTarget ? Math.round((totalDailyActual / totalDailyTarget) * 100) : 0;
-  const dailyOverflow = Math.max(0, totalDailyActual - totalDailyTarget);
+  const dailyOverflow = targetedDailyAspects.reduce((sum, aspect) => sum + (aspect.parts.length
+    ? aspect.parts.reduce((partSum, part) => partSum + Math.max(0, part.actualMinutes - part.targetMinutes), 0)
+    : Math.max(0, aspect.actual - aspect.target)), 0);
 
   const aspectBlocks = useMemo(() => {
     if (!selectedAspect) return [];
@@ -140,26 +155,45 @@ export default function DevelopmentPage() {
 
   const startEditingDailyTarget = () => {
     setDailyTargetDraft(String(selectedAspect?.dailyTargetMinutes || ""));
+    setDailyPartsDraft((selectedAspect?.dailyParts || []).map((part) => ({ ...part })));
     setEditingDailyTarget(true);
+  };
+
+  const addDailyPart = () => {
+    setDailyPartsDraft((parts) => [...parts, { id: nanoid(), name: "", targetMinutes: 30 }]);
+  };
+
+  const updateDailyPart = (id: string, updates: Partial<LifeAspectDailyPart>) => {
+    setDailyPartsDraft((parts) => parts.map((part) => part.id === id ? { ...part, ...updates } : part));
   };
 
   const saveDailyTarget = () => {
     if (!selectedAspect) return;
-    const nextTarget = Math.min(1440, Math.max(0, Math.round(Number(dailyTargetDraft) || 0)));
-    updateIdentitySystem(selectedAspect.id, { dailyTargetMinutes: nextTarget });
+    const parts = dailyPartsDraft
+      .map((part) => ({ ...part, name: part.name.trim(), targetMinutes: Math.min(1440, Math.max(0, Math.round(Number(part.targetMinutes) || 0))) }))
+      .filter((part) => part.name && part.targetMinutes > 0);
+    const nextTarget = parts.length
+      ? parts.reduce((sum, part) => sum + part.targetMinutes, 0)
+      : Math.min(1440, Math.max(0, Math.round(Number(dailyTargetDraft) || 0)));
+    updateIdentitySystem(selectedAspect.id, { dailyTargetMinutes: nextTarget, dailyParts: parts });
     setDailyTargetDraft("");
+    setDailyPartsDraft([]);
     setEditingDailyTarget(false);
   };
 
-  const openAspect = (id: string) => {
+  const cancelEditingDailyTarget = () => {
     setEditingDailyTarget(false);
     setDailyTargetDraft("");
+    setDailyPartsDraft([]);
+  };
+
+  const openAspect = (id: string) => {
+    cancelEditingDailyTarget();
     setSelectedAspectId(id);
   };
 
   const closeAspect = () => {
-    setEditingDailyTarget(false);
-    setDailyTargetDraft("");
+    cancelEditingDailyTarget();
     closeVisionForm();
     setSelectedAspectId(null);
   };
@@ -185,23 +219,34 @@ export default function DevelopmentPage() {
                 {targetedDailyAspects.map((aspect) => {
                   const progress = Math.min(100, (aspect.actual / aspect.target) * 100);
                   return (
-                    <span key={aspect.id} className={aspect.actual > aspect.target ? "satisfaction-segment is-over" : "satisfaction-segment"} style={{ "--aspect-color": aspect.color, flexGrow: aspect.target } as React.CSSProperties} title={`${aspect.name}: ${aspect.actual} из ${aspect.target} мин`}>
-                      <span style={{ width: `${progress}%` }} />
+                    <span key={aspect.id} className={`${aspect.actual > aspect.target ? "satisfaction-segment is-over" : "satisfaction-segment"}${aspect.parts.length ? " has-parts" : ""}`} style={{ "--aspect-color": aspect.color, flexGrow: aspect.target } as React.CSSProperties} title={`${aspect.name}: ${aspect.actual} из ${aspect.target} мин`}>
+                      {aspect.parts.length ? aspect.parts.map((part) => (
+                        <span key={part.id} className={part.actualMinutes > part.targetMinutes ? "satisfaction-part is-over" : "satisfaction-part"} style={{ flexGrow: part.targetMinutes }} title={`${part.name}: ${part.actualMinutes} из ${part.targetMinutes} мин`}>
+                          <span className="satisfaction-part-fill" style={{ width: `${Math.min(100, (part.actualMinutes / part.targetMinutes) * 100)}%` }} />
+                        </span>
+                      )) : <span className="satisfaction-fill" style={{ width: `${progress}%` }} />}
                     </span>
                   );
                 })}
               </div>
               <div className="satisfaction-summary">
                 <span>Сбалансированное выполнение: <strong>{creditedDailyMinutes} из {totalDailyTarget} мин</strong></span>
-                {dailyOverflow > 0 && <span className="is-over">+{dailyOverflow} мин сверх общей нормы · {totalDailyPercent}% времени</span>}
+                {dailyOverflow > 0 && <span className="is-over">+{dailyOverflow} мин сверх отдельных норм · {totalDailyPercent}% всего времени</span>}
               </div>
               <div className="satisfaction-legend">
                 {targetedDailyAspects.map((aspect) => (
                   <button key={aspect.id} type="button" onClick={() => openAspect(aspect.id)} style={{ "--aspect-color": aspect.color } as React.CSSProperties}>
-                    <span /><div><strong>{aspect.name}</strong><small>{aspect.actual} / {aspect.target} мин</small></div>
+                    <span /><div><strong>{aspect.name}</strong><small>{aspect.actual} / {aspect.target} мин{aspect.parts.length ? ` · ${aspect.parts.length} части` : ""}</small></div>
                   </button>
                 ))}
               </div>
+              {targetedDailyAspects.some((aspect) => aspect.parts.length > 0) && (
+                <div className="satisfaction-parts-breakdown">
+                  {targetedDailyAspects.flatMap((aspect) => aspect.parts.map((part) => (
+                    <span key={`${aspect.id}-${part.id}`} style={{ "--aspect-color": aspect.color } as React.CSSProperties}><i />{part.name}<strong>{part.actualMinutes} / {part.targetMinutes}</strong></span>
+                  )))}
+                </div>
+              )}
             </>
           ) : (
             <div className="satisfaction-empty"><Gauge className="size-6" /><div><strong>Задайте дневные нормы</strong><span>Откройте любой аспект и укажите, сколько минут хотите уделять ему каждый день.</span></div></div>
@@ -256,18 +301,35 @@ export default function DevelopmentPage() {
         <span className="development-detail-mark">{selectedAspect.id.padStart(2, "0")}</span>
         <div><span>Аспект жизни</span><h1>{selectedAspect.name}</h1><p className="development-year-total"><Clock3 className="size-4" /><strong>{yearlyAspectMinutes.toLocaleString("ru-RU")}</strong><span>минут за {currentYear} год</span></p></div>
         <div className="development-daily-target">
-          {editingDailyTarget ? (
-            <div className="development-target-form">
-              <label><span>Норма дня</span><input autoFocus type="number" min="0" max="1440" inputMode="numeric" value={dailyTargetDraft} onChange={(event) => setDailyTargetDraft(event.target.value)} onKeyDown={(event) => event.key === "Enter" && saveDailyTarget()} placeholder="90" /></label>
-              <button type="button" onClick={saveDailyTarget} aria-label="Сохранить норму"><Check className="size-4" /></button>
-              <button type="button" onClick={() => setEditingDailyTarget(false)} aria-label="Отменить"><X className="size-4" /></button>
-            </div>
-          ) : (
-            <button type="button" onClick={startEditingDailyTarget}><span>Норма дня</span><strong>{selectedAspect.dailyTargetMinutes ? `${selectedAspect.dailyTargetMinutes} мин` : "Не задана"}</strong><Pencil className="size-3.5" /></button>
-          )}
+          <button type="button" onClick={startEditingDailyTarget}><span>Норма дня</span><strong>{selectedAspect.dailyTargetMinutes ? `${selectedAspect.dailyTargetMinutes} мин${selectedAspect.dailyParts?.length ? ` · ${selectedAspect.dailyParts.length} части` : ""}` : "Не задана"}</strong><Pencil className="size-3.5" /></button>
         </div>
         <Compass className="development-detail-icon" />
       </div>
+
+      <AnimatePresence>
+        {editingDailyTarget && (
+          <motion.section initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="development-target-editor">
+            <div className="development-target-editor-head"><div><strong>Дневная норма</strong><span>Оставьте одну общую норму или разделите её на занятия.</span></div><button type="button" onClick={cancelEditingDailyTarget} aria-label="Закрыть"><X className="size-4" /></button></div>
+            {!dailyPartsDraft.length && (
+              <label className="development-target-total"><span>Общая норма</span><div><input autoFocus type="number" min="0" max="1440" inputMode="numeric" value={dailyTargetDraft} onChange={(event) => setDailyTargetDraft(event.target.value)} placeholder="90" /><small>минут в день</small></div></label>
+            )}
+            {dailyPartsDraft.length > 0 && (
+              <div className="development-target-parts">
+                {dailyPartsDraft.map((part, index) => (
+                  <div key={part.id} className="development-target-part">
+                    <span>{index + 1}</span>
+                    <input autoFocus={index === dailyPartsDraft.length - 1} type="text" value={part.name} onChange={(event) => updateDailyPart(part.id, { name: event.target.value })} placeholder="Например, История" aria-label="Название части" />
+                    <label><input type="number" min="1" max="1440" inputMode="numeric" value={part.targetMinutes} onChange={(event) => updateDailyPart(part.id, { targetMinutes: Number(event.target.value) })} aria-label={`Минут для ${part.name || "части"}`} /><small>мин</small></label>
+                    <button type="button" onClick={() => setDailyPartsDraft((parts) => parts.filter((item) => item.id !== part.id))} aria-label="Удалить часть"><Trash2 className="size-4" /></button>
+                  </div>
+                ))}
+                <div className="development-target-parts-total"><span>Общая норма</span><strong>{dailyPartsDraft.reduce((sum, part) => sum + Math.max(0, Number(part.targetMinutes) || 0), 0)} мин</strong></div>
+              </div>
+            )}
+            <div className="development-target-editor-actions"><button type="button" className="development-target-add-part" onClick={addDailyPart}><Plus className="size-4" /> {dailyPartsDraft.length ? "Добавить ещё часть" : "Разделить на части"}</button><div><button type="button" onClick={cancelEditingDailyTarget}>Отмена</button><button type="button" className="app-button" onClick={saveDailyTarget}><Check className="size-4" /> Сохранить</button></div></div>
+          </motion.section>
+        )}
+      </AnimatePresence>
 
       <section className="development-section vision-section">
         <div className="development-section-head">

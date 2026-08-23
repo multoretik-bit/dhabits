@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import { rollOverOverdueTasks } from "@/lib/taskRollover";
 import { LIFE_ASPECTS } from "@/lib/lifeAspects";
+import type { LifeAspectDailyPart } from "@/lib/lifeAspects";
 
 export { getCurrentBlock } from "@/lib/schedule";
 export type { DayScheduleOverride, DayBlockTimeOverride } from "@/lib/schedule";
@@ -96,6 +97,7 @@ export interface IdentitySystem {
   color: string;
   notionUrl?: string;
   dailyTargetMinutes?: number;
+  dailyParts?: LifeAspectDailyPart[];
 }
 
 export interface IdentitySystemFolder {

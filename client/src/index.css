@@ -1208,8 +1208,12 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
 .satisfaction-score span { color: var(--muted-foreground); font-size: 10px; font-weight: 700; }
 .satisfaction-track { display: flex; height: 22px; gap: 3px; overflow: hidden; margin: 0 22px; padding: 3px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-soft); }
 .satisfaction-segment { position: relative; min-width: 12px; overflow: hidden; border-radius: 999px; background: color-mix(in srgb, var(--aspect-color) 10%, var(--secondary)); }
-.satisfaction-segment > span { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--aspect-color); box-shadow: 0 0 14px color-mix(in srgb, var(--aspect-color) 35%, transparent); transition: width .45s ease; }
+.satisfaction-segment > .satisfaction-fill { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--aspect-color); box-shadow: 0 0 14px color-mix(in srgb, var(--aspect-color) 35%, transparent); transition: width .45s ease; }
 .satisfaction-segment.is-over { box-shadow: inset 0 0 0 1px var(--aspect-color), 0 0 12px color-mix(in srgb, var(--aspect-color) 30%, transparent); }
+.satisfaction-segment.has-parts { display: flex; gap: 2px; overflow: visible; background: transparent; box-shadow: none; }
+.satisfaction-part { position: relative; min-width: 5px; overflow: hidden; border-radius: 4px; background: color-mix(in srgb, var(--aspect-color) 10%, var(--secondary)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--aspect-color) 18%, transparent); }
+.satisfaction-part-fill { position: absolute; inset: 0 auto 0 0; background: var(--aspect-color); box-shadow: 0 0 12px color-mix(in srgb, var(--aspect-color) 35%, transparent); transition: width .45s ease; }
+.satisfaction-part.is-over { box-shadow: inset 0 0 0 1px var(--aspect-color), 0 0 9px color-mix(in srgb, var(--aspect-color) 30%, transparent); }
 .satisfaction-summary { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 9px 22px 0; color: var(--muted-foreground); font-size: 9px; }
 .satisfaction-summary strong { color: var(--foreground); }
 .satisfaction-summary .is-over { color: var(--primary); font-weight: 800; }
@@ -1220,6 +1224,10 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
 .satisfaction-legend button > div { display: flex; min-width: 0; flex-direction: column; }
 .satisfaction-legend strong { overflow: hidden; color: var(--foreground); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .satisfaction-legend small { color: var(--muted-foreground); font-size: 8px; }
+.satisfaction-parts-breakdown { display: flex; flex-wrap: wrap; gap: 6px; margin: -7px 22px 20px; padding-top: 10px; border-top: 1px solid var(--border); }
+.satisfaction-parts-breakdown > span { display: inline-flex; align-items: center; gap: 5px; padding: 5px 7px; border-radius: 8px; background: var(--surface-soft); color: var(--muted-foreground); font-size: 8px; }
+.satisfaction-parts-breakdown i { width: 3px; height: 14px; border-radius: 2px; background: var(--aspect-color); }
+.satisfaction-parts-breakdown strong { color: var(--foreground); font-weight: 850; }
 .satisfaction-empty { display: flex; align-items: center; justify-content: center; gap: 11px; min-height: 110px; margin: 0 22px 20px; border: 1px dashed var(--border); border-radius: 17px; color: var(--muted-foreground); }
 .satisfaction-empty > div { display: flex; max-width: 440px; flex-direction: column; }
 .satisfaction-empty strong { color: var(--foreground); font-size: 12px; }
@@ -1266,6 +1274,33 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
 .development-target-form input:focus { border-color: var(--aspect-color); }
 .development-target-form button { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; background: color-mix(in srgb, var(--aspect-color) 10%, var(--secondary)); color: var(--aspect-color); }
 .development-target-form button:last-child { background: var(--secondary); color: var(--muted-foreground); }
+.development-target-editor { display: grid; gap: 14px; padding: 18px; border: 1px solid color-mix(in srgb, var(--aspect-color) 28%, var(--border)); border-radius: 22px; background: color-mix(in srgb, var(--aspect-color) 5%, var(--card)); box-shadow: var(--shadow-sm); }
+.development-target-editor-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.development-target-editor-head > div { display: flex; flex-direction: column; }
+.development-target-editor-head strong { color: var(--foreground); font-size: 15px; }
+.development-target-editor-head span { color: var(--muted-foreground); font-size: 10px; }
+.development-target-editor-head > button { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 9px; background: var(--secondary); color: var(--muted-foreground); }
+.development-target-total { display: grid; max-width: 310px; gap: 6px; }
+.development-target-total > span { color: var(--muted-foreground); font-size: 9px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.development-target-total > div { display: flex; align-items: center; gap: 8px; }
+.development-target-total input, .development-target-part input { height: 40px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 11px; background: var(--card); color: var(--foreground); outline: none; }
+.development-target-total input { width: 110px; font-size: 14px; font-weight: 850; }
+.development-target-total small, .development-target-part small { color: var(--muted-foreground); font-size: 9px; font-weight: 700; }
+.development-target-total input:focus, .development-target-part input:focus { border-color: var(--aspect-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--aspect-color) 10%, transparent); }
+.development-target-parts { display: grid; gap: 7px; }
+.development-target-part { display: grid; grid-template-columns: 28px minmax(0, 1fr) 112px 34px; align-items: center; gap: 8px; }
+.development-target-part > span { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 8px; background: color-mix(in srgb, var(--aspect-color) 12%, var(--secondary)); color: var(--aspect-color); font-size: 9px; font-weight: 900; }
+.development-target-part > label { display: flex; align-items: center; gap: 5px; }
+.development-target-part > label input { width: 76px; font-weight: 800; }
+.development-target-part > button { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; color: var(--muted-foreground); }
+.development-target-part > button:hover { background: color-mix(in srgb, var(--destructive) 9%, transparent); color: var(--destructive); }
+.development-target-parts-total { display: flex; justify-content: flex-end; gap: 8px; padding: 7px 42px 0 0; color: var(--muted-foreground); font-size: 10px; }
+.development-target-parts-total strong { color: var(--foreground); }
+.development-target-editor-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 2px; }
+.development-target-editor-actions > div { display: flex; gap: 7px; }
+.development-target-editor-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 11px; border-radius: 10px; color: var(--muted-foreground); font-size: 10px; font-weight: 800; }
+.development-target-editor-actions .development-target-add-part { background: color-mix(in srgb, var(--aspect-color) 10%, var(--secondary)); color: var(--aspect-color); }
+.development-target-editor-actions .app-button { background: var(--aspect-color); color: #fff; }
 .development-section { overflow: hidden; border: 1px solid var(--border); border-radius: 24px; background: var(--card); box-shadow: var(--shadow-sm); }
 .development-section-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 19px 20px; border-bottom: 1px solid var(--border); }
 .development-section-title { display: flex; min-width: 0; align-items: center; gap: 12px; }
@@ -1336,6 +1371,7 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .satisfaction-track { margin-inline: 16px; }
   .satisfaction-summary { padding-inline: 16px; }
   .satisfaction-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px 16px 16px; }
+  .satisfaction-parts-breakdown { margin-inline: 16px; }
   .satisfaction-empty { margin: 0 16px 16px; padding: 16px; }
   .development-overview { grid-template-columns: 1fr; }
   .development-detail-hero { min-height: 155px; padding: 20px; }
@@ -1364,6 +1400,14 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .development-target-form { width: 100%; }
   .development-target-form label { flex: 1; }
   .development-target-form input { width: 100%; }
+  .development-target-editor { padding: 14px; }
+  .development-target-part { grid-template-columns: 24px minmax(0, 1fr) 90px 30px; gap: 5px; }
+  .development-target-part > span { width: 23px; height: 23px; }
+  .development-target-part > label input { width: 58px; padding-inline: 7px; }
+  .development-target-part > button { width: 30px; }
+  .development-target-editor-actions { align-items: stretch; flex-direction: column; }
+  .development-target-editor-actions > div { justify-content: flex-end; }
+  .development-target-editor-actions .development-target-add-part { width: 100%; }
   .development-detail-icon { top: 18px; }
   .development-section-title > span { width: 34px; height: 34px; }
   .development-add { padding: 8px; }

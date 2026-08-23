@@ -78,12 +78,43 @@ export interface TimerActivityRecord {
   endedAt?: string;
 }
 
+export interface LifeAspectDailyPart {
+  id: string;
+  name: string;
+  targetMinutes: number;
+}
+
 export function getTimerMinutesForAspectOnDate(sessions: TimerActivityRecord[], aspectId: string, date: string) {
   const seconds = sessions.reduce((sum, session) => {
     if (session.date !== date || getTimerActivityAspectId(session.title, session.color) !== aspectId) return sum;
     return sum + Math.max(0, session.durationSeconds || 0);
   }, 0);
   return Math.floor(seconds / 60);
+}
+
+export function getTimerMinutesForAspectPartsOnDate(
+  sessions: TimerActivityRecord[],
+  aspectId: string,
+  date: string,
+  parts: LifeAspectDailyPart[],
+) {
+  const totals = new Map(parts.map((part) => [part.id, 0]));
+
+  sessions.forEach((session) => {
+    if (session.date !== date || getTimerActivityAspectId(session.title, session.color) !== aspectId) return;
+    const sessionTitle = normalizeActivityTitle(session.title);
+    const matchedPart = parts.find((part) => {
+      const partName = normalizeActivityTitle(part.name);
+      return partName.length > 0 && (sessionTitle.includes(partName) || partName.includes(sessionTitle));
+    });
+    if (!matchedPart) return;
+    totals.set(matchedPart.id, (totals.get(matchedPart.id) || 0) + Math.max(0, session.durationSeconds || 0));
+  });
+
+  return parts.map((part) => ({
+    ...part,
+    actualMinutes: Math.floor((totals.get(part.id) || 0) / 60),
+  }));
 }
 
 export function getTimerMinutesForAspectInYear(sessions: TimerActivityRecord[], aspectId: string, year: number) {
