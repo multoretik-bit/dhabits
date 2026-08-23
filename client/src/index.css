@@ -1231,6 +1231,8 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
 .development-section-title p { color: var(--muted-foreground); font-size: 10px; }
 .development-add { display: flex; align-items: center; gap: 7px; padding: 9px 12px; border-radius: 12px; background: var(--aspect-color); color: #fff; font-size: 11px; font-weight: 800; box-shadow: 0 7px 16px color-mix(in srgb, var(--aspect-color) 23%, transparent); }
 .vision-form { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 13px; margin: 15px; padding: 15px; border: 1px solid color-mix(in srgb, var(--aspect-color) 27%, var(--border)); border-radius: 17px; background: color-mix(in srgb, var(--aspect-color) 5%, var(--surface-soft)); }
+.vision-form-heading { display: flex; grid-column: 1 / -1; align-items: center; gap: 7px; color: var(--aspect-color); }
+.vision-form-heading strong { color: var(--foreground); font-size: 12px; }
 .vision-form label { display: grid; gap: 6px; }
 .vision-form label > span { color: var(--muted-foreground); font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .vision-form textarea, .vision-form input { width: 100%; min-height: 42px; padding: 10px 11px; border: 1px solid var(--border); border-radius: 11px; background: var(--card); color: var(--foreground); outline: none; }
@@ -1250,14 +1252,25 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
 .vision-item-copy > div { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 7px; }
 .vision-item-copy > div > span { display: inline-flex; align-items: center; gap: 4px; padding: 4px 7px; border-radius: 7px; background: var(--secondary); color: var(--muted-foreground); font-size: 9px; font-weight: 700; }
 .vision-item-copy > div > span:last-child { color: color-mix(in srgb, var(--aspect-color) 80%, var(--foreground)); }
-.vision-delete { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 9px; color: var(--muted-foreground); }
+.vision-edit, .vision-delete { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 9px; color: var(--muted-foreground); }
+.vision-edit:hover { background: color-mix(in srgb, var(--aspect-color) 9%, transparent); color: var(--aspect-color); }
 .vision-delete:hover { background: color-mix(in srgb, var(--destructive) 9%, transparent); color: var(--destructive); }
 .vision-empty { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 90px; border: 1px dashed color-mix(in srgb, var(--aspect-color) 30%, var(--border)); border-radius: 16px; color: var(--aspect-color); }
 .vision-empty > span, .tools-placeholder p, .aspect-block-empty p { display: flex; flex-direction: column; text-align: left; }
 .vision-empty strong, .tools-placeholder strong, .aspect-block-empty strong { color: var(--foreground); font-size: 12px; }
 .vision-empty small, .tools-placeholder span, .aspect-block-empty span { color: var(--muted-foreground); font-size: 10px; }
 .development-soon { padding: 5px 8px; border-radius: 8px; background: var(--secondary); color: var(--muted-foreground); font-size: 9px; font-weight: 850; letter-spacing: .05em; text-transform: uppercase; }
+.development-soon.is-ready { background: color-mix(in srgb, var(--aspect-color) 12%, var(--secondary)); color: var(--aspect-color); }
 .tools-placeholder, .aspect-block-empty { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 86px; margin: 14px; border: 1px dashed var(--border); border-radius: 15px; color: var(--muted-foreground); }
+.study-tool-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 15px; overflow: hidden; margin: 14px; padding: 17px; border: 1px solid color-mix(in srgb, var(--aspect-color) 32%, var(--border)); border-radius: 18px; background: linear-gradient(135deg, color-mix(in srgb, var(--aspect-color) 13%, var(--card)), var(--surface-soft)); color: var(--foreground); transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.study-tool-card::after { position: absolute; right: -35px; bottom: -65px; width: 145px; height: 145px; border-radius: 50%; background: var(--aspect-color); content: ""; filter: blur(45px); opacity: .13; pointer-events: none; }
+.study-tool-card:hover { border-color: color-mix(in srgb, var(--aspect-color) 58%, var(--border)); box-shadow: 0 14px 30px color-mix(in srgb, var(--aspect-color) 13%, transparent); transform: translateY(-2px); }
+.study-tool-icon { display: grid; width: 54px; height: 54px; place-items: center; border-radius: 16px; background: var(--aspect-color); color: #3d3300; box-shadow: 0 10px 22px color-mix(in srgb, var(--aspect-color) 25%, transparent); }
+.study-tool-copy { display: flex; min-width: 0; flex-direction: column; }
+.study-tool-copy > small { color: color-mix(in srgb, var(--aspect-color) 72%, var(--foreground)); font-size: 9px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
+.study-tool-copy > strong { margin-top: 2px; color: var(--foreground); font-size: 15px; font-weight: 850; }
+.study-tool-copy > span { margin-top: 3px; color: var(--muted-foreground); font-size: 10px; line-height: 1.4; }
+.study-tool-open { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; padding: 9px 11px; border-radius: 11px; background: var(--aspect-color); color: #3d3300; font-size: 10px; font-weight: 850; }
 .development-manage { padding: 7px 10px; border-radius: 10px; color: var(--aspect-color); font-size: 10px; font-weight: 800; }
 .development-manage:hover { background: color-mix(in srgb, var(--aspect-color) 9%, transparent); }
 .aspect-block-list { display: grid; gap: 8px; padding: 14px; }
@@ -1296,6 +1309,10 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .development-add { padding: 8px; }
   .development-add span { display: none; }
   .vision-item { padding: 11px; }
+  .vision-edit, .vision-delete { width: 27px; height: 27px; }
+  .study-tool-card { grid-template-columns: auto minmax(0, 1fr); gap: 11px; padding: 14px; }
+  .study-tool-icon { width: 46px; height: 46px; border-radius: 14px; }
+  .study-tool-open { grid-column: 1 / -1; justify-content: center; }
   .aspect-block-item { grid-template-columns: 64px minmax(0, 1fr); }
   .aspect-block-item > svg { display: none; }
 }

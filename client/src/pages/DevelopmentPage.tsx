@@ -2,13 +2,16 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
+  BookOpenText,
   BriefcaseBusiness,
   CalendarDays,
   Check,
   ChevronRight,
   Clock3,
   Compass,
+  ExternalLink,
   Layers3,
+  Pencil,
   Plus,
   Sparkles,
   Trash2,
@@ -56,6 +59,7 @@ export default function DevelopmentPage() {
   const [showVisionForm, setShowVisionForm] = useState(false);
   const [visionText, setVisionText] = useState("");
   const [visionDeadline, setVisionDeadline] = useState(getDefaultDeadline);
+  const [editingVisionId, setEditingVisionId] = useState<string | null>(null);
 
   const systems = LIFE_ASPECTS.map((fallback) => {
     const saved = identitySystems.find((system) => system.id === fallback.id);
@@ -78,12 +82,35 @@ export default function DevelopmentPage() {
     });
   }, [blocks, selectedAspect, todayString, weekday]);
 
-  const addVision = () => {
-    if (!selectedAspect || !visionText.trim() || !visionDeadline) return;
-    addIdentitySystemIdea(selectedAspect.id, visionText.trim(), undefined, visionDeadline);
+  const closeVisionForm = () => {
+    setShowVisionForm(false);
+    setEditingVisionId(null);
     setVisionText("");
     setVisionDeadline(getDefaultDeadline());
-    setShowVisionForm(false);
+  };
+
+  const startAddingVision = () => {
+    setEditingVisionId(null);
+    setVisionText("");
+    setVisionDeadline(getDefaultDeadline());
+    setShowVisionForm(true);
+  };
+
+  const startEditingVision = (vision: (typeof identitySystemIdeas)[number]) => {
+    setEditingVisionId(vision.id);
+    setVisionText(vision.text);
+    setVisionDeadline(vision.deadline || getDefaultDeadline());
+    setShowVisionForm(true);
+  };
+
+  const saveVision = () => {
+    if (!selectedAspect || !visionText.trim() || !visionDeadline) return;
+    if (editingVisionId) {
+      updateIdentitySystemIdea(editingVisionId, { text: visionText.trim(), deadline: visionDeadline });
+    } else {
+      addIdentitySystemIdea(selectedAspect.id, visionText.trim(), undefined, visionDeadline);
+    }
+    closeVisionForm();
   };
 
   if (!selectedAspect) {
@@ -148,15 +175,16 @@ export default function DevelopmentPage() {
       <section className="development-section vision-section">
         <div className="development-section-head">
           <div className="development-section-title"><span><Sparkles className="size-5" /></span><div><h2>Видение</h2><p>Каким вы хотите быть и к какому состоянию прийти</p></div></div>
-          <button type="button" className="development-add" onClick={() => setShowVisionForm((value) => !value)} aria-label="Добавить пункт видения"><Plus className="size-5" /> <span>Добавить</span></button>
+          <button type="button" className="development-add" onClick={startAddingVision} aria-label="Добавить пункт видения"><Plus className="size-5" /> <span>Добавить</span></button>
         </div>
 
         <AnimatePresence>
           {showVisionForm && (
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="vision-form">
+              <div className="vision-form-heading"><Pencil className="size-4" /><strong>{editingVisionId ? "Редактировать пункт видения" : "Новый пункт видения"}</strong></div>
               <label><span>Каким я должен быть</span><textarea autoFocus value={visionText} onChange={(event) => setVisionText(event.target.value)} placeholder="Например: я спокойно выступаю перед большой аудиторией" rows={3} /></label>
               <label><span>Дедлайн</span><input type="date" value={visionDeadline} onChange={(event) => setVisionDeadline(event.target.value)} /></label>
-              <div className="vision-form-actions"><button type="button" onClick={() => setShowVisionForm(false)}>Отмена</button><button type="button" className="app-button" disabled={!visionText.trim() || !visionDeadline} onClick={addVision}><Check className="size-4" /> Сохранить</button></div>
+              <div className="vision-form-actions"><button type="button" onClick={closeVisionForm}>Отмена</button><button type="button" className="app-button" disabled={!visionText.trim() || !visionDeadline} onClick={saveVision}><Check className="size-4" /> {editingVisionId ? "Обновить" : "Сохранить"}</button></div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -166,19 +194,26 @@ export default function DevelopmentPage() {
             <motion.article layout key={vision.id} className={vision.completed ? "vision-item is-completed" : "vision-item"}>
               <button type="button" className="vision-check" onClick={() => updateIdentitySystemIdea(vision.id, { completed: !vision.completed })} aria-label={vision.completed ? "Вернуть пункт" : "Отметить выполненным"}>{vision.completed && <Check className="size-4" />}</button>
               <div className="vision-item-copy"><p>{vision.text}</p><div><span><CalendarDays className="size-3.5" /> {formatDeadline(vision.deadline)}</span>{vision.deadline && <span>{getDeadlineState(vision.deadline)}</span>}</div></div>
-              <button type="button" className="vision-delete" onClick={() => deleteIdentitySystemIdea(vision.id)} aria-label="Удалить пункт"><Trash2 className="size-4" /></button>
+              <button type="button" className="vision-edit" onClick={() => startEditingVision(vision)} aria-label="Редактировать пункт"><Pencil className="size-4" /></button>
+              <button type="button" className="vision-delete" onClick={() => { deleteIdentitySystemIdea(vision.id); if (editingVisionId === vision.id) closeVisionForm(); }} aria-label="Удалить пункт"><Trash2 className="size-4" /></button>
             </motion.article>
           ))}
-          {!visions.length && !showVisionForm && <button type="button" className="vision-empty" onClick={() => setShowVisionForm(true)}><Plus className="size-5" /><span><strong>Добавьте первый пункт видения</strong><small>Опишите конкретное состояние и назначьте срок</small></span></button>}
+          {!visions.length && !showVisionForm && <button type="button" className="vision-empty" onClick={startAddingVision}><Plus className="size-5" /><span><strong>Добавьте первый пункт видения</strong><small>Опишите конкретное состояние и назначьте срок</small></span></button>}
         </div>
       </section>
 
       <section className="development-section tools-section">
         <div className="development-section-head">
           <div className="development-section-title"><span><Wrench className="size-5" /></span><div><h2>Инструменты</h2><p>Практики и опоры для развития этой сферы</p></div></div>
-          <span className="development-soon">Скоро</span>
+          <span className={selectedAspect.id === "10" ? "development-soon is-ready" : "development-soon"}>{selectedAspect.id === "10" ? "Доступно" : "Скоро"}</span>
         </div>
-        <div className="tools-placeholder"><Wrench className="size-5" /><p><strong>Здесь появятся ваши инструменты</strong><span>Мы добавим их отдельно под каждый аспект.</span></p></div>
+        {selectedAspect.id === "10" ? (
+          <a className="study-tool-card" href="https://den-english-10000.tivishka.chatgpt.site/" target="_blank" rel="noreferrer">
+            <span className="study-tool-icon"><BookOpenText className="size-7" /></span>
+            <span className="study-tool-copy"><small>English vocabulary</small><strong>10 000 английских слов</strong><span>Открывайте тренажёр, повторяйте слова и расширяйте словарный запас.</span></span>
+            <span className="study-tool-open">Открыть <ExternalLink className="size-4" /></span>
+          </a>
+        ) : <div className="tools-placeholder"><Wrench className="size-5" /><p><strong>Здесь появятся ваши инструменты</strong><span>Мы добавим их отдельно под каждый аспект.</span></p></div>}
       </section>
 
       <section className="development-section blocks-section">
