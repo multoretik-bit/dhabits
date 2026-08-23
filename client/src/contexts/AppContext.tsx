@@ -694,12 +694,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         // 1. Initial Load
         try {
           const remoteData = await syncLoad(session.user.id) as any;
+          const localLastUpdated = savedData.lastUpdated || 0;
+          const hasLocalAspectContent = Boolean(
+            savedData.identityValues?.length ||
+            savedData.identityValueFolders?.length ||
+            savedData.identitySystemFolders?.length ||
+            savedData.identitySystemIdeas?.length
+          );
+
           if (remoteData) {
-            const localLastUpdated = savedData.lastUpdated || 0;
             const remoteLastUpdated = remoteData.lastUpdated || 0;
-            const isLocalEmpty = !savedData.habits?.length && !savedData.tasks?.length && (savedData.coins || 0) === 0;
+            const remoteIsNewer = Boolean(remoteLastUpdated && new Date(remoteLastUpdated) > new Date(localLastUpdated));
             
-            if (isLocalEmpty || !localLastUpdated || (remoteLastUpdated && new Date(remoteLastUpdated) > new Date(localLastUpdated))) {
+            if (!hasLocalAspectContent || !localLastUpdated || remoteIsNewer) {
               console.log("Sync: Applying remote data (newer or local empty)");
               isRemoteUpdateRef.current = true;
               setCoins(remoteData.coins || 0);
@@ -739,7 +746,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 void pushImmediateSync({ tasks: preparedRemoteData.tasks, deletedTaskIds: preparedRemoteData.deletedTaskIds });
               }
               setTimeout(() => { isRemoteUpdateRef.current = false; }, 200);
+            } else if (!remoteLastUpdated || new Date(localLastUpdated) > new Date(remoteLastUpdated)) {
+              console.log("Sync: Local development data is newer, uploading aspects to cloud");
+              await syncSave(session.user.id, {
+                ...remoteData,
+                identityValues: savedData.identityValues || [],
+                identityValueFolders: savedData.identityValueFolders || [],
+                identitySystems: savedData.identitySystems || DEFAULT_IDENTITY_SYSTEMS,
+                identitySystemFolders: savedData.identitySystemFolders || [],
+                identitySystemIdeas: savedData.identitySystemIdeas || [],
+                lastUpdated: savedData.lastUpdated,
+                clientId: clientIdRef.current,
+              });
             }
+          } else if (hasLocalAspectContent) {
+            console.log("Sync: No cloud row found, uploading local development data");
+            await syncSave(session.user.id, {
+              identityValues: savedData.identityValues || [],
+              identityValueFolders: savedData.identityValueFolders || [],
+              identitySystems: savedData.identitySystems || DEFAULT_IDENTITY_SYSTEMS,
+              identitySystemFolders: savedData.identitySystemFolders || [],
+              identitySystemIdeas: savedData.identitySystemIdeas || [],
+              lastUpdated: savedData.lastUpdated,
+              clientId: clientIdRef.current,
+            });
           }
         } catch (err) {
           console.error("Sync: Initial fetch failed", err);
