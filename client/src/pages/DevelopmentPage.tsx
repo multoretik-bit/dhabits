@@ -68,6 +68,7 @@ export default function DevelopmentPage() {
   const [editingDailyTarget, setEditingDailyTarget] = useState(false);
   const [dailyTargetDraft, setDailyTargetDraft] = useState("");
   const [dailyPartsDraft, setDailyPartsDraft] = useState<LifeAspectDailyPart[]>([]);
+  const [activeSatisfactionPart, setActiveSatisfactionPart] = useState<string | null>(null);
 
   const systems = useMemo(() => LIFE_ASPECTS.map((fallback) => {
     const saved = identitySystems.find((system) => system.id === fallback.id);
@@ -110,6 +111,13 @@ export default function DevelopmentPage() {
   const dailyOverflow = targetedDailyAspects.reduce((sum, aspect) => sum + (aspect.parts.length
     ? aspect.parts.reduce((partSum, part) => partSum + Math.max(0, part.actualMinutes - part.targetMinutes), 0)
     : Math.max(0, aspect.actual - aspect.target)), 0);
+  const selectedSatisfactionPart = targetedDailyAspects.flatMap((aspect) => aspect.parts.map((part) => ({
+    ...part,
+    aspectId: aspect.id,
+    aspectName: aspect.name,
+    aspectColor: aspect.color,
+    key: `${aspect.id}-${part.id}`,
+  }))).find((part) => part.key === activeSatisfactionPart);
 
   const aspectBlocks = useMemo(() => {
     if (!selectedAspect) return [];
@@ -215,16 +223,25 @@ export default function DevelopmentPage() {
 
           {targetedDailyAspects.length ? (
             <>
+              {targetedDailyAspects.some((aspect) => aspect.parts.length > 0) && (
+                <div className={selectedSatisfactionPart ? "satisfaction-hover-info is-active" : "satisfaction-hover-info"} style={{ "--aspect-color": selectedSatisfactionPart?.aspectColor || "var(--primary)" } as React.CSSProperties}>
+                  {selectedSatisfactionPart ? (
+                    <><span /><div><strong>{selectedSatisfactionPart.aspectName} · {selectedSatisfactionPart.name}</strong><small>{selectedSatisfactionPart.actualMinutes} из {selectedSatisfactionPart.targetMinutes} мин · начислено за таймеры с названием «{selectedSatisfactionPart.name}»</small></div></>
+                  ) : <small>Наведите на часть шкалы, чтобы увидеть её источник</small>}
+                </div>
+              )}
               <div className="satisfaction-track" aria-label={`Шкала удовлетворения заполнена на ${satisfactionPercent}%`}>
                 {targetedDailyAspects.map((aspect) => {
                   const progress = Math.min(100, (aspect.actual / aspect.target) * 100);
                   return (
                     <span key={aspect.id} className={`${aspect.actual > aspect.target ? "satisfaction-segment is-over" : "satisfaction-segment"}${aspect.parts.length ? " has-parts" : ""}`} style={{ "--aspect-color": aspect.color, flexGrow: aspect.target } as React.CSSProperties} title={`${aspect.name}: ${aspect.actual} из ${aspect.target} мин`}>
-                      {aspect.parts.length ? aspect.parts.map((part) => (
-                        <span key={part.id} className={part.actualMinutes > part.targetMinutes ? "satisfaction-part is-over" : "satisfaction-part"} style={{ flexGrow: part.targetMinutes }} title={`${part.name}: ${part.actualMinutes} из ${part.targetMinutes} мин`}>
+                      {aspect.parts.length ? aspect.parts.map((part) => {
+                        const partKey = `${aspect.id}-${part.id}`;
+                        return (
+                        <button key={part.id} type="button" className={part.actualMinutes > part.targetMinutes ? "satisfaction-part is-over" : "satisfaction-part"} style={{ flexGrow: part.targetMinutes }} aria-label={`${aspect.name}, ${part.name}: ${part.actualMinutes} из ${part.targetMinutes} минут`} onMouseEnter={() => setActiveSatisfactionPart(partKey)} onMouseLeave={() => setActiveSatisfactionPart(null)} onFocus={() => setActiveSatisfactionPart(partKey)} onBlur={() => setActiveSatisfactionPart(null)} onClick={() => setActiveSatisfactionPart(partKey)}>
                           <span className="satisfaction-part-fill" style={{ width: `${Math.min(100, (part.actualMinutes / part.targetMinutes) * 100)}%` }} />
-                        </span>
-                      )) : <span className="satisfaction-fill" style={{ width: `${progress}%` }} />}
+                        </button>
+                      );}) : <span className="satisfaction-fill" style={{ width: `${progress}%` }} />}
                     </span>
                   );
                 })}
@@ -240,13 +257,6 @@ export default function DevelopmentPage() {
                   </button>
                 ))}
               </div>
-              {targetedDailyAspects.some((aspect) => aspect.parts.length > 0) && (
-                <div className="satisfaction-parts-breakdown">
-                  {targetedDailyAspects.flatMap((aspect) => aspect.parts.map((part) => (
-                    <span key={`${aspect.id}-${part.id}`} style={{ "--aspect-color": aspect.color } as React.CSSProperties}><i />{part.name}<strong>{part.actualMinutes} / {part.targetMinutes}</strong></span>
-                  )))}
-                </div>
-              )}
             </>
           ) : (
             <div className="satisfaction-empty"><Gauge className="size-6" /><div><strong>Задайте дневные нормы</strong><span>Откройте любой аспект и укажите, сколько минут хотите уделять ему каждый день.</span></div></div>

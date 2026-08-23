@@ -12,6 +12,7 @@ import AdvancedColorPicker from "@/components/AdvancedColorPicker";
 import FormModal from "@/components/FormModal";
 import { FormInput } from "@/components/FormInputs";
 import { EmptyState, SectionHeading } from "@/components/AppUI";
+import { groupActivitySessionsByTitle } from "@/lib/activitySessions";
 
 function getElapsedSeconds(timer: ActivityTimerState, now: number) {
   const runningSeconds = timer.isRunning && timer.startedAt
@@ -106,20 +107,7 @@ export default function PomodoroTracker({ selectedDate }: { selectedDate: Date }
     [activitySessions, selectedDateString]
   );
 
-  const groupedTotals = useMemo(() => {
-    const totals = new Map<string, { key: string; title: string; color: string; seconds: number; sessions: ActivitySession[] }>();
-    dailySessions.forEach((session) => {
-      const key = `${session.color}:${session.title.trim().toLocaleLowerCase("ru-RU")}`;
-      const current = totals.get(key);
-      if (current) {
-        current.seconds += session.durationSeconds;
-        current.sessions.push(session);
-      } else {
-        totals.set(key, { key, title: session.title, color: session.color, seconds: session.durationSeconds, sessions: [session] });
-      }
-    });
-    return Array.from(totals.values()).sort((a, b) => b.seconds - a.seconds);
-  }, [dailySessions]);
+  const groupedTotals = useMemo(() => groupActivitySessionsByTitle(dailySessions), [dailySessions]);
 
   const totalDaySeconds = dailySessions.reduce((sum, session) => sum + session.durationSeconds, 0);
   const hasActiveTime = elapsedSeconds > 0;
