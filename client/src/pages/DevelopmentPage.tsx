@@ -51,6 +51,7 @@ export default function DevelopmentPage() {
     addIdentitySystemIdea,
     updateIdentitySystemIdea,
     deleteIdentitySystemIdea,
+    activitySessions,
     blocks,
     habits,
     tasks,
@@ -70,6 +71,17 @@ export default function DevelopmentPage() {
   const today = new Date();
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const weekday = today.getDay();
+  const currentYear = today.getFullYear();
+
+  const yearlyAspectMinutes = useMemo(() => {
+    if (!selectedAspect) return 0;
+    const totalSeconds = activitySessions.reduce((sum, session) => {
+      const sessionYear = Number(session.date?.slice(0, 4)) || new Date(session.endedAt).getFullYear();
+      if (sessionYear !== currentYear || !colorBelongsToLifeAspect(session.color, selectedAspect.id)) return sum;
+      return sum + Math.max(0, session.durationSeconds || 0);
+    }, 0);
+    return Math.floor(totalSeconds / 60);
+  }, [activitySessions, currentYear, selectedAspect]);
 
   const aspectBlocks = useMemo(() => {
     if (!selectedAspect) return [];
@@ -168,7 +180,7 @@ export default function DevelopmentPage() {
       <button type="button" className="development-back" onClick={() => setSelectedAspectId(null)}><ArrowLeft className="size-4" /> Все аспекты</button>
       <div className="development-detail-hero">
         <span className="development-detail-mark">{selectedAspect.id.padStart(2, "0")}</span>
-        <div><span>Аспект жизни</span><h1>{selectedAspect.name}</h1><p>От образа будущего — к действиям в сегодняшнем дне.</p></div>
+        <div><span>Аспект жизни</span><h1>{selectedAspect.name}</h1><p className="development-year-total"><Clock3 className="size-4" /><strong>{yearlyAspectMinutes.toLocaleString("ru-RU")}</strong><span>минут за {currentYear} год</span></p></div>
         <Compass className="development-detail-icon" />
       </div>
 
