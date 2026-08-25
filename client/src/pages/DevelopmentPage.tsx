@@ -467,28 +467,6 @@ export default function DevelopmentPage() {
         )}
       </AnimatePresence>
 
-      <section className="development-today-success">
-        <div className="development-today-success-head">
-          <span><Sparkles className="size-5" /></span>
-          <div><h2>Сегодня к успеху</h2><p>Сколько вы продвинулись по целям этого аспекта за день</p></div>
-          <strong>{aspectGoals.filter((goal) => getGoalProgressForDate(goal, activitySessions, todayString) > 0).length} / {aspectGoals.length}</strong>
-        </div>
-        {aspectGoals.length ? (
-          <div className="development-today-success-grid">
-            {aspectGoals.map((goal) => {
-              const value = getGoalProgressForDate(goal, activitySessions, todayString);
-              return (
-                <div key={goal.id} className={value > 0 ? "has-progress" : ""} style={{ "--goal-color": goal.color || selectedAspect.color } as React.CSSProperties}>
-                  <span>{goal.emoji || "🎯"}</span>
-                  <div><small>{goal.name}</small><strong>{value.toLocaleString("ru-RU")} {getGoalProgressUnit(goal)}</strong></div>
-                  <em>{value > 0 ? "сделано сегодня" : "пока 0 сегодня"}</em>
-                </div>
-              );
-            })}
-          </div>
-        ) : <button type="button" className="development-today-empty" onClick={() => startAddingGoal()}><Target className="size-5" /><span><strong>Создайте цель, чтобы видеть движение за день</strong><small>Калории и другие значения добавляются вручную, минуты можно связать с таймером.</small></span></button>}
-      </section>
-
       <section className="development-section vision-section">
         <div className="development-section-head">
           <div className="development-section-title"><span><Sparkles className="size-5" /></span><div><h2>Видение</h2><p>Каким вы хотите быть и к какому состоянию прийти</p></div></div>
@@ -522,7 +500,7 @@ export default function DevelopmentPage() {
 
       <section className="development-section aspect-goals-section">
         <div className="development-section-head">
-          <div className="development-section-title"><span><Target className="size-5" /></span><div><h2>Цели</h2><p>Конкретные результаты, через которые вы воплощаете своё видение</p></div></div>
+          <div className="development-section-title"><span><Target className="size-5" /></span><div><h2>Цели</h2><p>{aspectGoals.length ? `Сегодня есть движение по ${aspectGoals.filter((goal) => getGoalProgressForDate(goal, activitySessions, todayString) > 0).length} из ${aspectGoals.length} целей` : "Конкретные результаты, через которые вы воплощаете своё видение"}</p></div></div>
           <button type="button" className="development-add" onClick={() => startAddingGoal()} aria-label="Добавить цель"><Plus className="size-5" /> <span>Добавить</span></button>
         </div>
 
@@ -557,7 +535,7 @@ export default function DevelopmentPage() {
                 {linkedVision && <p className="aspect-goal-vision"><Sparkles className="size-3.5" /> {linkedVision.text}</p>}
                 <div className="aspect-goal-progress-copy"><span>{goal.currentValue.toLocaleString("ru-RU")} / {goal.targetValue.toLocaleString("ru-RU")} {getGoalProgressUnit(goal)}</span>{goal.deadline && <span><CalendarDays className="size-3" /> {formatDeadline(goal.deadline)}</span>}</div>
                 <div className="aspect-goal-progress"><i style={{ width: `${progress}%` }} /></div>
-                <p className="aspect-goal-today"><Sparkles className="size-3.5" /> Сегодня: <strong>+{getGoalProgressForDate(goal, activitySessions, todayString).toLocaleString("ru-RU")} {getGoalProgressUnit(goal)}</strong></p>
+                <p className={getGoalProgressForDate(goal, activitySessions, todayString) > 0 ? "aspect-goal-today has-progress" : "aspect-goal-today"}><span><Sparkles className="size-3.5" /> Сегодня к успеху</span><strong>+{getGoalProgressForDate(goal, activitySessions, todayString).toLocaleString("ru-RU")} {getGoalProgressUnit(goal)}</strong></p>
                 <div className="aspect-goal-actions"><Link href="/goals">Заполнять на странице целей <ChevronRight className="size-3.5" /></Link><button type="button" onClick={() => startEditingGoal(goal)} aria-label="Редактировать цель"><Pencil className="size-4" /></button><button type="button" onClick={() => deleteGoal(goal.id)} aria-label="Удалить цель"><Trash2 className="size-4" /></button></div>
               </article>
             );
