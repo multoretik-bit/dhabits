@@ -196,6 +196,9 @@ export interface Goal {
   progressType?: "manual" | "activity_minutes";
   activityName?: string;
   activityTrackingStartedAt?: string;
+  aspectId?: string;
+  visionId?: string;
+  unit?: string;
 }
 
 export interface GoalFolder {

@@ -17,6 +17,7 @@ import {
   Pencil,
   Plus,
   Sparkles,
+  Target,
   Trash2,
   Wrench,
   X,
@@ -61,6 +62,10 @@ export default function DevelopmentPage() {
     blocks,
     habits,
     tasks,
+    goals,
+    addGoal,
+    updateGoal,
+    deleteGoal,
   } = useApp();
   const [selectedAspectId, setSelectedAspectId] = useState<string | null>(null);
   const [showVisionForm, setShowVisionForm] = useState(false);
@@ -71,6 +76,14 @@ export default function DevelopmentPage() {
   const [dailyTargetDraft, setDailyTargetDraft] = useState("");
   const [dailyPartsDraft, setDailyPartsDraft] = useState<LifeAspectDailyPart[]>([]);
   const [activeSatisfactionPart, setActiveSatisfactionPart] = useState<string | null>(null);
+  const [showGoalForm, setShowGoalForm] = useState(false);
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+  const [goalName, setGoalName] = useState("");
+  const [goalDescription, setGoalDescription] = useState("");
+  const [goalTarget, setGoalTarget] = useState("100");
+  const [goalUnit, setGoalUnit] = useState("");
+  const [goalDeadline, setGoalDeadline] = useState(getDefaultDeadline);
+  const [goalVisionId, setGoalVisionId] = useState("");
 
   const systems = useMemo(() => LIFE_ASPECTS.map((fallback) => {
     const saved = identitySystems.find((system) => system.id === fallback.id);
@@ -78,6 +91,7 @@ export default function DevelopmentPage() {
   }), [identitySystems]);
   const selectedAspect = systems.find((aspect) => aspect.id === selectedAspectId);
   const visions = identitySystemIdeas.filter((idea) => idea.aspectId === selectedAspectId);
+  const aspectGoals = goals.filter((goal) => goal.aspectId === selectedAspectId);
   const today = new Date();
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const weekday = today.getDay();
@@ -163,6 +177,75 @@ export default function DevelopmentPage() {
     closeVisionForm();
   };
 
+  const closeGoalForm = () => {
+    setShowGoalForm(false);
+    setEditingGoalId(null);
+    setGoalName("");
+    setGoalDescription("");
+    setGoalTarget("100");
+    setGoalUnit("");
+    setGoalDeadline(getDefaultDeadline());
+    setGoalVisionId("");
+  };
+
+  const startAddingGoal = (visionId = "") => {
+    closeGoalForm();
+    setGoalVisionId(visionId);
+    setShowGoalForm(true);
+  };
+
+  const startEditingGoal = (goal: (typeof goals)[number]) => {
+    setEditingGoalId(goal.id);
+    setGoalName(goal.name);
+    setGoalDescription(goal.description || "");
+    setGoalTarget(String(goal.targetValue));
+    setGoalUnit(goal.unit || "");
+    setGoalDeadline(goal.deadline || getDefaultDeadline());
+    setGoalVisionId(visions.some((vision) => vision.id === goal.visionId) ? goal.visionId || "" : "");
+    setShowGoalForm(true);
+  };
+
+  const saveAspectGoal = () => {
+    if (!selectedAspect || !goalName.trim()) return;
+    const targetValue = Math.max(1, Number(goalTarget) || 1);
+    if (editingGoalId) {
+      const currentGoal = goals.find((goal) => goal.id === editingGoalId);
+      updateGoal(editingGoalId, {
+        name: goalName.trim(),
+        description: goalDescription.trim(),
+        targetValue,
+        unit: goalUnit.trim() || undefined,
+        deadline: goalDeadline || undefined,
+        aspectId: selectedAspect.id,
+        visionId: goalVisionId || undefined,
+        color: selectedAspect.color,
+        completed: Boolean(currentGoal && currentGoal.currentValue >= targetValue),
+      });
+    } else {
+      addGoal({
+        id: nanoid(),
+        name: goalName.trim(),
+        emoji: "🎯",
+        description: goalDescription.trim(),
+        linkedHabits: [],
+        coins: 100,
+        streak: 0,
+        folder: "general",
+        completed: false,
+        startValue: 0,
+        targetValue,
+        currentValue: 0,
+        color: selectedAspect.color,
+        deadline: goalDeadline || undefined,
+        progressType: "manual",
+        aspectId: selectedAspect.id,
+        visionId: goalVisionId || undefined,
+        unit: goalUnit.trim() || undefined,
+      });
+    }
+    closeGoalForm();
+  };
+
   const startEditingDailyTarget = () => {
     setDailyTargetDraft(String(selectedAspect?.dailyTargetMinutes || ""));
     setDailyPartsDraft((selectedAspect?.dailyParts || []).map((part) => ({ ...part })));
@@ -205,6 +288,7 @@ export default function DevelopmentPage() {
   const closeAspect = () => {
     cancelEditingDailyTarget();
     closeVisionForm();
+    closeGoalForm();
     setSelectedAspectId(null);
   };
 
@@ -365,11 +449,51 @@ export default function DevelopmentPage() {
             <motion.article layout key={vision.id} className={vision.completed ? "vision-item is-completed" : "vision-item"}>
               <button type="button" className="vision-check" onClick={() => updateIdentitySystemIdea(vision.id, { completed: !vision.completed })} aria-label={vision.completed ? "Вернуть пункт" : "Отметить выполненным"}>{vision.completed && <Check className="size-4" />}</button>
               <div className="vision-item-copy"><p>{vision.text}</p><div><span><CalendarDays className="size-3.5" /> {formatDeadline(vision.deadline)}</span>{vision.deadline && <span>{getDeadlineState(vision.deadline)}</span>}</div></div>
+              <button type="button" className="vision-goal-add" onClick={() => startAddingGoal(vision.id)} aria-label="Добавить цель к этому видению"><Target className="size-4" /></button>
               <button type="button" className="vision-edit" onClick={() => startEditingVision(vision)} aria-label="Редактировать пункт"><Pencil className="size-4" /></button>
               <button type="button" className="vision-delete" onClick={() => { deleteIdentitySystemIdea(vision.id); if (editingVisionId === vision.id) closeVisionForm(); }} aria-label="Удалить пункт"><Trash2 className="size-4" /></button>
             </motion.article>
           ))}
           {!visions.length && !showVisionForm && <button type="button" className="vision-empty" onClick={startAddingVision}><Plus className="size-5" /><span><strong>Добавьте первый пункт видения</strong><small>Опишите конкретное состояние и назначьте срок</small></span></button>}
+        </div>
+      </section>
+
+      <section className="development-section aspect-goals-section">
+        <div className="development-section-head">
+          <div className="development-section-title"><span><Target className="size-5" /></span><div><h2>Цели</h2><p>Конкретные результаты, через которые вы воплощаете своё видение</p></div></div>
+          <button type="button" className="development-add" onClick={() => startAddingGoal()} aria-label="Добавить цель"><Plus className="size-5" /> <span>Добавить</span></button>
+        </div>
+
+        <AnimatePresence>
+          {showGoalForm && (
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="aspect-goal-form">
+              <div className="aspect-goal-form-heading"><Target className="size-4" /><strong>{editingGoalId ? "Редактировать цель" : "Новая цель"}</strong><span>Через что я достигну желаемого состояния</span></div>
+              <label className="is-wide"><span>Название цели</span><input autoFocus value={goalName} onChange={(event) => setGoalName(event.target.value)} placeholder="Например: держать норму 2200 ккал" /></label>
+              <label className="is-wide"><span>Описание</span><input value={goalDescription} onChange={(event) => setGoalDescription(event.target.value)} placeholder="Что именно должно измениться" /></label>
+              <label><span>Целевое значение</span><input type="number" min="1" value={goalTarget} onChange={(event) => setGoalTarget(event.target.value)} /></label>
+              <label><span>Единица</span><input value={goalUnit} onChange={(event) => setGoalUnit(event.target.value)} placeholder="ккал, кг, дней" /></label>
+              <label><span>Дедлайн</span><input type="date" value={goalDeadline} onChange={(event) => setGoalDeadline(event.target.value)} /></label>
+              <label><span>Связать с видением</span><select value={goalVisionId} onChange={(event) => setGoalVisionId(event.target.value)}><option value="">Со всем аспектом</option>{visions.map((vision) => <option key={vision.id} value={vision.id}>{vision.text}</option>)}</select></label>
+              <div className="aspect-goal-form-actions"><button type="button" onClick={closeGoalForm}>Отмена</button><button type="button" className="app-button" disabled={!goalName.trim() || !Number(goalTarget)} onClick={saveAspectGoal}><Check className="size-4" /> {editingGoalId ? "Обновить" : "Создать цель"}</button></div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="aspect-goal-list">
+          {aspectGoals.map((goal) => {
+            const progress = Math.min(100, Math.max(0, goal.targetValue > goal.startValue ? ((goal.currentValue - goal.startValue) / (goal.targetValue - goal.startValue)) * 100 : 0));
+            const linkedVision = visions.find((vision) => vision.id === goal.visionId);
+            return (
+              <article key={goal.id} className={goal.completed ? "aspect-goal-card is-completed" : "aspect-goal-card"}>
+                <div className="aspect-goal-card-top"><span><Target className="size-5" /></span><div><strong>{goal.name}</strong><small>{goal.description || "Конкретный шаг к видению"}</small></div><b>{Math.round(progress)}%</b></div>
+                {linkedVision && <p className="aspect-goal-vision"><Sparkles className="size-3.5" /> {linkedVision.text}</p>}
+                <div className="aspect-goal-progress-copy"><span>{goal.currentValue.toLocaleString("ru-RU")} / {goal.targetValue.toLocaleString("ru-RU")} {goal.unit || ""}</span>{goal.deadline && <span><CalendarDays className="size-3" /> {formatDeadline(goal.deadline)}</span>}</div>
+                <div className="aspect-goal-progress"><i style={{ width: `${progress}%` }} /></div>
+                <div className="aspect-goal-actions"><Link href="/goals">Заполнять на странице целей <ChevronRight className="size-3.5" /></Link><button type="button" onClick={() => startEditingGoal(goal)} aria-label="Редактировать цель"><Pencil className="size-4" /></button><button type="button" onClick={() => deleteGoal(goal.id)} aria-label="Удалить цель"><Trash2 className="size-4" /></button></div>
+              </article>
+            );
+          })}
+          {!aspectGoals.length && !showGoalForm && <button type="button" className="aspect-goal-empty" onClick={() => startAddingGoal()}><Target className="size-5" /><span><strong>Добавьте первую цель</strong><small>Превратите видение в измеримый результат</small></span></button>}
         </div>
       </section>
 

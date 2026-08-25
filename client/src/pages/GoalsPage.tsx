@@ -7,6 +7,7 @@ import FormModal from "@/components/FormModal";
 import { FormInput } from "@/components/FormInputs";
 import { EmptyState, Metric, PageHeader, PageShell, SectionHeading, SegmentedControl } from "@/components/AppUI";
 import AddPage from "./AddPage";
+import { LIFE_ASPECTS } from "@/lib/lifeAspects";
 
 function GoalCard({
   goal,
@@ -17,13 +18,15 @@ function GoalCard({
   habits: Habit[];
   onProgress: (goal: Goal) => void;
 }) {
-  const { updateGoal, deleteGoal, moveGoalUp, moveGoalDown } = useApp();
+  const { updateGoal, deleteGoal, moveGoalUp, moveGoalDown, identitySystemIdeas } = useApp();
   const [expanded, setExpanded] = useState(false);
   const isActivityGoal = goal.progressType === "activity_minutes";
   const isCompleted = goal.completed || goal.currentValue >= goal.targetValue;
   const range = goal.targetValue - goal.startValue;
   const progress = Math.min(100, Math.max(0, range > 0 ? ((goal.currentValue - goal.startValue) / range) * 100 : 0));
   const linked = (goal.linkedHabits ?? []).map((id) => habits.find((habit) => habit.id === id)?.name).filter(Boolean);
+  const aspect = LIFE_ASPECTS.find((item) => item.id === goal.aspectId);
+  const vision = identitySystemIdeas.find((item) => item.id === goal.visionId);
 
   return (
     <article className={`goal-card ${isCompleted ? "is-completed" : ""}`} style={{ "--goal-color": goal.color } as React.CSSProperties}>
@@ -38,7 +41,8 @@ function GoalCard({
         </div>
         <div className="goal-reward"><img src="/illustrations/reward-coin-v3.svg" alt="" /><strong>{goal.coins}</strong></div>
       </div>
-      <div className="goal-progress-copy"><span>{goal.currentValue} / {goal.targetValue}{isActivityGoal ? " мин" : ""}</span><strong>{Math.round(progress)}%</strong></div>
+      {(aspect || vision) && <div className="goal-context">{aspect && <span style={{ "--goal-aspect-color": aspect.color } as React.CSSProperties}><i />{aspect.name}</span>}{vision && <span><Target className="size-3" /> {vision.text}</span>}</div>}
+      <div className="goal-progress-copy"><span>{goal.currentValue} / {goal.targetValue}{isActivityGoal ? " мин" : goal.unit ? ` ${goal.unit}` : ""}</span><strong>{Math.round(progress)}%</strong></div>
       <div className="goal-progress"><i style={{ width: `${progress}%` }} /></div>
       {linked.length > 0 && <p className="goal-linked">Связано: {linked.join(", ")}</p>}
       {isActivityGoal && <p className="goal-linked"><Clock3 className="size-3" /> Автоматически из занятия «{goal.activityName}»</p>}
@@ -116,6 +120,19 @@ export default function GoalsPage() {
     );
   };
 
+  const renderAspectGoalGroup = (aspect: { id: string; name: string; color: string }, aspectGoals: Goal[]) => (
+    <section key={aspect.id} className="growth-folder app-surface goal-aspect-folder" style={{ "--goal-aspect-color": aspect.color } as React.CSSProperties}>
+      <div className="growth-folder-head">
+        <span className="folder-color" style={{ backgroundColor: aspect.color }} />
+        <span className="folder-title">{aspect.name}</span>
+        <span className="section-meta">{aspectGoals.length}</span>
+        <span className="folder-spacer" />
+        <span className="goal-aspect-caption">Видение → результат</span>
+      </div>
+      <div className="growth-folder-body">{aspectGoals.map((goal) => <GoalCard key={goal.id} goal={goal} habits={habits} onProgress={openProgress} />)}</div>
+    </section>
+  );
+
   const renderHabitFolder = (folder: HabitFolder) => {
     const folderHabits = habitsForToday.filter((habit) => habit.folder === folder.id);
     return (
@@ -139,7 +156,7 @@ export default function GoalsPage() {
       <PageHeader
         eyebrow="Личный рост"
         title="Саморазвитие"
-        description="Следите за движением к целям и поддерживайте привычки без лишнего визуального шума."
+        description="Видение показывает, кем вы хотите стать. Цели превращают его в измеримые результаты по каждому аспекту жизни."
         actions={<button type="button" onClick={() => setActiveTab("manage")} className="app-button"><Plus className="size-4" /> Создать</button>}
       />
 
@@ -159,15 +176,15 @@ export default function GoalsPage() {
 
       <div className="growth-list">
         {activeTab === "manage" ? <AddPage embedded /> : activeTab === "goals" ? (
-          goals.length || goalFolders.length ? <>
-            {renderGoalFolder({ id: "general", name: "Общие цели", emoji: "🏆", color: "var(--coin)", collapsed: false }, true)}
-            {goalFolders.filter((folder) => folder.id !== "general").map((folder) => renderGoalFolder(folder))}
-          </> : <EmptyState icon={Target} title="Добавьте первую цель" description="Цель появится здесь, а ежедневные действия можно связать с привычками." action={<button type="button" onClick={() => setActiveTab("manage")} className="app-button">Перейти к созданию</button>} />
+          goals.length ? <>
+            {LIFE_ASPECTS.map((aspect) => ({ aspect, goals: goals.filter((goal) => goal.aspectId === aspect.id) })).filter((group) => group.goals.length).map((group) => renderAspectGoalGroup(group.aspect, group.goals))}
+            {goals.some((goal) => !goal.aspectId) && renderAspectGoalGroup({ id: "unlinked", name: "Без аспекта", color: "var(--muted-foreground)" }, goals.filter((goal) => !goal.aspectId))}
+          </> : <EmptyState icon={Target} title="Добавьте первую цель" description="Создайте её внутри нужного аспекта — она автоматически появится здесь." action={<button type="button" onClick={() => setActiveTab("manage")} className="app-button">Перейти к созданию</button>} />
         ) : habitFolders.map(renderHabitFolder)}
       </div>
 
       <FormModal title="Обновить прогресс" isOpen={Boolean(progressGoal)} onClose={() => { setProgressGoalId(null); setProgressValue(""); }} onSubmit={saveProgress} submitText="Записать успех">
-        {progressGoal && <div className="progress-modal-summary"><span>{progressGoal.emoji}</span><div><strong>{progressGoal.name}</strong><small>Сейчас {progressGoal.currentValue} · осталось {Math.max(0, progressGoal.targetValue - progressGoal.currentValue)}</small></div></div>}
+        {progressGoal && <div className="progress-modal-summary"><span>{progressGoal.emoji}</span><div><strong>{progressGoal.name}</strong><small>Сейчас {progressGoal.currentValue}{progressGoal.unit ? ` ${progressGoal.unit}` : ""} · осталось {Math.max(0, progressGoal.targetValue - progressGoal.currentValue)}{progressGoal.unit ? ` ${progressGoal.unit}` : ""}</small></div></div>}
         <FormInput label="Сколько добавить" value={progressValue} onChange={setProgressValue} type="number" placeholder="5" />
       </FormModal>
     </PageShell>
