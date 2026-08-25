@@ -1,11 +1,12 @@
 import { useMemo, useState, type CSSProperties } from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock, Repeat2, Trash2 } from "lucide-react";
 import { nanoid } from "nanoid";
 import { useApp, type MonthEvent } from "@/contexts/AppContext";
 import { formatDateToDateString, isSameDay } from "@/lib/dateUtils";
 import AdvancedColorPicker from "@/components/AdvancedColorPicker";
 import FormModal from "@/components/FormModal";
-import { FormInput } from "@/components/FormInputs";
+import { FormCheckbox, FormInput } from "@/components/FormInputs";
+import { getMonthEventOccurrenceForDate, monthEventCoversDate } from "@/lib/monthEvents";
 
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
@@ -14,23 +15,11 @@ function parseDate(dateString: string) {
   return new Date(year, month - 1, day);
 }
 
-function addDays(date: Date, amount: number) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + amount);
-}
-
-function getEventEndDate(event: MonthEvent) {
-  return formatDateToDateString(addDays(parseDate(event.startDate), Math.max(1, event.duration) - 1));
-}
-
-function coversDate(event: MonthEvent, dateString: string) {
-  return event.startDate <= dateString && getEventEndDate(event) >= dateString;
-}
-
 function getCalendarDays(month: Date) {
   const first = new Date(month.getFullYear(), month.getMonth(), 1);
   const mondayOffset = (first.getDay() + 6) % 7;
-  const gridStart = addDays(first, -mondayOffset);
-  return Array.from({ length: 42 }, (_, index) => addDays(gridStart, index));
+  const gridStart = new Date(first.getFullYear(), first.getMonth(), first.getDate() - mondayOffset);
+  return Array.from({ length: 42 }, (_, index) => new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index));
 }
 
 function getReadableDate(dateString: string) {
@@ -48,6 +37,8 @@ export default function MonthCalendar({ onSelectDate }: { onSelectDate?: (date: 
   const [eventColor, setEventColor] = useState("#315cff");
   const [eventDuration, setEventDuration] = useState("1");
   const [eventTime, setEventTime] = useState("");
+  const [eventRepeatsWeekly, setEventRepeatsWeekly] = useState(false);
+  const [eventRepeatUntil, setEventRepeatUntil] = useState("");
 
   const calendarDays = useMemo(() => getCalendarDays(visibleMonth), [visibleMonth]);
 
@@ -57,6 +48,8 @@ export default function MonthCalendar({ onSelectDate }: { onSelectDate?: (date: 
     setEventColor("#315cff");
     setEventDuration("1");
     setEventTime("");
+    setEventRepeatsWeekly(false);
+    setEventRepeatUntil("");
   };
 
   const closeEditor = () => {
@@ -66,7 +59,7 @@ export default function MonthCalendar({ onSelectDate }: { onSelectDate?: (date: 
 
   const openDay = (date: Date) => {
     const dateString = formatDateToDateString(date);
-    const existingEvent = events.find((event) => coversDate(event, dateString));
+    const existingEvent = events.find((event) => monthEventCoversDate(event, dateString));
     onSelectDate?.(date);
 
     if (existingEvent) {
@@ -76,6 +69,8 @@ export default function MonthCalendar({ onSelectDate }: { onSelectDate?: (date: 
       setEventColor(existingEvent.color);
       setEventDuration(String(existingEvent.duration));
       setEventTime(existingEvent.time || "");
+      setEventRepeatsWeekly(existingEvent.recurrence === "weekly");
+      setEventRepeatUntil(existingEvent.repeatUntil || "");
     } else {
       resetEditor();
       setEventDate(dateString);
@@ -94,6 +89,8 @@ export default function MonthCalendar({ onSelectDate }: { onSelectDate?: (date: 
       color: eventColor,
       duration,
       time: eventTime || undefined,
+      recurrence: eventRepeatsWeekly ? "weekly" : undefined,
+      repeatUntil: eventRepeatsWeekly && eventRepeatUntil >= eventDate ? eventRepeatUntil : undefined,
     };
 
     saveMonthEvent(nextEvent);
@@ -132,8 +129,8 @@ export default function MonthCalendar({ onSelectDate }: { onSelectDate?: (date: 
         <div className="month-calendar-grid">
           {calendarDays.map((date) => {
             const dateString = formatDateToDateString(date);
-            const dayEvents = events.filter((event) => coversDate(event, dateString));
-            const primaryEvent = dayEvents[0];
+            const dayEvents = events.map((event) => getMonthEventOccurrenceForDate(event, dateString)).filter((occurrence) => occurrence !== null);
+            const primaryEvent = dayEvents[0]?.event;
             const isOutsideMonth = date.getMonth() !== visibleMonth.getMonth();
             const style = primaryEvent ? { "--day-color": primaryEvent.color } as CSSProperties : undefined;
 
@@ -148,11 +145,11 @@ export default function MonthCalendar({ onSelectDate }: { onSelectDate?: (date: 
               >
                 <span className="month-day-number">{date.getDate()}</span>
                 <span className="month-day-events">
-                  {dayEvents.slice(0, 3).map((event) => (
-                    <span key={event.id} className="month-event-pill" style={{ "--event-color": event.color } as CSSProperties}>
-                      {event.time && <Clock className="size-3" />}
-                      <span>{event.startDate === dateString ? (event.title || "Цветной день") : "Продолжение"}</span>
-                      {event.time && event.startDate === dateString && <time>{event.time}</time>}
+                  {dayEvents.slice(0, 3).map((occurrence) => (
+                    <span key={occurrence.event.id} className="month-event-pill" style={{ "--event-color": occurrence.event.color } as CSSProperties}>
+                      {occurrence.event.recurrence === "weekly" ? <Repeat2 className="size-3" /> : occurrence.event.time && <Clock className="size-3" />}
+                      <span>{occurrence.isOccurrenceStart ? (occurrence.event.title || "Цветной день") : "Продолжение"}</span>
+                      {occurrence.event.time && occurrence.isOccurrenceStart && <time>{occurrence.event.time}</time>}
                     </span>
                   ))}
                   {dayEvents.length > 3 && <span className="month-event-more">+{dayEvents.length - 3}</span>}
@@ -162,7 +159,7 @@ export default function MonthCalendar({ onSelectDate }: { onSelectDate?: (date: 
           })}
         </div>
 
-        <p className="month-calendar-hint">Нажмите на день, чтобы выбрать цвет, добавить событие, время и длительность.</p>
+        <p className="month-calendar-hint">Нажмите на день, чтобы добавить событие, время, длительность и еженедельный повтор.</p>
       </section>
 
       <FormModal
@@ -178,6 +175,8 @@ export default function MonthCalendar({ onSelectDate }: { onSelectDate?: (date: 
           <FormInput label="Время" value={eventTime} onChange={setEventTime} type="time" />
           <FormInput label="Сколько дней длится" value={eventDuration} onChange={setEventDuration} type="number" />
         </div>
+        <FormCheckbox label="Повторять каждую неделю" checked={eventRepeatsWeekly} onChange={setEventRepeatsWeekly} />
+        {eventRepeatsWeekly && <FormInput label="Повторять до (необязательно)" value={eventRepeatUntil} onChange={setEventRepeatUntil} type="date" />}
         <AdvancedColorPicker label="Цвет дня и события" value={eventColor} onChange={setEventColor} />
         {editingEventId && (
           <button type="button" className="month-event-delete" onClick={deleteEvent}><Trash2 className="size-4" /> Удалить событие</button>

@@ -377,6 +377,8 @@ export interface MonthEvent {
   color: string;
   duration: number;
   time?: string;
+  recurrence?: "weekly";
+  repeatUntil?: string;
 }
 
 export interface ActivitySession {

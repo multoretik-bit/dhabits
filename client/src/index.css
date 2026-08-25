@@ -329,6 +329,14 @@
   .schedule-links { display: flex; gap: 4px; }
   .schedule-block-actions { display: flex; align-items: center; gap: 8px; }
   .schedule-block-actions > img { width: 74px; height: 62px; object-fit: contain; filter: drop-shadow(0 10px 12px color-mix(in srgb, var(--block-color) 18%, transparent)); pointer-events: none; }
+  .schedule-block-month-events { position: relative; z-index: 1; display: grid; gap: 7px; margin-top: 12px; }
+  .schedule-month-event { --event-color: var(--primary); display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 64px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--event-color) 32%, var(--border)); border-left: 5px solid var(--event-color); border-radius: 17px; background: linear-gradient(135deg, color-mix(in srgb, var(--event-color) 11%, var(--surface-raised)), var(--surface-raised)); box-shadow: 0 9px 24px color-mix(in srgb, var(--event-color) 7%, transparent); }
+  .schedule-month-event.is-inside-block { min-height: 52px; padding: 9px 11px; border-left-width: 3px; border-radius: 13px; background: color-mix(in srgb, var(--event-color) 9%, var(--surface-soft)); box-shadow: none; }
+  .schedule-month-event-icon { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px; color: var(--event-color); background: color-mix(in srgb, var(--event-color) 15%, var(--surface-raised)); }
+  .schedule-month-event > div { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+  .schedule-month-event > div strong { overflow: hidden; color: var(--foreground); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+  .schedule-month-event > div small { color: var(--event-color); font-size: 9px; font-weight: 800; }
+  .schedule-month-event-repeat { display: inline-flex; align-items: center; gap: 4px; padding: 5px 7px; border-radius: 8px; color: var(--event-color); background: color-mix(in srgb, var(--event-color) 10%, var(--secondary)); font-size: 8px; font-weight: 800; white-space: nowrap; }
   .schedule-block-body { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-top: 14px; padding-top: 14px; overflow: hidden; border-top: 1px solid color-mix(in srgb, var(--block-color) 14%, var(--border)); }
   .schedule-block-column { min-width: 0; padding: 12px; border-radius: 17px; background: color-mix(in srgb, var(--surface-soft) 76%, transparent); }
   .schedule-block-column .section-heading { margin-bottom: 9px; }
@@ -1046,6 +1054,9 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .schedule-block-head { gap: 9px; }
   .schedule-block-actions { gap: 4px; }
   .schedule-block-actions > img { width: 54px; height: 48px; }
+  .schedule-month-event { grid-template-columns: 32px minmax(0, 1fr); padding: 10px; }
+  .schedule-month-event-repeat { grid-column: 2; width: max-content; }
+  .schedule-month-event-icon { width: 30px; height: 30px; }
   .schedule-block-column { padding: 9px; }
   .schedule-block-body { grid-template-columns: 1fr; }
   .pomodoro-panel { position: static; max-height: none; padding: 14px; }

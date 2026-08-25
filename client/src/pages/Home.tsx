@@ -5,6 +5,7 @@ import {
   ArrowDown,
   ArrowUp,
   CalendarDays,
+  CalendarClock,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -13,6 +14,7 @@ import {
   Pencil,
   Plus,
   RotateCcw,
+  Repeat2,
   Sparkles,
   Target,
   X,
@@ -22,6 +24,7 @@ import { useApp, type HabitBlock, type Task, getCurrentBlock } from "@/contexts/
 import { formatDateToDateString, isSameDay } from "@/lib/dateUtils";
 import { getBlockIllustration } from "@/lib/blockIllustrations";
 import { applyDayScheduleOverride, isHabitScheduledForDay } from "@/lib/schedule";
+import { getMonthEventOccurrenceForDate, timeFallsWithinBlock, type MonthEventOccurrence } from "@/lib/monthEvents";
 import Calendar from "@/components/Calendar";
 import MonthCalendar from "@/components/MonthCalendar";
 import HabitRow from "@/components/HabitRow";
@@ -63,9 +66,23 @@ function getBlockColor(block?: HabitBlock | null) {
   return "#315cff";
 }
 
+function ScheduleMonthEvent({ occurrence, compact = false }: { occurrence: MonthEventOccurrence; compact?: boolean }) {
+  const { event, isOccurrenceStart } = occurrence;
+  return (
+    <article className={compact ? "schedule-month-event is-inside-block" : "schedule-month-event"} style={{ "--event-color": event.color } as React.CSSProperties}>
+      <span className="schedule-month-event-icon"><CalendarClock className="size-4" /></span>
+      <div>
+        <strong>{event.title || "Событие месяца"}</strong>
+        <small>{event.time || "На весь день"}{!isOccurrenceStart ? " · продолжение" : ""}</small>
+      </div>
+      {event.recurrence === "weekly" && <span className="schedule-month-event-repeat"><Repeat2 className="size-3" /> Каждую неделю</span>}
+    </article>
+  );
+}
+
 export default function Home() {
   const {
-    habits, tasks, blocks, addTask, toggleBlockCollapse,
+    habits, tasks, blocks, monthEvents, addTask, toggleBlockCollapse,
     dayScheduleOverrides, reorderBlocksForDay, setBlockTimeOverrideForDay, hideBlockForDay, restoreBlockForDay, resetDayScheduleOverride,
   } = useApp();
   const [mode, setMode] = useState<"focus" | "schedule" | "month">("focus");
@@ -118,6 +135,28 @@ export default function Home() {
     const hiddenIds = new Set(dayOverride.hidden);
     return baseTodayBlocks.filter((block) => hiddenIds.has(block.id));
   }, [baseTodayBlocks, dayOverride, selectedIsToday]);
+
+  const dayMonthEvents = useMemo(() => monthEvents.flatMap((event) => {
+    const occurrence = getMonthEventOccurrenceForDate(event, dateStr);
+    return occurrence ? [occurrence] : [];
+  }).sort((a, b) => timeToMinutes(a.event.time) - timeToMinutes(b.event.time)), [monthEvents, dateStr]);
+
+  const blockIdByMonthEventId = useMemo(() => new Map(dayMonthEvents.map((occurrence) => {
+    const block = occurrence.event.time
+      ? todayBlocks.find((item) => timeFallsWithinBlock(occurrence.event.time, item.startTime, item.endTime))
+      : undefined;
+    return [occurrence.event.id, block?.id] as const;
+  })), [dayMonthEvents, todayBlocks]);
+
+  const standaloneMonthEvents = useMemo(
+    () => dayMonthEvents.filter((occurrence) => !blockIdByMonthEventId.get(occurrence.event.id)),
+    [blockIdByMonthEventId, dayMonthEvents]
+  );
+
+  const scheduleTimelineItems = useMemo(() => [
+    ...todayBlocks.map((block) => ({ type: "block" as const, block, sortTime: block.startTime ? timeToMinutes(block.startTime) : 1440 })),
+    ...standaloneMonthEvents.map((occurrence) => ({ type: "event" as const, occurrence, sortTime: occurrence.event.time ? timeToMinutes(occurrence.event.time) : -1 })),
+  ].sort((a, b) => a.sortTime - b.sortTime), [standaloneMonthEvents, todayBlocks]);
 
   const moveScheduleBlock = (blockId: string, direction: -1 | 1) => {
     const order = todayBlocks.map((block) => block.id);
@@ -273,8 +312,8 @@ export default function Home() {
             <section className="app-surface schedule-timeline">
               <SectionHeading
                 icon={Clock}
-                title="Блоки дня"
-                meta={todayBlocks.length}
+                title="Расписание дня"
+                meta={todayBlocks.length + dayMonthEvents.length}
                 action={selectedIsToday ? (
                   <div className="schedule-edit-controls">
                     {dayOverride && (
@@ -297,8 +336,12 @@ export default function Home() {
               {isEditingToday && (
                 <p className="schedule-edit-hint">Изменения времени, порядка и видимости блоков действуют только сегодня и не повлияют на другие дни.</p>
               )}
-              {todayBlocks.length ? todayBlocks.map((block, index) => {
+              {scheduleTimelineItems.length ? scheduleTimelineItems.map((item) => {
+                if (item.type === "event") return <ScheduleMonthEvent key={`event-${item.occurrence.event.id}`} occurrence={item.occurrence} />;
+                const block = item.block;
+                const index = todayBlocks.findIndex((candidate) => candidate.id === block.id);
                 const blockHabits = habits.filter((habit) => habit.blockId === block.id && isHabitScheduledForDay(habit, dayOfWeek));
+                const blockMonthEvents = dayMonthEvents.filter((occurrence) => blockIdByMonthEventId.get(occurrence.event.id) === block.id);
                 const isCurrent = activeBlock?.id === block.id;
                 const hasTimeOverride = Boolean(dayOverride?.times?.[block.id]);
                 return (
@@ -331,6 +374,7 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
+                    {blockMonthEvents.length > 0 && <div className="schedule-block-month-events">{blockMonthEvents.map((occurrence) => <ScheduleMonthEvent key={occurrence.event.id} occurrence={occurrence} compact />)}</div>}
                     {!block.collapsed && <div className="schedule-block-body">
                         <div className="schedule-block-column">
                         <SectionHeading icon={Target} title="Привычки" meta={blockHabits.length} />
@@ -339,7 +383,7 @@ export default function Home() {
                     </div>}
                   </article>
                 );
-              }) : <EmptyState title="Расписание пока пустое" description="Создайте блок в разделе «Саморазвитие»." />}
+              }) : <EmptyState title="Расписание пока пустое" description="Создайте блок или добавьте событие в плане на месяц." />}
               {isEditingToday && hiddenTodayBlocks.length > 0 && (
                 <div className="schedule-hidden-blocks">
                   <span>Скрыто на сегодня:</span>
