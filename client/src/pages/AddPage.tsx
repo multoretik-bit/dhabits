@@ -484,10 +484,11 @@ function GoalsTab() {
   const [progressType, setProgressType] = useState<"manual" | "activity_minutes">("manual");
   const [activityName, setActivityName] = useState("");
   const [aspectId, setAspectId] = useState("");
+  const [unit, setUnit] = useState("");
 
   const [folderName, setFolderName] = useState(""); const [folderColor, setFolderColor] = useState("#8b5cf6"); const [folderEmoji, setFolderEmoji] = useState("🏆");
 
-  const resetForm = () => { setName(""); setDesc(""); setTarget("100"); setColor("#8b5cf6"); setEmoji("🎯"); setFolder("general"); setCoins("100"); setDeadline(""); setProgressType("manual"); setActivityName(""); setAspectId(""); };
+  const resetForm = () => { setName(""); setDesc(""); setTarget("100"); setColor("#8b5cf6"); setEmoji("🎯"); setFolder("general"); setCoins("100"); setDeadline(""); setProgressType("manual"); setActivityName(""); setAspectId(""); setUnit(""); };
 
   const knownActivityNames = Array.from(new Map(activitySessions.map((session) => [
     session.title.trim().toLocaleLowerCase("ru-RU"),
@@ -519,6 +520,7 @@ function GoalsTab() {
           <p className="text-xs text-muted-foreground">Новые минуты с таким названием будут засчитываться автоматически.</p>
         </div>
       )}
+      {progressType === "manual" && <FormInput label="Единица измерения" value={unit} onChange={setUnit} placeholder="ккал, кг, страниц" />}
       <div className="grid grid-cols-2 gap-3">
         <FormInput label={progressType === "activity_minutes" ? "Сколько минут" : "Цель (значение)"} value={target} onChange={setTarget} type="number" />
         <FormInput label="Награда (монеты)" value={coins} onChange={setCoins} type="number" />
@@ -605,6 +607,7 @@ function GoalsTab() {
                         setCoins(String(g.coins)); setDeadline(g.deadline || "");
                         setProgressType(g.progressType || "manual"); setActivityName(g.activityName || "");
                         setAspectId(g.aspectId || "");
+                        setUnit(g.unit || "");
                         setShowEdit(true); 
                       }} className="w-8 h-8 text-blue-400 hover:bg-blue-400/10"><Edit2 className="w-4 h-4" /></Button>
                       <Button size="icon" variant="ghost" onClick={() => { if (confirm("Удалить?")) deleteGoal(g.id); }} className="w-8 h-8 text-red-400 hover:bg-red-400/10"><Trash2 className="w-4 h-4" /></Button>
@@ -618,8 +621,8 @@ function GoalsTab() {
         })}
       </div>
 
-      <FormModal title="Новая цель" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); const trimmedActivity = activityName.trim(); if (name && aspectId && (progressType !== "activity_minutes" || trimmedActivity)) { addGoal({ id: nanoid(), name, emoji, description: desc, linkedHabits: [], coins: Number(coins), streak: 0, folder, completed: false, startValue: 0, targetValue: Number(target), currentValue: 0, color, deadline, progressType, activityName: progressType === "activity_minutes" ? trimmedActivity : undefined, activityTrackingStartedAt: progressType === "activity_minutes" ? new Date().toISOString() : undefined, aspectId }); setShowCreate(false); resetForm(); } }} submitText="Создать">{goalFormContent}</FormModal>
-      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); const currentGoal = goals.find((goal) => goal.id === editingId); const trimmedActivity = activityName.trim(); if (editingId && currentGoal && name && aspectId && (progressType !== "activity_minutes" || trimmedActivity)) { const trackingChanged = currentGoal.progressType !== progressType || (currentGoal.activityName || "").trim().toLocaleLowerCase("ru-RU") !== trimmedActivity.toLocaleLowerCase("ru-RU"); const nextCurrentValue = trackingChanged ? 0 : currentGoal.currentValue; const nextTarget = Number(target); updateGoal(editingId, { name, emoji, description: desc, targetValue: nextTarget, color, folder, coins: Number(coins), deadline, progressType, activityName: progressType === "activity_minutes" ? trimmedActivity : undefined, activityTrackingStartedAt: progressType === "activity_minutes" ? (trackingChanged ? new Date().toISOString() : currentGoal.activityTrackingStartedAt || new Date().toISOString()) : undefined, currentValue: nextCurrentValue, completed: nextCurrentValue >= nextTarget, aspectId }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{goalFormContent}</FormModal>
+      <FormModal title="Новая цель" isOpen={showCreate} onClose={() => { setShowCreate(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); const trimmedActivity = activityName.trim(); if (name && aspectId && (progressType !== "activity_minutes" || trimmedActivity)) { addGoal({ id: nanoid(), name, emoji, description: desc, linkedHabits: [], coins: Number(coins), streak: 0, folder, completed: false, startValue: 0, targetValue: Number(target), currentValue: 0, color, deadline, progressType, activityName: progressType === "activity_minutes" ? trimmedActivity : undefined, activityTrackingStartedAt: progressType === "activity_minutes" ? new Date().toISOString() : undefined, aspectId, unit: progressType === "manual" ? unit.trim() || undefined : undefined }); setShowCreate(false); resetForm(); } }} submitText="Создать">{goalFormContent}</FormModal>
+      <FormModal title="Редактировать" isOpen={showEdit} onClose={() => { setShowEdit(false); resetForm(); }} onSubmit={(e) => { e.preventDefault(); const currentGoal = goals.find((goal) => goal.id === editingId); const trimmedActivity = activityName.trim(); if (editingId && currentGoal && name && aspectId && (progressType !== "activity_minutes" || trimmedActivity)) { const trackingChanged = currentGoal.progressType !== progressType || (currentGoal.activityName || "").trim().toLocaleLowerCase("ru-RU") !== trimmedActivity.toLocaleLowerCase("ru-RU"); const nextCurrentValue = trackingChanged ? 0 : currentGoal.currentValue; const nextTarget = Number(target); updateGoal(editingId, { name, emoji, description: desc, targetValue: nextTarget, color, folder, coins: Number(coins), deadline, progressType, activityName: progressType === "activity_minutes" ? trimmedActivity : undefined, activityTrackingStartedAt: progressType === "activity_minutes" ? (trackingChanged ? new Date().toISOString() : currentGoal.activityTrackingStartedAt || new Date().toISOString()) : undefined, currentValue: nextCurrentValue, completed: nextCurrentValue >= nextTarget, aspectId, unit: progressType === "manual" ? unit.trim() || undefined : undefined }); setShowEdit(false); resetForm(); } }} submitText="Сохранить">{goalFormContent}</FormModal>
       <FormModal title="Новая папка" isOpen={showCreateFolder} onClose={() => { setShowCreateFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (folderName) { addGoalFolder({ id: nanoid(), name: folderName, emoji: folderEmoji, color: folderColor, collapsed: false }); setShowCreateFolder(false); setFolderName(""); } }} submitText="Создать">{folderFormContent}</FormModal>
       <FormModal title="Редактировать папку" isOpen={showEditFolder} onClose={() => { setShowEditFolder(false); setFolderName(""); }} onSubmit={(e) => { e.preventDefault(); if (editingFolderId && folderName) { updateGoalFolder(editingFolderId, { name: folderName, color: folderColor, emoji: folderEmoji }); setShowEditFolder(false); } }} submitText="Сохранить">{folderFormContent}</FormModal>
     </div>

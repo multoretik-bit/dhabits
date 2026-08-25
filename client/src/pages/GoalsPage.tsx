@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Clock3, ListTodo, Plus, Target, Trash2, Trophy } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, Clock3, ListTodo, Plus, Sparkles, Target, Trash2, Trophy } from "lucide-react";
 import { useApp, type Goal, type Habit, type HabitFolder } from "@/contexts/AppContext";
 import HabitRow from "@/components/HabitRow";
 import FormModal from "@/components/FormModal";
@@ -8,14 +8,18 @@ import { FormInput } from "@/components/FormInputs";
 import { EmptyState, Metric, PageHeader, PageShell, SectionHeading, SegmentedControl } from "@/components/AppUI";
 import AddPage from "./AddPage";
 import { LIFE_ASPECTS } from "@/lib/lifeAspects";
+import { getGoalProgressForDate, getGoalProgressUnit } from "@/lib/goalProgress";
+import { formatDateToDateString } from "@/lib/dateUtils";
 
 function GoalCard({
   goal,
   habits,
+  todayProgress,
   onProgress,
 }: {
   goal: Goal;
   habits: Habit[];
+  todayProgress: number;
   onProgress: (goal: Goal) => void;
 }) {
   const { updateGoal, deleteGoal, moveGoalUp, moveGoalDown, identitySystemIdeas } = useApp();
@@ -44,6 +48,7 @@ function GoalCard({
       {(aspect || vision) && <div className="goal-context">{aspect && <span style={{ "--goal-aspect-color": aspect.color } as React.CSSProperties}><i />{aspect.name}</span>}{vision && <span><Target className="size-3" /> {vision.text}</span>}</div>}
       <div className="goal-progress-copy"><span>{goal.currentValue} / {goal.targetValue}{isActivityGoal ? " мин" : goal.unit ? ` ${goal.unit}` : ""}</span><strong>{Math.round(progress)}%</strong></div>
       <div className="goal-progress"><i style={{ width: `${progress}%` }} /></div>
+      <p className="goal-today-progress"><Sparkles className="size-3.5" /> Сегодня к успеху: <strong>+{todayProgress.toLocaleString("ru-RU")} {getGoalProgressUnit(goal)}</strong></p>
       {linked.length > 0 && <p className="goal-linked">Связано: {linked.join(", ")}</p>}
       {isActivityGoal && <p className="goal-linked"><Clock3 className="size-3" /> Автоматически из занятия «{goal.activityName}»</p>}
       <div className="goal-actions">
@@ -61,7 +66,7 @@ function GoalCard({
 export default function GoalsPage() {
   const [location] = useLocation();
   const {
-    goals, goalFolders, habits, habitFolders,
+    goals, goalFolders, habits, habitFolders, activitySessions,
     updateGoal, deleteGoalFolder, toggleGoalFolderCollapse, toggleHabitFolderCollapse,
     moveGoalFolderUp, moveGoalFolderDown,
   } = useApp();
@@ -70,7 +75,7 @@ export default function GoalsPage() {
   const [progressValue, setProgressValue] = useState("");
   const today = new Date();
   const dayOfWeek = today.getDay();
-  const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const dateStr = formatDateToDateString(today);
   const habitsForToday = useMemo(() => habits.filter((habit) => habit.daysOfWeek.includes(dayOfWeek)), [habits, dayOfWeek]);
   const completedGoals = goals.filter((goal) => goal.completed || goal.currentValue >= goal.targetValue).length;
   const averageProgress = goals.length ? Math.round(goals.reduce((sum, goal) => {
@@ -88,7 +93,12 @@ export default function GoalsPage() {
     const goal = goals.find((item) => item.id === progressGoalId);
     if (!goal) return;
     const nextValue = goal.currentValue + (Number.parseFloat(progressValue) || 0);
-    updateGoal(goal.id, { currentValue: nextValue, completed: nextValue >= goal.targetValue });
+    const addedValue = Number.parseFloat(progressValue) || 0;
+    updateGoal(goal.id, {
+      currentValue: nextValue,
+      completed: nextValue >= goal.targetValue,
+      progressByDate: { ...goal.progressByDate, [dateStr]: (goal.progressByDate?.[dateStr] || 0) + addedValue },
+    });
     setProgressGoalId(null);
     setProgressValue("");
   };
@@ -113,7 +123,7 @@ export default function GoalsPage() {
         </button>
         {(isGeneral || !folder.collapsed) && (
           <div className="growth-folder-body">
-            {folderGoals.length ? folderGoals.map((goal) => <GoalCard key={goal.id} goal={goal} habits={habits} onProgress={openProgress} />) : <EmptyState compact title="В этой папке пока нет целей" />}
+            {folderGoals.length ? folderGoals.map((goal) => <GoalCard key={goal.id} goal={goal} habits={habits} todayProgress={getGoalProgressForDate(goal, activitySessions, dateStr)} onProgress={openProgress} />) : <EmptyState compact title="В этой папке пока нет целей" />}
           </div>
         )}
       </section>
@@ -129,7 +139,7 @@ export default function GoalsPage() {
         <span className="folder-spacer" />
         <span className="goal-aspect-caption">Видение → результат</span>
       </div>
-      <div className="growth-folder-body">{aspectGoals.map((goal) => <GoalCard key={goal.id} goal={goal} habits={habits} onProgress={openProgress} />)}</div>
+      <div className="growth-folder-body">{aspectGoals.map((goal) => <GoalCard key={goal.id} goal={goal} habits={habits} todayProgress={getGoalProgressForDate(goal, activitySessions, dateStr)} onProgress={openProgress} />)}</div>
     </section>
   );
 

@@ -25,8 +25,11 @@ import {
 import { Link } from "wouter";
 import { nanoid } from "nanoid";
 import { PageHeader, PageShell } from "@/components/AppUI";
+import AdvancedColorPicker from "@/components/AdvancedColorPicker";
+import EmojiPicker from "@/components/EmojiPicker";
 import { useApp } from "@/contexts/AppContext";
 import { colorBelongsToLifeAspect, getTimerMinutesForAspectInYear, getTimerMinutesForAspectOnDate, getTimerMinutesForAspectPartsOnDate, LIFE_ASPECT_GROUPS, LIFE_ASPECTS, type LifeAspectDailyPart } from "@/lib/lifeAspects";
+import { getGoalProgressForDate, getGoalProgressUnit } from "@/lib/goalProgress";
 
 function getDefaultDeadline() {
   const date = new Date();
@@ -63,6 +66,7 @@ export default function DevelopmentPage() {
     habits,
     tasks,
     goals,
+    goalFolders,
     addGoal,
     updateGoal,
     deleteGoal,
@@ -84,6 +88,12 @@ export default function DevelopmentPage() {
   const [goalUnit, setGoalUnit] = useState("");
   const [goalDeadline, setGoalDeadline] = useState(getDefaultDeadline);
   const [goalVisionId, setGoalVisionId] = useState("");
+  const [goalEmoji, setGoalEmoji] = useState("🎯");
+  const [goalColor, setGoalColor] = useState("");
+  const [goalFolder, setGoalFolder] = useState("general");
+  const [goalCoins, setGoalCoins] = useState("100");
+  const [goalProgressType, setGoalProgressType] = useState<"manual" | "activity_minutes">("manual");
+  const [goalActivityName, setGoalActivityName] = useState("");
 
   const systems = useMemo(() => LIFE_ASPECTS.map((fallback) => {
     const saved = identitySystems.find((system) => system.id === fallback.id);
@@ -92,6 +102,10 @@ export default function DevelopmentPage() {
   const selectedAspect = systems.find((aspect) => aspect.id === selectedAspectId);
   const visions = identitySystemIdeas.filter((idea) => idea.aspectId === selectedAspectId);
   const aspectGoals = goals.filter((goal) => goal.aspectId === selectedAspectId);
+  const knownActivityNames = Array.from(new Map(activitySessions.map((session) => [
+    session.title.trim().toLocaleLowerCase("ru-RU"),
+    session.title.trim(),
+  ])).values()).filter(Boolean).sort((a, b) => a.localeCompare(b, "ru-RU"));
   const today = new Date();
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const weekday = today.getDay();
@@ -186,6 +200,12 @@ export default function DevelopmentPage() {
     setGoalUnit("");
     setGoalDeadline(getDefaultDeadline());
     setGoalVisionId("");
+    setGoalEmoji("🎯");
+    setGoalColor(selectedAspect?.color || "");
+    setGoalFolder("general");
+    setGoalCoins("100");
+    setGoalProgressType("manual");
+    setGoalActivityName("");
   };
 
   const startAddingGoal = (visionId = "") => {
@@ -202,45 +222,65 @@ export default function DevelopmentPage() {
     setGoalUnit(goal.unit || "");
     setGoalDeadline(goal.deadline || getDefaultDeadline());
     setGoalVisionId(visions.some((vision) => vision.id === goal.visionId) ? goal.visionId || "" : "");
+    setGoalEmoji(goal.emoji || "🎯");
+    setGoalColor(goal.color || selectedAspect?.color || "");
+    setGoalFolder(goal.folder || "general");
+    setGoalCoins(String(goal.coins || 0));
+    setGoalProgressType(goal.progressType || "manual");
+    setGoalActivityName(goal.activityName || "");
     setShowGoalForm(true);
   };
 
   const saveAspectGoal = () => {
-    if (!selectedAspect || !goalName.trim()) return;
+    const trimmedActivity = goalActivityName.trim();
+    if (!selectedAspect || !goalName.trim() || (goalProgressType === "activity_minutes" && !trimmedActivity)) return;
     const targetValue = Math.max(1, Number(goalTarget) || 1);
     if (editingGoalId) {
       const currentGoal = goals.find((goal) => goal.id === editingGoalId);
+      if (!currentGoal) return;
+      const trackingChanged = currentGoal.progressType !== goalProgressType
+        || (currentGoal.activityName || "").trim().toLocaleLowerCase("ru-RU") !== trimmedActivity.toLocaleLowerCase("ru-RU");
+      const nextCurrentValue = trackingChanged ? 0 : currentGoal.currentValue;
       updateGoal(editingGoalId, {
         name: goalName.trim(),
+        emoji: goalEmoji,
         description: goalDescription.trim(),
         targetValue,
-        unit: goalUnit.trim() || undefined,
+        unit: goalProgressType === "manual" ? goalUnit.trim() || undefined : undefined,
         deadline: goalDeadline || undefined,
         aspectId: selectedAspect.id,
         visionId: goalVisionId || undefined,
-        color: selectedAspect.color,
-        completed: Boolean(currentGoal && currentGoal.currentValue >= targetValue),
+        color: goalColor || selectedAspect.color,
+        folder: goalFolder,
+        coins: Math.max(0, Number(goalCoins) || 0),
+        progressType: goalProgressType,
+        activityName: goalProgressType === "activity_minutes" ? trimmedActivity : undefined,
+        activityTrackingStartedAt: goalProgressType === "activity_minutes" ? (trackingChanged ? new Date().toISOString() : currentGoal.activityTrackingStartedAt || new Date().toISOString()) : undefined,
+        currentValue: nextCurrentValue,
+        completed: nextCurrentValue >= targetValue,
       });
     } else {
       addGoal({
         id: nanoid(),
         name: goalName.trim(),
-        emoji: "🎯",
+        emoji: goalEmoji,
         description: goalDescription.trim(),
         linkedHabits: [],
-        coins: 100,
+        coins: Math.max(0, Number(goalCoins) || 0),
         streak: 0,
-        folder: "general",
+        folder: goalFolder,
         completed: false,
         startValue: 0,
         targetValue,
         currentValue: 0,
-        color: selectedAspect.color,
+        color: goalColor || selectedAspect.color,
         deadline: goalDeadline || undefined,
-        progressType: "manual",
+        progressType: goalProgressType,
+        activityName: goalProgressType === "activity_minutes" ? trimmedActivity : undefined,
+        activityTrackingStartedAt: goalProgressType === "activity_minutes" ? new Date().toISOString() : undefined,
         aspectId: selectedAspect.id,
         visionId: goalVisionId || undefined,
-        unit: goalUnit.trim() || undefined,
+        unit: goalProgressType === "manual" ? goalUnit.trim() || undefined : undefined,
       });
     }
     closeGoalForm();
@@ -427,6 +467,28 @@ export default function DevelopmentPage() {
         )}
       </AnimatePresence>
 
+      <section className="development-today-success">
+        <div className="development-today-success-head">
+          <span><Sparkles className="size-5" /></span>
+          <div><h2>Сегодня к успеху</h2><p>Сколько вы продвинулись по целям этого аспекта за день</p></div>
+          <strong>{aspectGoals.filter((goal) => getGoalProgressForDate(goal, activitySessions, todayString) > 0).length} / {aspectGoals.length}</strong>
+        </div>
+        {aspectGoals.length ? (
+          <div className="development-today-success-grid">
+            {aspectGoals.map((goal) => {
+              const value = getGoalProgressForDate(goal, activitySessions, todayString);
+              return (
+                <div key={goal.id} className={value > 0 ? "has-progress" : ""} style={{ "--goal-color": goal.color || selectedAspect.color } as React.CSSProperties}>
+                  <span>{goal.emoji || "🎯"}</span>
+                  <div><small>{goal.name}</small><strong>{value.toLocaleString("ru-RU")} {getGoalProgressUnit(goal)}</strong></div>
+                  <em>{value > 0 ? "сделано сегодня" : "пока 0 сегодня"}</em>
+                </div>
+              );
+            })}
+          </div>
+        ) : <button type="button" className="development-today-empty" onClick={() => startAddingGoal()}><Target className="size-5" /><span><strong>Создайте цель, чтобы видеть движение за день</strong><small>Калории и другие значения добавляются вручную, минуты можно связать с таймером.</small></span></button>}
+      </section>
+
       <section className="development-section vision-section">
         <div className="development-section-head">
           <div className="development-section-title"><span><Sparkles className="size-5" /></span><div><h2>Видение</h2><p>Каким вы хотите быть и к какому состоянию прийти</p></div></div>
@@ -469,12 +531,18 @@ export default function DevelopmentPage() {
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="aspect-goal-form">
               <div className="aspect-goal-form-heading"><Target className="size-4" /><strong>{editingGoalId ? "Редактировать цель" : "Новая цель"}</strong><span>Через что я достигну желаемого состояния</span></div>
               <label className="is-wide"><span>Название цели</span><input autoFocus value={goalName} onChange={(event) => setGoalName(event.target.value)} placeholder="Например: держать норму 2200 ккал" /></label>
+              <div className="aspect-goal-picker"><EmojiPicker label="Иконка" value={goalEmoji} onChange={setGoalEmoji} /></div>
+              <div className="aspect-goal-picker"><span>Цвет</span><AdvancedColorPicker value={goalColor || selectedAspect.color} onChange={setGoalColor} /></div>
+              <label><span>Папка</span><select value={goalFolder} onChange={(event) => setGoalFolder(event.target.value)}>{goalFolders.map((folder) => <option key={folder.id} value={folder.id}>{folder.emoji || "🏆"} {folder.name}</option>)}</select></label>
+              <label><span>Награда</span><input type="number" min="0" value={goalCoins} onChange={(event) => setGoalCoins(event.target.value)} placeholder="100" /></label>
               <label className="is-wide"><span>Описание</span><input value={goalDescription} onChange={(event) => setGoalDescription(event.target.value)} placeholder="Что именно должно измениться" /></label>
-              <label><span>Целевое значение</span><input type="number" min="1" value={goalTarget} onChange={(event) => setGoalTarget(event.target.value)} /></label>
-              <label><span>Единица</span><input value={goalUnit} onChange={(event) => setGoalUnit(event.target.value)} placeholder="ккал, кг, дней" /></label>
+              <label className="is-wide"><span>Как считать прогресс</span><select value={goalProgressType} onChange={(event) => setGoalProgressType(event.target.value as "manual" | "activity_minutes")}><option value="manual">Добавлять значение вручную</option><option value="activity_minutes">Автоматически в минутах из таймера</option></select></label>
+              {goalProgressType === "activity_minutes" && <label className="is-wide"><span>Название занятия в таймере</span><input list="aspect-goal-activity-options" value={goalActivityName} onChange={(event) => setGoalActivityName(event.target.value)} placeholder="Например: Чтение" /><datalist id="aspect-goal-activity-options">{knownActivityNames.map((title) => <option key={title} value={title} />)}</datalist><small>В цель пойдут только минуты занятия с этим названием.</small></label>}
+              <label><span>{goalProgressType === "activity_minutes" ? "Цель в минутах" : "Целевое значение"}</span><input type="number" min="1" value={goalTarget} onChange={(event) => setGoalTarget(event.target.value)} /></label>
+              {goalProgressType === "manual" && <label><span>Единица</span><input value={goalUnit} onChange={(event) => setGoalUnit(event.target.value)} placeholder="ккал, кг, страниц" /></label>}
               <label><span>Дедлайн</span><input type="date" value={goalDeadline} onChange={(event) => setGoalDeadline(event.target.value)} /></label>
               <label><span>Связать с видением</span><select value={goalVisionId} onChange={(event) => setGoalVisionId(event.target.value)}><option value="">Со всем аспектом</option>{visions.map((vision) => <option key={vision.id} value={vision.id}>{vision.text}</option>)}</select></label>
-              <div className="aspect-goal-form-actions"><button type="button" onClick={closeGoalForm}>Отмена</button><button type="button" className="app-button" disabled={!goalName.trim() || !Number(goalTarget)} onClick={saveAspectGoal}><Check className="size-4" /> {editingGoalId ? "Обновить" : "Создать цель"}</button></div>
+              <div className="aspect-goal-form-actions"><button type="button" onClick={closeGoalForm}>Отмена</button><button type="button" className="app-button" disabled={!goalName.trim() || !Number(goalTarget) || (goalProgressType === "activity_minutes" && !goalActivityName.trim())} onClick={saveAspectGoal}><Check className="size-4" /> {editingGoalId ? "Обновить" : "Создать цель"}</button></div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -485,10 +553,11 @@ export default function DevelopmentPage() {
             const linkedVision = visions.find((vision) => vision.id === goal.visionId);
             return (
               <article key={goal.id} className={goal.completed ? "aspect-goal-card is-completed" : "aspect-goal-card"}>
-                <div className="aspect-goal-card-top"><span><Target className="size-5" /></span><div><strong>{goal.name}</strong><small>{goal.description || "Конкретный шаг к видению"}</small></div><b>{Math.round(progress)}%</b></div>
+                <div className="aspect-goal-card-top"><span>{goal.emoji || <Target className="size-5" />}</span><div><strong>{goal.name}</strong><small>{goal.description || "Конкретный шаг к видению"}</small></div><b>{Math.round(progress)}%</b></div>
                 {linkedVision && <p className="aspect-goal-vision"><Sparkles className="size-3.5" /> {linkedVision.text}</p>}
-                <div className="aspect-goal-progress-copy"><span>{goal.currentValue.toLocaleString("ru-RU")} / {goal.targetValue.toLocaleString("ru-RU")} {goal.unit || ""}</span>{goal.deadline && <span><CalendarDays className="size-3" /> {formatDeadline(goal.deadline)}</span>}</div>
+                <div className="aspect-goal-progress-copy"><span>{goal.currentValue.toLocaleString("ru-RU")} / {goal.targetValue.toLocaleString("ru-RU")} {getGoalProgressUnit(goal)}</span>{goal.deadline && <span><CalendarDays className="size-3" /> {formatDeadline(goal.deadline)}</span>}</div>
                 <div className="aspect-goal-progress"><i style={{ width: `${progress}%` }} /></div>
+                <p className="aspect-goal-today"><Sparkles className="size-3.5" /> Сегодня: <strong>+{getGoalProgressForDate(goal, activitySessions, todayString).toLocaleString("ru-RU")} {getGoalProgressUnit(goal)}</strong></p>
                 <div className="aspect-goal-actions"><Link href="/goals">Заполнять на странице целей <ChevronRight className="size-3.5" /></Link><button type="button" onClick={() => startEditingGoal(goal)} aria-label="Редактировать цель"><Pencil className="size-4" /></button><button type="button" onClick={() => deleteGoal(goal.id)} aria-label="Удалить цель"><Trash2 className="size-4" /></button></div>
               </article>
             );

@@ -199,6 +199,7 @@ export interface Goal {
   aspectId?: string;
   visionId?: string;
   unit?: string;
+  progressByDate?: Record<string, number>;
 }
 
 export interface GoalFolder {
