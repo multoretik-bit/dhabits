@@ -321,7 +321,7 @@ export default function DevelopmentPage() {
       <AnimatePresence>
         {editingDailyTarget && (
           <motion.section initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="development-target-editor">
-            <div className="development-target-editor-head"><div><strong>Дневная норма</strong><span>Оставьте одну общую норму или разделите её на занятия.</span></div><button type="button" onClick={cancelEditingDailyTarget} aria-label="Закрыть"><X className="size-4" /></button></div>
+            <div className="development-target-editor-head"><div><strong>Дневная норма</strong><span>Каждая часть заполняется только временем одноимённого занятия в таймере.</span></div><button type="button" onClick={cancelEditingDailyTarget} aria-label="Закрыть"><X className="size-4" /></button></div>
             {!dailyPartsDraft.length && (
               <label className="development-target-total"><span>Общая норма</span><div><input autoFocus type="number" min="0" max="1440" inputMode="numeric" value={dailyTargetDraft} onChange={(event) => setDailyTargetDraft(event.target.value)} placeholder="90" /><small>минут в день</small></div></label>
             )}

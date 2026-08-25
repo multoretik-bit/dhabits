@@ -56,6 +56,16 @@ function normalizeActivityTitle(title: string) {
   return title.trim().toLocaleLowerCase("ru-RU").replace(/ё/g, "е");
 }
 
+const ACTIVITY_PART_STEMS = ["спорт", "хожден", "силов", "англий", "истори", "чтен"];
+
+function activityTitleMatchesPart(title: string, partName: string) {
+  const normalizedTitle = normalizeActivityTitle(title);
+  const normalizedPartName = normalizeActivityTitle(partName);
+  if (!normalizedPartName) return false;
+  if (normalizedTitle.includes(normalizedPartName) || normalizedPartName.includes(normalizedTitle)) return true;
+  return ACTIVITY_PART_STEMS.some((stem) => normalizedTitle.includes(stem) && normalizedPartName.includes(stem));
+}
+
 export function getTimerActivityAspectId(title: string, color?: string) {
   const normalizedTitle = normalizeActivityTitle(title);
 
@@ -106,11 +116,7 @@ export function getTimerMinutesForAspectPartsOnDate(
 
   sessions.forEach((session) => {
     if (session.date !== date || getTimerActivityAspectId(session.title, session.color) !== aspectId) return;
-    const sessionTitle = normalizeActivityTitle(session.title);
-    const matchedPart = parts.find((part) => {
-      const partName = normalizeActivityTitle(part.name);
-      return partName.length > 0 && (sessionTitle.includes(partName) || partName.includes(sessionTitle));
-    });
+    const matchedPart = parts.find((part) => activityTitleMatchesPart(session.title, part.name));
     if (!matchedPart) return;
     totals.set(matchedPart.id, (totals.get(matchedPart.id) || 0) + Math.max(0, session.durationSeconds || 0));
   });

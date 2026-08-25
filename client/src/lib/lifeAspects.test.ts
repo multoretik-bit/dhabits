@@ -61,4 +61,33 @@ describe("getTimerActivityAspectId", () => {
       { ...parts[2], actualMinutes: 15 },
     ]);
   });
+
+  it("counts only the configured sport part", () => {
+    const sessions = [
+      { date: "2026-08-25", title: "Хождение пешком", color: "#2815ff", durationSeconds: 35 * 60 },
+      { date: "2026-08-25", title: "Силовые", color: "#2815ff", durationSeconds: 40 * 60 },
+      { date: "2026-08-25", title: "Спорт", color: "#2815ff", durationSeconds: 20 * 60 },
+    ];
+    const parts = [{ id: "walking", name: "Хождение", targetMinutes: 60 }];
+
+    expect(getTimerMinutesForAspectPartsOnDate(sessions, "2", "2026-08-25", parts)).toEqual([
+      { ...parts[0], actualMinutes: 35 },
+    ]);
+  });
+
+  it("keeps walking and strength training in separate sport parts", () => {
+    const sessions = [
+      { date: "2026-08-25", title: "Хождение", color: "#ffd814", durationSeconds: 30 * 60 },
+      { date: "2026-08-25", title: "Силовая тренировка", color: "#ffd814", durationSeconds: 45 * 60 },
+    ];
+    const parts = [
+      { id: "walking", name: "Хождение", targetMinutes: 60 },
+      { id: "strength", name: "Силовые", targetMinutes: 45 },
+    ];
+
+    expect(getTimerMinutesForAspectPartsOnDate(sessions, "2", "2026-08-25", parts)).toEqual([
+      { ...parts[0], actualMinutes: 30 },
+      { ...parts[1], actualMinutes: 45 },
+    ]);
+  });
 });
