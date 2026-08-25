@@ -6,7 +6,7 @@ describe("getTimerActivityAspectId", () => {
     expect(getTimerActivityAspectId(title, "#67e8f9")).toBe("10");
   });
 
-  it.each(["Спорт", "Хождение пешком"])("routes %s to health", (title) => {
+  it.each(["Спорт", "Хождение пешком", "Силовые", "Силовая тренировка"])("routes %s to health", (title) => {
     expect(getTimerActivityAspectId(title, "#ffd814")).toBe("2");
   });
 
@@ -36,9 +36,10 @@ describe("getTimerActivityAspectId", () => {
     const sessions = [
       { date: "2026-01-10", title: "Спорт", color: "#2815ff", durationSeconds: 20 * 60 },
       { date: "2026-08-23", title: "Хождение", color: "#2815ff", durationSeconds: 35 * 60 },
+      { date: "2026-08-25", title: "Силовые", color: "#ffd814", durationSeconds: 40 * 60 },
       { date: "2025-12-31", title: "Спорт", color: "#2815ff", durationSeconds: 50 * 60 },
     ];
-    expect(getTimerMinutesForAspectInYear(sessions, "2", 2026)).toBe(55);
+    expect(getTimerMinutesForAspectInYear(sessions, "2", 2026)).toBe(95);
   });
 
   it("splits an aspect into independently filled daily parts", () => {

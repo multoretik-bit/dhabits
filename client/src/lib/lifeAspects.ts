@@ -60,7 +60,11 @@ export function getTimerActivityAspectId(title: string, color?: string) {
   const normalizedTitle = normalizeActivityTitle(title);
 
   if (normalizedTitle.includes("работ")) return "8";
-  if (normalizedTitle.includes("спорт") || normalizedTitle.includes("хожден")) return "2";
+  if (
+    normalizedTitle.includes("спорт") ||
+    normalizedTitle.includes("хожден") ||
+    normalizedTitle.includes("силов")
+  ) return "2";
   if (
     normalizedTitle.includes("англий") ||
     normalizedTitle.includes("истори") ||
