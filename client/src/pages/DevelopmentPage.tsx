@@ -81,6 +81,7 @@ export default function DevelopmentPage() {
   const [editingVisionId, setEditingVisionId] = useState<string | null>(null);
   const [editingDailyTarget, setEditingDailyTarget] = useState(false);
   const [dailyTargetDraft, setDailyTargetDraft] = useState("");
+  const [dailyRewardDraft, setDailyRewardDraft] = useState("");
   const [dailyPartsDraft, setDailyPartsDraft] = useState<LifeAspectDailyPart[]>([]);
   const [activeSatisfactionPart, setActiveSatisfactionPart] = useState<string | null>(null);
   const [showGoalForm, setShowGoalForm] = useState(false);
@@ -291,6 +292,7 @@ export default function DevelopmentPage() {
 
   const startEditingDailyTarget = () => {
     setDailyTargetDraft(String(selectedAspect?.dailyTargetMinutes || ""));
+    setDailyRewardDraft(selectedAspect?.rewardPerMinute === undefined ? "" : String(selectedAspect.rewardPerMinute));
     setDailyPartsDraft((selectedAspect?.dailyParts || []).map((part) => ({ ...part })));
     setEditingDailyTarget(true);
   };
@@ -318,8 +320,12 @@ export default function DevelopmentPage() {
     const nextTarget = parts.length
       ? parts.reduce((sum, part) => sum + part.targetMinutes, 0)
       : Math.min(1440, Math.max(0, Math.round(Number(dailyTargetDraft) || 0)));
-    updateIdentitySystem(selectedAspect.id, { dailyTargetMinutes: nextTarget, dailyParts: parts });
+    const rewardPerMinute = dailyRewardDraft.trim() === ""
+      ? undefined
+      : Math.max(0, Math.round((Number(dailyRewardDraft.replace(",", ".")) || 0) * 1000) / 1000);
+    updateIdentitySystem(selectedAspect.id, { dailyTargetMinutes: nextTarget, rewardPerMinute, dailyParts: parts });
     setDailyTargetDraft("");
+    setDailyRewardDraft("");
     setDailyPartsDraft([]);
     setEditingDailyTarget(false);
   };
@@ -327,6 +333,7 @@ export default function DevelopmentPage() {
   const cancelEditingDailyTarget = () => {
     setEditingDailyTarget(false);
     setDailyTargetDraft("");
+    setDailyRewardDraft("");
     setDailyPartsDraft([]);
   };
 
@@ -457,7 +464,10 @@ export default function DevelopmentPage() {
           <motion.section initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="development-target-editor">
             <div className="development-target-editor-head"><div><strong>Дневная норма</strong><span>Каждая часть заполняется только временем одноимённого занятия в таймере.</span></div><button type="button" onClick={cancelEditingDailyTarget} aria-label="Закрыть"><X className="size-4" /></button></div>
             {!dailyPartsDraft.length && (
-              <label className="development-target-total"><span>Общая норма</span><div><input autoFocus type="number" min="0" max="1440" inputMode="numeric" value={dailyTargetDraft} onChange={(event) => setDailyTargetDraft(event.target.value)} placeholder="90" /><small>минут в день</small></div></label>
+              <div className="development-target-general-fields">
+                <label className="development-target-total"><span>Общая норма</span><div><input autoFocus type="number" min="0" max="1440" inputMode="numeric" value={dailyTargetDraft} onChange={(event) => setDailyTargetDraft(event.target.value)} placeholder="90" /><small>минут в день</small></div></label>
+                <label className="development-target-total is-reward"><span>Оплата времени</span><div><Coins className="size-4" /><input type="number" min="0" step="0.01" inputMode="decimal" value={dailyRewardDraft} onChange={(event) => setDailyRewardDraft(event.target.value)} placeholder="0,1" /><small>монет за 1 минуту</small></div></label>
+              </div>
             )}
             {dailyPartsDraft.length > 0 && (
               <div className="development-target-parts">

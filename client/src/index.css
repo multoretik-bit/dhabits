@@ -1302,11 +1302,13 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
 .development-target-editor-head strong { color: var(--foreground); font-size: 15px; }
 .development-target-editor-head span { color: var(--muted-foreground); font-size: 10px; }
 .development-target-editor-head > button { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 9px; background: var(--secondary); color: var(--muted-foreground); }
+.development-target-general-fields { display: flex; flex-wrap: wrap; gap: 14px 28px; }
 .development-target-total { display: grid; max-width: 310px; gap: 6px; }
 .development-target-total > span { color: var(--muted-foreground); font-size: 9px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
 .development-target-total > div { display: flex; align-items: center; gap: 8px; }
 .development-target-total input, .development-target-part input { height: 40px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 11px; background: var(--card); color: var(--foreground); outline: none; }
 .development-target-total input { width: 110px; font-size: 14px; font-weight: 850; }
+.development-target-total.is-reward > div > svg { color: var(--aspect-color); }
 .development-target-total small, .development-target-part small { color: var(--muted-foreground); font-size: 9px; font-weight: 700; }
 .development-target-total input:focus, .development-target-part input:focus { border-color: var(--aspect-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--aspect-color) 10%, transparent); }
 .development-target-parts { display: grid; gap: 7px; }

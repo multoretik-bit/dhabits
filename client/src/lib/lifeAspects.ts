@@ -102,14 +102,13 @@ export interface LifeAspectDailyPart {
 export function getActivityRewardPerMinute(
   title: string,
   color: string | undefined,
-  systems: Array<{ id: string; dailyParts?: LifeAspectDailyPart[] }>,
+  systems: Array<{ id: string; rewardPerMinute?: number; dailyParts?: LifeAspectDailyPart[] }>,
 ) {
   const aspectId = getTimerActivityAspectId(title, color);
   if (!aspectId) return undefined;
-  const part = systems
-    .find((system) => system.id === aspectId)
-    ?.dailyParts?.find((item) => activityTitleMatchesPart(title, item.name));
-  return part?.rewardPerMinute;
+  const system = systems.find((item) => item.id === aspectId);
+  const part = system?.dailyParts?.find((item) => activityTitleMatchesPart(title, item.name));
+  return part?.rewardPerMinute ?? system?.rewardPerMinute;
 }
 
 export function getTimerMinutesForAspectOnDate(sessions: TimerActivityRecord[], aspectId: string, date: string) {

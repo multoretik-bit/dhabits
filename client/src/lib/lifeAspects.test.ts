@@ -104,4 +104,10 @@ describe("getTimerActivityAspectId", () => {
     expect(getActivityRewardPerMinute("История мира", "#ffd814", systems)).toBe(0.4);
     expect(getActivityRewardPerMinute("Английский слова", "#ffd814", systems)).toBe(0.25);
   });
+
+  it("uses the aspect reward when the daily target is not split into parts", () => {
+    const systems = [{ id: "10", rewardPerMinute: 0.2 }];
+
+    expect(getActivityRewardPerMinute("Конспект", "#ffd814", systems)).toBe(0.2);
+  });
 });

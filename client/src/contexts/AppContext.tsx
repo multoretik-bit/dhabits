@@ -97,6 +97,7 @@ export interface IdentitySystem {
   color: string;
   notionUrl?: string;
   dailyTargetMinutes?: number;
+  rewardPerMinute?: number;
   dailyParts?: LifeAspectDailyPart[];
 }
 
