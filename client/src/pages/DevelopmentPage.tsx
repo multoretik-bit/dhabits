@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Clock3,
   Compass,
+  Coins,
   ExternalLink,
   Gauge,
   Globe2,
@@ -305,7 +306,14 @@ export default function DevelopmentPage() {
   const saveDailyTarget = () => {
     if (!selectedAspect) return;
     const parts = dailyPartsDraft
-      .map((part) => ({ ...part, name: part.name.trim(), targetMinutes: Math.min(1440, Math.max(0, Math.round(Number(part.targetMinutes) || 0))) }))
+      .map((part) => ({
+        ...part,
+        name: part.name.trim(),
+        targetMinutes: Math.min(1440, Math.max(0, Math.round(Number(part.targetMinutes) || 0))),
+        rewardPerMinute: part.rewardPerMinute === undefined
+          ? undefined
+          : Math.max(0, Math.round((Number(part.rewardPerMinute) || 0) * 1000) / 1000),
+      }))
       .filter((part) => part.name && part.targetMinutes > 0);
     const nextTarget = parts.length
       ? parts.reduce((sum, part) => sum + part.targetMinutes, 0)
@@ -458,6 +466,7 @@ export default function DevelopmentPage() {
                     <span>{index + 1}</span>
                     <input autoFocus={index === dailyPartsDraft.length - 1} type="text" value={part.name} onChange={(event) => updateDailyPart(part.id, { name: event.target.value })} placeholder="Например, История" aria-label="Название части" />
                     <label><input type="number" min="1" max="1440" inputMode="numeric" value={part.targetMinutes} onChange={(event) => updateDailyPart(part.id, { targetMinutes: Number(event.target.value) })} aria-label={`Минут для ${part.name || "части"}`} /><small>мин</small></label>
+                    <label className="development-target-reward"><Coins className="size-3.5" /><input type="number" min="0" step="0.01" inputMode="decimal" value={part.rewardPerMinute ?? ""} onChange={(event) => updateDailyPart(part.id, { rewardPerMinute: event.target.value === "" ? undefined : Number(event.target.value) })} placeholder="0,1" aria-label={`Монет за минуту для ${part.name || "части"}`} /><small>за мин</small></label>
                     <button type="button" onClick={() => setDailyPartsDraft((parts) => parts.filter((item) => item.id !== part.id))} aria-label="Удалить часть"><Trash2 className="size-4" /></button>
                   </div>
                 ))}

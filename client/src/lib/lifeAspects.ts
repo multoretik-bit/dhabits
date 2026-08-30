@@ -96,6 +96,20 @@ export interface LifeAspectDailyPart {
   id: string;
   name: string;
   targetMinutes: number;
+  rewardPerMinute?: number;
+}
+
+export function getActivityRewardPerMinute(
+  title: string,
+  color: string | undefined,
+  systems: Array<{ id: string; dailyParts?: LifeAspectDailyPart[] }>,
+) {
+  const aspectId = getTimerActivityAspectId(title, color);
+  if (!aspectId) return undefined;
+  const part = systems
+    .find((system) => system.id === aspectId)
+    ?.dailyParts?.find((item) => activityTitleMatchesPart(title, item.name));
+  return part?.rewardPerMinute;
 }
 
 export function getTimerMinutesForAspectOnDate(sessions: TimerActivityRecord[], aspectId: string, date: string) {

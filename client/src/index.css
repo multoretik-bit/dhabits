@@ -1310,10 +1310,12 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
 .development-target-total small, .development-target-part small { color: var(--muted-foreground); font-size: 9px; font-weight: 700; }
 .development-target-total input:focus, .development-target-part input:focus { border-color: var(--aspect-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--aspect-color) 10%, transparent); }
 .development-target-parts { display: grid; gap: 7px; }
-.development-target-part { display: grid; grid-template-columns: 28px minmax(0, 1fr) 112px 34px; align-items: center; gap: 8px; }
+.development-target-part { display: grid; grid-template-columns: 28px minmax(0, 1fr) 112px 150px 34px; align-items: center; gap: 8px; }
 .development-target-part > span { display: grid; width: 26px; height: 26px; place-items: center; border-radius: 8px; background: color-mix(in srgb, var(--aspect-color) 12%, var(--secondary)); color: var(--aspect-color); font-size: 9px; font-weight: 900; }
 .development-target-part > label { display: flex; align-items: center; gap: 5px; }
 .development-target-part > label input { width: 76px; font-weight: 800; }
+.development-target-part > .development-target-reward { gap: 5px; padding-left: 8px; border-left: 1px solid var(--border); color: var(--aspect-color); }
+.development-target-part > .development-target-reward input { width: 58px; }
 .development-target-part > button { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; color: var(--muted-foreground); }
 .development-target-part > button:hover { background: color-mix(in srgb, var(--destructive) 9%, transparent); color: var(--destructive); }
 .development-target-parts-total { display: flex; justify-content: flex-end; gap: 8px; padding: 7px 42px 0 0; color: var(--muted-foreground); font-size: 10px; }
@@ -1487,6 +1489,8 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .development-target-form input { width: 100%; }
   .development-target-editor { padding: 14px; }
   .development-target-part { grid-template-columns: 24px minmax(0, 1fr) 90px 30px; gap: 5px; }
+  .development-target-part > .development-target-reward { grid-column: 2 / 4; grid-row: 2; padding: 0 0 0 2px; border-left: 0; }
+  .development-target-part > button { grid-column: 4; grid-row: 1 / 3; }
   .development-target-part > span { width: 23px; height: 23px; }
   .development-target-part > label input { width: 58px; padding-inline: 7px; }
   .development-target-part > button { width: 30px; }

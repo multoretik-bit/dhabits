@@ -6,7 +6,7 @@ import { syncSave, syncLoad } from "@/lib/sync";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import { rollOverOverdueTasks } from "@/lib/taskRollover";
-import { LIFE_ASPECTS } from "@/lib/lifeAspects";
+import { getActivityRewardPerMinute, LIFE_ASPECTS } from "@/lib/lifeAspects";
 import type { LifeAspectDailyPart } from "@/lib/lifeAspects";
 
 export { getCurrentBlock } from "@/lib/schedule";
@@ -1870,7 +1870,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const addActivitySession = (session: ActivitySession, options?: { preserveTimer?: boolean }) => {
     const matchingMicroGoal = activityMicroGoals.find((goal) => normalizeActivityName(goal.title) === normalizeActivityName(session.title));
-    const rewardPerMinute = Math.max(0, matchingMicroGoal?.rewardPerMinute || 0);
+    const aspectRewardPerMinute = getActivityRewardPerMinute(session.title, session.color, identitySystems);
+    const rewardPerMinute = Math.max(0, aspectRewardPerMinute ?? matchingMicroGoal?.rewardPerMinute ?? 0);
     const earnedCoins = Math.round((Math.max(0, session.durationSeconds) / 60) * rewardPerMinute * 100) / 100;
     const recordedSession = earnedCoins > 0 ? { ...session, earnedCoins } : session;
     const newSessions = [recordedSession, ...activitySessions];

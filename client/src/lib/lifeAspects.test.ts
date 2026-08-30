@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getTimerActivityAspectId, getTimerMinutesForAspectInYear, getTimerMinutesForAspectOnDate, getTimerMinutesForAspectPartsOnDate } from "./lifeAspects";
+import { getActivityRewardPerMinute, getTimerActivityAspectId, getTimerMinutesForAspectInYear, getTimerMinutesForAspectOnDate, getTimerMinutesForAspectPartsOnDate } from "./lifeAspects";
 
 describe("getTimerActivityAspectId", () => {
   it.each(["Английский", "История России", "Чтение книги"])("routes %s to study", (title) => {
@@ -89,5 +89,19 @@ describe("getTimerActivityAspectId", () => {
       { ...parts[0], actualMinutes: 30 },
       { ...parts[1], actualMinutes: 45 },
     ]);
+  });
+
+  it("uses a separate reward rate for each configured activity part", () => {
+    const systems = [
+      { id: "2", dailyParts: [{ id: "walking", name: "Хождение", targetMinutes: 60, rewardPerMinute: 0.15 }] },
+      { id: "10", dailyParts: [
+        { id: "history", name: "История", targetMinutes: 30, rewardPerMinute: 0.4 },
+        { id: "english", name: "Английский", targetMinutes: 30, rewardPerMinute: 0.25 },
+      ] },
+    ];
+
+    expect(getActivityRewardPerMinute("Хождение пешком", "#2815ff", systems)).toBe(0.15);
+    expect(getActivityRewardPerMinute("История мира", "#ffd814", systems)).toBe(0.4);
+    expect(getActivityRewardPerMinute("Английский слова", "#ffd814", systems)).toBe(0.25);
   });
 });
