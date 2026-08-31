@@ -36,6 +36,7 @@ import EmojiPicker from "@/components/EmojiPicker";
 import { useApp, type HealthWorkoutExercise } from "@/contexts/AppContext";
 import { colorBelongsToLifeAspect, getTimerMinutesForAspectInYear, getTimerMinutesForAspectOnDate, getTimerMinutesForAspectPartsOnDate, LIFE_ASPECT_GROUPS, LIFE_ASPECTS, type LifeAspectDailyPart } from "@/lib/lifeAspects";
 import { getGoalProgressForDate, getGoalProgressUnit } from "@/lib/goalProgress";
+import { formatCalendarDays, formatUsefulTime, getUsefulTimeStats } from "@/lib/usefulTime";
 
 function getDefaultDeadline() {
   const date = new Date();
@@ -132,6 +133,10 @@ export default function DevelopmentPage() {
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
   const weekday = today.getDay();
   const currentYear = today.getFullYear();
+  const usefulTimeStats = useMemo(
+    () => getUsefulTimeStats(activitySessions, todayString),
+    [activitySessions, todayString],
+  );
 
   const yearlyAspectMinutes = useMemo(() => {
     if (!selectedAspect) return 0;
@@ -408,6 +413,14 @@ export default function DevelopmentPage() {
           title="Развитие"
           description="Десять аспектов жизни связывают ваше видение с тем, что вы реально делаете каждый день. Выберите сферу, чтобы увидеть её направление и дневные блоки."
         />
+
+        <section className="useful-time-card">
+          <div className="useful-time-intro"><span><Sparkles className="size-5" /></span><div><strong>Время с пользой</strong><small>Все занятия таймера начиная с 1 августа 2026 года</small></div></div>
+          <div className="useful-time-metrics">
+            <article><span>Всего проведено с пользой</span><strong>{formatUsefulTime(usefulTimeStats.totalSeconds)}</strong><small>за {formatCalendarDays(usefulTimeStats.daysElapsed)}</small></article>
+            <article><span>Среднее за один день</span><strong>{formatUsefulTime(usefulTimeStats.averageSecondsPerDay)}</strong><small>общее время ÷ количество дней</small></article>
+          </div>
+        </section>
 
         <section className="satisfaction-card">
           <div className="satisfaction-head">
