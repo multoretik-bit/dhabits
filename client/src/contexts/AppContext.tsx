@@ -99,6 +99,13 @@ export interface IdentitySystem {
   dailyTargetMinutes?: number;
   rewardPerMinute?: number;
   dailyParts?: LifeAspectDailyPart[];
+  healthWorkout?: HealthWorkoutExercise[];
+}
+
+export interface HealthWorkoutExercise {
+  id: string;
+  name: string;
+  amount: string;
 }
 
 export interface IdentitySystemFolder {

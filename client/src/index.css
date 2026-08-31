@@ -1432,6 +1432,34 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
 .study-tool-copy > strong { margin-top: 2px; color: var(--foreground); font-size: 15px; font-weight: 850; }
 .study-tool-copy > span { margin-top: 3px; color: var(--muted-foreground); font-size: 10px; line-height: 1.4; }
 .study-tool-open { position: relative; z-index: 1; display: inline-flex; grid-column: 1 / -1; align-self: end; align-items: center; justify-content: center; gap: 6px; padding: 9px 11px; border-radius: 11px; background: var(--aspect-color); color: #3d3300; font-size: 10px; font-weight: 850; }
+.health-tools-wrap { display: grid; gap: 12px; padding: 14px; }
+.health-tool-card { width: min(100%, 520px); text-align: left; }
+.health-tool-card .study-tool-open svg { transition: transform .18s ease; }
+.health-tool-card[aria-expanded="true"] .study-tool-open svg { transform: rotate(90deg); }
+.health-workout-program { overflow: hidden; border: 1px solid color-mix(in srgb, var(--aspect-color) 28%, var(--border)); border-radius: 20px; background: color-mix(in srgb, var(--aspect-color) 4%, var(--surface-soft)); }
+.health-workout-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border-bottom: 1px solid var(--border); }
+.health-workout-head > div { display: flex; align-items: center; gap: 10px; }
+.health-workout-head > div > span { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 12px; background: color-mix(in srgb, var(--aspect-color) 14%, var(--secondary)); color: var(--aspect-color); }
+.health-workout-head > div > div { display: flex; flex-direction: column; }
+.health-workout-head strong { font-size: 13px; font-weight: 900; }
+.health-workout-head small { color: var(--muted-foreground); font-size: 9px; }
+.health-workout-head > button, .health-workout-editor-actions > button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 10px; border-radius: 10px; background: var(--secondary); color: var(--muted-foreground); font-size: 9px; font-weight: 850; }
+.health-workout-list { display: grid; gap: 7px; padding: 12px; }
+.health-workout-exercise { display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--card); }
+.health-workout-exercise > span { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 9px; background: color-mix(in srgb, var(--aspect-color) 13%, var(--secondary)); color: var(--aspect-color); font-size: 9px; font-weight: 900; }
+.health-workout-exercise > div:not(.health-workout-row-actions) { display: flex; min-width: 0; flex-direction: column; }
+.health-workout-exercise strong { font-size: 11px; font-weight: 850; }
+.health-workout-exercise small { margin-top: 2px; color: var(--muted-foreground); font-size: 9px; }
+.health-workout-exercise.is-editing { grid-template-columns: 34px minmax(0, 1fr) auto; }
+.health-workout-exercise input { min-width: 0; height: 34px; padding: 7px 9px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface-soft); color: var(--foreground); font-size: 10px; outline: none; }
+.health-workout-exercise input + input { margin-top: 5px; color: var(--muted-foreground); }
+.health-workout-exercise input:focus { border-color: var(--aspect-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--aspect-color) 10%, transparent); }
+.health-workout-row-actions { display: flex; gap: 4px; }
+.health-workout-row-actions button { display: grid; width: 29px; height: 29px; place-items: center; border-radius: 8px; background: var(--secondary); color: var(--muted-foreground); }
+.health-workout-row-actions button:last-child:hover { color: var(--destructive); }
+.health-workout-row-actions button:disabled { opacity: .35; }
+.health-workout-editor-actions { display: flex; justify-content: space-between; gap: 10px; padding: 0 12px 12px; }
+.health-workout-editor-actions > .app-button { background: var(--aspect-color); color: #fff; }
 .development-manage { padding: 7px 10px; border-radius: 10px; color: var(--aspect-color); font-size: 10px; font-weight: 800; }
 .development-manage:hover { background: color-mix(in srgb, var(--aspect-color) 9%, transparent); }
 .aspect-block-list { display: grid; gap: 8px; padding: 14px; }
@@ -1510,6 +1538,14 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .study-tools-grid { grid-template-columns: 1fr; }
   .study-tool-card { min-height: 0; grid-template-columns: auto minmax(0, 1fr); gap: 11px; padding: 14px; }
   .study-tool-icon { width: 46px; height: 46px; border-radius: 14px; }
+  .health-tools-wrap { padding: 10px; }
+  .health-tool-card { width: 100%; }
+  .health-workout-head { align-items: flex-start; padding: 12px; }
+  .health-workout-head > button { padding-inline: 8px; }
+  .health-workout-exercise.is-editing { grid-template-columns: 30px minmax(0, 1fr); }
+  .health-workout-exercise.is-editing > .health-workout-row-actions { grid-column: 2; justify-content: flex-end; }
+  .health-workout-editor-actions { flex-direction: column; }
+  .health-workout-editor-actions > button { width: 100%; }
   .aspect-block-item { grid-template-columns: 64px minmax(0, 1fr); }
   .aspect-block-item > svg { display: none; }
 }

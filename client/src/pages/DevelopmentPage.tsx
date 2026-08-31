@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
+  ArrowDown,
+  ArrowUp,
   BookMarked,
   BookOpenText,
   BriefcaseBusiness,
@@ -11,6 +13,7 @@ import {
   Clock3,
   Compass,
   Coins,
+  Dumbbell,
   ExternalLink,
   Gauge,
   Globe2,
@@ -30,7 +33,7 @@ import { nanoid } from "nanoid";
 import { PageHeader, PageShell } from "@/components/AppUI";
 import AdvancedColorPicker from "@/components/AdvancedColorPicker";
 import EmojiPicker from "@/components/EmojiPicker";
-import { useApp } from "@/contexts/AppContext";
+import { useApp, type HealthWorkoutExercise } from "@/contexts/AppContext";
 import { colorBelongsToLifeAspect, getTimerMinutesForAspectInYear, getTimerMinutesForAspectOnDate, getTimerMinutesForAspectPartsOnDate, LIFE_ASPECT_GROUPS, LIFE_ASPECTS, type LifeAspectDailyPart } from "@/lib/lifeAspects";
 import { getGoalProgressForDate, getGoalProgressUnit } from "@/lib/goalProgress";
 
@@ -55,6 +58,17 @@ function getDeadlineState(value?: string) {
   if (days === 0) return "Срок сегодня";
   return `Осталось ${days} дн.`;
 }
+
+const DEFAULT_HEALTH_WORKOUT: HealthWorkoutExercise[] = [
+  { id: "neck-circles", name: "Круговые движения шеей", amount: "10 в одну и 10 в другую сторону" },
+  { id: "elbow-circles", name: "Круги локтями", amount: "10 в одну и 10 в другую сторону" },
+  { id: "shoulder-circles", name: "Круги плечами", amount: "10 в одну и 10 в другую сторону" },
+  { id: "squats", name: "Приседания", amount: "20 раз" },
+  { id: "push-ups", name: "Отжимания", amount: "10 раз" },
+  { id: "front-knee-raises", name: "Подъём колен перед собой", amount: "20 раз" },
+  { id: "clap-knee-raises", name: "Подъёмы колен с хлопком под ногой", amount: "20 раз" },
+  { id: "inner-thigh-raises", name: "Подъёмы внутрь бедра", amount: "20 раз" },
+];
 
 export default function DevelopmentPage() {
   const {
@@ -98,12 +112,16 @@ export default function DevelopmentPage() {
   const [goalCoins, setGoalCoins] = useState("100");
   const [goalProgressType, setGoalProgressType] = useState<"manual" | "activity_minutes">("manual");
   const [goalActivityName, setGoalActivityName] = useState("");
+  const [isHealthWorkoutOpen, setIsHealthWorkoutOpen] = useState(false);
+  const [isEditingHealthWorkout, setIsEditingHealthWorkout] = useState(false);
+  const [healthWorkoutDraft, setHealthWorkoutDraft] = useState<HealthWorkoutExercise[]>([]);
 
   const systems = useMemo(() => LIFE_ASPECTS.map((fallback) => {
     const saved = identitySystems.find((system) => system.id === fallback.id);
     return { ...fallback, ...saved, name: saved?.aspect || fallback.name, color: fallback.color };
   }), [identitySystems]);
   const selectedAspect = systems.find((aspect) => aspect.id === selectedAspectId);
+  const healthWorkout = selectedAspect?.healthWorkout?.length ? selectedAspect.healthWorkout : DEFAULT_HEALTH_WORKOUT;
   const visions = identitySystemIdeas.filter((idea) => idea.aspectId === selectedAspectId);
   const aspectGoals = goals.filter((goal) => goal.aspectId === selectedAspectId);
   const knownActivityNames = Array.from(new Map(activitySessions.map((session) => [
@@ -346,7 +364,40 @@ export default function DevelopmentPage() {
     cancelEditingDailyTarget();
     closeVisionForm();
     closeGoalForm();
+    setIsHealthWorkoutOpen(false);
+    setIsEditingHealthWorkout(false);
+    setHealthWorkoutDraft([]);
     setSelectedAspectId(null);
+  };
+
+  const startEditingHealthWorkout = () => {
+    setHealthWorkoutDraft(healthWorkout.map((exercise) => ({ ...exercise })));
+    setIsEditingHealthWorkout(true);
+  };
+
+  const updateHealthWorkoutExercise = (id: string, updates: Partial<HealthWorkoutExercise>) => {
+    setHealthWorkoutDraft((items) => items.map((item) => item.id === id ? { ...item, ...updates } : item));
+  };
+
+  const moveHealthWorkoutExercise = (index: number, direction: -1 | 1) => {
+    setHealthWorkoutDraft((items) => {
+      const target = index + direction;
+      if (target < 0 || target >= items.length) return items;
+      const next = [...items];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
+  const saveHealthWorkout = () => {
+    if (!selectedAspect) return;
+    const program = healthWorkoutDraft
+      .map((exercise) => ({ ...exercise, name: exercise.name.trim(), amount: exercise.amount.trim() }))
+      .filter((exercise) => exercise.name && exercise.amount);
+    if (!program.length) return;
+    updateIdentitySystem(selectedAspect.id, { healthWorkout: program });
+    setIsEditingHealthWorkout(false);
+    setHealthWorkoutDraft([]);
   };
 
   if (!selectedAspect) {
@@ -568,7 +619,7 @@ export default function DevelopmentPage() {
       <section className="development-section tools-section">
         <div className="development-section-head">
           <div className="development-section-title"><span><Wrench className="size-5" /></span><div><h2>Инструменты</h2><p>Практики и опоры для развития этой сферы</p></div></div>
-          <span className={selectedAspect.id === "10" ? "development-soon is-ready" : "development-soon"}>{selectedAspect.id === "10" ? "Доступно" : "Скоро"}</span>
+          <span className={selectedAspect.id === "10" || selectedAspect.id === "2" ? "development-soon is-ready" : "development-soon"}>{selectedAspect.id === "10" || selectedAspect.id === "2" ? "Доступно" : "Скоро"}</span>
         </div>
         {selectedAspect.id === "10" ? (
           <div className="study-tools-categories">
@@ -617,6 +668,35 @@ export default function DevelopmentPage() {
                 </a>
               </div>
             </section>
+          </div>
+        ) : selectedAspect.id === "2" ? (
+          <div className="health-tools-wrap">
+            <button type="button" className="study-tool-card health-tool-card" onClick={() => setIsHealthWorkoutOpen((open) => !open)} aria-expanded={isHealthWorkoutOpen}>
+              <span className="study-tool-icon"><Dumbbell className="size-7" /></span>
+              <span className="study-tool-copy"><small>Ежедневный комплекс</small><strong>Зарядка</strong><span>Восемь упражнений для мягкого запуска всего тела.</span></span>
+              <span className="study-tool-open">{isHealthWorkoutOpen ? "Скрыть программу" : "Открыть программу"} <ChevronRight className="size-4" /></span>
+            </button>
+            <AnimatePresence>
+              {isHealthWorkoutOpen && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="health-workout-program">
+                  <div className="health-workout-head"><div><span><Dumbbell className="size-5" /></span><div><strong>Программа зарядки</strong><small>Выполняйте упражнения по порядку</small></div></div>{isEditingHealthWorkout ? <button type="button" onClick={() => { setIsEditingHealthWorkout(false); setHealthWorkoutDraft([]); }}><X className="size-4" /> Отмена</button> : <button type="button" onClick={startEditingHealthWorkout}><Pencil className="size-4" /> Изменить</button>}</div>
+                  <div className="health-workout-list">
+                    {(isEditingHealthWorkout ? healthWorkoutDraft : healthWorkout).map((exercise, index) => (
+                      <div key={exercise.id} className={isEditingHealthWorkout ? "health-workout-exercise is-editing" : "health-workout-exercise"}>
+                        <span>{String(index + 1).padStart(2, "0")}</span>
+                        {isEditingHealthWorkout ? (
+                          <>
+                            <div><input value={exercise.name} onChange={(event) => updateHealthWorkoutExercise(exercise.id, { name: event.target.value })} aria-label={`Название упражнения ${index + 1}`} /><input value={exercise.amount} onChange={(event) => updateHealthWorkoutExercise(exercise.id, { amount: event.target.value })} aria-label={`Количество повторов упражнения ${index + 1}`} /></div>
+                            <div className="health-workout-row-actions"><button type="button" disabled={index === 0} onClick={() => moveHealthWorkoutExercise(index, -1)} aria-label={`Поднять упражнение ${exercise.name}`}><ArrowUp className="size-3.5" /></button><button type="button" disabled={index === healthWorkoutDraft.length - 1} onClick={() => moveHealthWorkoutExercise(index, 1)} aria-label={`Опустить упражнение ${exercise.name}`}><ArrowDown className="size-3.5" /></button><button type="button" onClick={() => setHealthWorkoutDraft((items) => items.filter((item) => item.id !== exercise.id))} aria-label={`Удалить упражнение ${exercise.name}`}><Trash2 className="size-3.5" /></button></div>
+                          </>
+                        ) : <div><strong>{exercise.name}</strong><small>{exercise.amount}</small></div>}
+                      </div>
+                    ))}
+                  </div>
+                  {isEditingHealthWorkout && <div className="health-workout-editor-actions"><button type="button" onClick={() => setHealthWorkoutDraft((items) => [...items, { id: nanoid(), name: "Новое упражнение", amount: "10 раз" }])}><Plus className="size-4" /> Добавить упражнение</button><button type="button" className="app-button" onClick={saveHealthWorkout} disabled={!healthWorkoutDraft.some((exercise) => exercise.name.trim() && exercise.amount.trim())}><Check className="size-4" /> Сохранить программу</button></div>}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         ) : <div className="tools-placeholder"><Wrench className="size-5" /><p><strong>Здесь появятся ваши инструменты</strong><span>Мы добавим их отдельно под каждый аспект.</span></p></div>}
       </section>
