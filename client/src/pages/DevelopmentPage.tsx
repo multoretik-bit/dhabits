@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowDown,
   ArrowUp,
+  BarChart3,
   BookMarked,
   BookOpenText,
   BriefcaseBusiness,
@@ -34,9 +35,9 @@ import { PageHeader, PageShell } from "@/components/AppUI";
 import AdvancedColorPicker from "@/components/AdvancedColorPicker";
 import EmojiPicker from "@/components/EmojiPicker";
 import { useApp, type HealthWorkoutExercise } from "@/contexts/AppContext";
-import { colorBelongsToLifeAspect, getTimerMinutesForAspectInYear, getTimerMinutesForAspectOnDate, getTimerMinutesForAspectPartsOnDate, LIFE_ASPECT_GROUPS, LIFE_ASPECTS, type LifeAspectDailyPart } from "@/lib/lifeAspects";
+import { colorBelongsToLifeAspect, getTimerActivityAspectId, getTimerMinutesForAspectInYear, getTimerMinutesForAspectOnDate, getTimerMinutesForAspectPartsOnDate, LIFE_ASPECT_GROUPS, LIFE_ASPECTS, type LifeAspectDailyPart } from "@/lib/lifeAspects";
 import { getGoalProgressForDate, getGoalProgressUnit } from "@/lib/goalProgress";
-import { formatCalendarDays, formatUsefulTime, getUsefulTimeStats } from "@/lib/usefulTime";
+import { formatCalendarDays, formatUsefulTime, getUsefulTimeHistory, getUsefulTimeStats } from "@/lib/usefulTime";
 
 function getDefaultDeadline() {
   const date = new Date();
@@ -58,6 +59,11 @@ function getDeadlineState(value?: string) {
   if (days < 0) return `Просрочено на ${Math.abs(days)} дн.`;
   if (days === 0) return "Срок сегодня";
   return `Осталось ${days} дн.`;
+}
+
+function formatUsefulHistoryDate(date: string, today: string) {
+  if (date === today) return "Сегодня";
+  return new Date(`${date}T00:00:00`).toLocaleDateString("ru-RU", { weekday: "short", day: "numeric", month: "short" });
 }
 
 const DEFAULT_HEALTH_WORKOUT: HealthWorkoutExercise[] = [
@@ -116,6 +122,7 @@ export default function DevelopmentPage() {
   const [isHealthWorkoutOpen, setIsHealthWorkoutOpen] = useState(false);
   const [isEditingHealthWorkout, setIsEditingHealthWorkout] = useState(false);
   const [healthWorkoutDraft, setHealthWorkoutDraft] = useState<HealthWorkoutExercise[]>([]);
+  const [isUsefulHistoryOpen, setIsUsefulHistoryOpen] = useState(false);
 
   const systems = useMemo(() => LIFE_ASPECTS.map((fallback) => {
     const saved = identitySystems.find((system) => system.id === fallback.id);
@@ -137,6 +144,15 @@ export default function DevelopmentPage() {
     () => getUsefulTimeStats(activitySessions, todayString),
     [activitySessions, todayString],
   );
+  const usefulTimeHistory = useMemo(
+    () => getUsefulTimeHistory(activitySessions.map((session) => ({
+      date: session.date,
+      durationSeconds: session.durationSeconds,
+      categoryId: getTimerActivityAspectId(session.title, session.color),
+    })), todayString),
+    [activitySessions, todayString],
+  );
+  const todayUsefulSeconds = usefulTimeHistory[0]?.totalSeconds || 0;
 
   const yearlyAspectMinutes = useMemo(() => {
     if (!selectedAspect) return 0;
@@ -408,19 +424,44 @@ export default function DevelopmentPage() {
   if (!selectedAspect) {
     return (
       <PageShell className="development-page">
-        <PageHeader
-          eyebrow="Долгосрочная система"
-          title="Развитие"
-          description="Десять аспектов жизни связывают ваше видение с тем, что вы реально делаете каждый день. Выберите сферу, чтобы увидеть её направление и дневные блоки."
-        />
+        <div className="development-top-row">
+          <PageHeader
+            eyebrow="Долгосрочная система"
+            title="Развитие"
+            description="Десять аспектов жизни связывают ваше видение с тем, что вы реально делаете каждый день. Выберите сферу, чтобы увидеть её направление и дневные блоки."
+          />
 
-        <section className="useful-time-card">
-          <div className="useful-time-intro"><span><Sparkles className="size-5" /></span><div><strong>Время с пользой</strong><small>Все занятия таймера начиная с 1 августа 2026 года</small></div></div>
-          <div className="useful-time-metrics">
-            <article><span>Всего проведено с пользой</span><strong>{formatUsefulTime(usefulTimeStats.totalSeconds)}</strong><small>за {formatCalendarDays(usefulTimeStats.daysElapsed)}</small></article>
-            <article><span>Среднее за один день</span><strong>{formatUsefulTime(usefulTimeStats.averageSecondsPerDay)}</strong><small>общее время ÷ количество дней</small></article>
-          </div>
-        </section>
+          <section className="useful-time-card">
+            <div className="useful-time-intro"><span><Sparkles className="size-5" /></span><div><strong>Время с пользой</strong><small>С 1 августа 2026 года</small></div></div>
+            <div className="useful-time-metrics">
+              <article><span>Всего</span><strong>{formatUsefulTime(usefulTimeStats.totalSeconds)}</strong><small>{formatCalendarDays(usefulTimeStats.daysElapsed)}</small></article>
+              <button type="button" className="useful-time-average" onClick={() => setIsUsefulHistoryOpen(true)} aria-label="Открыть полезное время по дням"><span>Среднее в день</span><strong>{formatUsefulTime(usefulTimeStats.averageSecondsPerDay)}</strong><small><BarChart3 className="size-3.5" /> По дням <ChevronRight className="size-3" /></small></button>
+              <article><span>Сегодня</span><strong>{formatUsefulTime(todayUsefulSeconds)}</strong><small>по таймеру</small></article>
+            </div>
+          </section>
+        </div>
+
+        <AnimatePresence>
+          {isUsefulHistoryOpen && (
+            <motion.div className="useful-history-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => event.target === event.currentTarget && setIsUsefulHistoryOpen(false)}>
+              <motion.aside className="useful-history-panel" role="dialog" aria-modal="true" aria-labelledby="useful-history-title" initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 40, opacity: 0 }}>
+                <div className="useful-history-head"><div><span><BarChart3 className="size-5" /></span><div><h2 id="useful-history-title">Полезное время по дням</h2><p>Краткая разбивка по аспектам с 1 августа</p></div></div><button type="button" onClick={() => setIsUsefulHistoryOpen(false)} aria-label="Закрыть историю"><X className="size-5" /></button></div>
+                <div className="useful-history-summary"><div><span>Всего</span><strong>{formatUsefulTime(usefulTimeStats.totalSeconds)}</strong></div><div><span>Среднее</span><strong>{formatUsefulTime(usefulTimeStats.averageSecondsPerDay)}</strong></div><div><span>Сегодня</span><strong>{formatUsefulTime(todayUsefulSeconds)}</strong></div></div>
+                <div className="useful-history-days">
+                  {usefulTimeHistory.map((day) => (
+                    <article key={day.date} className={day.totalSeconds ? "useful-history-day has-time" : "useful-history-day"}>
+                      <div className="useful-history-day-head"><div><strong>{formatUsefulHistoryDate(day.date, todayString)}</strong><small>{new Date(`${day.date}T00:00:00`).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}</small></div><b>{formatUsefulTime(day.totalSeconds)}</b></div>
+                      {day.categories.length ? <div className="useful-history-categories">{day.categories.map((category) => {
+                        const aspect = LIFE_ASPECTS.find((item) => item.id === category.categoryId);
+                        return <span key={category.categoryId} style={{ "--category-color": aspect?.color || "var(--primary)" } as React.CSSProperties}><i /><strong>{aspect?.name || "Другое"}</strong><small>{formatUsefulTime(category.seconds)}</small></span>;
+                      })}</div> : <p>В этот день полезное время не записывалось</p>}
+                    </article>
+                  ))}
+                </div>
+              </motion.aside>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <section className="satisfaction-card">
           <div className="satisfaction-head">

@@ -3,6 +3,10 @@ export interface UsefulTimeSession {
   durationSeconds: number;
 }
 
+export interface CategorizedUsefulTimeSession extends UsefulTimeSession {
+  categoryId?: string;
+}
+
 const DAY_MS = 86_400_000;
 
 function dateStringToUtc(value: string) {
@@ -28,6 +32,38 @@ export function getUsefulTimeStats(
     daysElapsed,
     averageSecondsPerDay: daysElapsed ? totalSeconds / daysElapsed : 0,
   };
+}
+
+export function getUsefulTimeHistory(
+  sessions: CategorizedUsefulTimeSession[],
+  today: string,
+  startDate = "2026-08-01",
+) {
+  const startTime = dateStringToUtc(startDate);
+  const todayTime = dateStringToUtc(today);
+  if (todayTime < startTime) return [];
+
+  const days = new Map<string, { date: string; totalSeconds: number; categories: Map<string, number> }>();
+  for (let time = startTime; time <= todayTime; time += DAY_MS) {
+    const date = new Date(time).toISOString().slice(0, 10);
+    days.set(date, { date, totalSeconds: 0, categories: new Map() });
+  }
+
+  sessions.forEach((session) => {
+    const day = days.get(session.date);
+    if (!day) return;
+    const seconds = Math.max(0, session.durationSeconds || 0);
+    const categoryId = session.categoryId || "other";
+    day.totalSeconds += seconds;
+    day.categories.set(categoryId, (day.categories.get(categoryId) || 0) + seconds);
+  });
+
+  return Array.from(days.values()).reverse().map((day) => ({
+    date: day.date,
+    totalSeconds: day.totalSeconds,
+    categories: Array.from(day.categories, ([categoryId, seconds]) => ({ categoryId, seconds }))
+      .sort((a, b) => b.seconds - a.seconds),
+  }));
 }
 
 export function formatUsefulTime(totalSeconds: number) {

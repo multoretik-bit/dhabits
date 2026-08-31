@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCalendarDays, formatUsefulTime, getUsefulTimeStats } from "./usefulTime";
+import { formatCalendarDays, formatUsefulTime, getUsefulTimeHistory, getUsefulTimeStats } from "./usefulTime";
 
 describe("getUsefulTimeStats", () => {
   it("counts all calendar days from 1 August including days without sessions", () => {
@@ -32,5 +32,27 @@ describe("formatUsefulTime", () => {
     expect(formatCalendarDays(31)).toBe("31 календарный день");
     expect(formatCalendarDays(22)).toBe("22 календарных дня");
     expect(formatCalendarDays(15)).toBe("15 календарных дней");
+  });
+});
+
+describe("getUsefulTimeHistory", () => {
+  it("creates every day and groups its time by category", () => {
+    const history = getUsefulTimeHistory([
+      { date: "2026-08-01", durationSeconds: 1800, categoryId: "10" },
+      { date: "2026-08-01", durationSeconds: 900, categoryId: "10" },
+      { date: "2026-08-01", durationSeconds: 1200, categoryId: "2" },
+    ], "2026-08-02");
+
+    expect(history).toEqual([
+      { date: "2026-08-02", totalSeconds: 0, categories: [] },
+      {
+        date: "2026-08-01",
+        totalSeconds: 3900,
+        categories: [
+          { categoryId: "10", seconds: 2700 },
+          { categoryId: "2", seconds: 1200 },
+        ],
+      },
+    ]);
   });
 });
