@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyDayScheduleOverride, getCurrentBlock, isHabitScheduledForDay } from "./schedule";
+import { applyDayScheduleOverride, getCurrentBlock, getScheduleRestGaps, isHabitScheduledForDay } from "./schedule";
 
 const blocks = [
   { id: "morning", startTime: "09:00", endTime: "10:00" },
@@ -70,5 +70,44 @@ describe("applyDayScheduleOverride", () => {
       { id: "night", startTime: "23:00", endTime: "02:00" },
       { id: "work", startTime: "16:00", endTime: "18:00" },
     ]);
+  });
+});
+
+describe("getScheduleRestGaps", () => {
+  it("fills the entire day around scheduled blocks", () => {
+    expect(getScheduleRestGaps([
+      { startTime: "09:00", endTime: "10:00" },
+      { startTime: "16:00", endTime: "18:00" },
+    ])).toEqual([
+      { start: 0, end: 540, duration: 540 },
+      { start: 600, end: 960, duration: 360 },
+      { start: 1080, end: 1440, duration: 360 },
+    ]);
+  });
+
+  it("merges overlaps and supports blocks crossing midnight", () => {
+    expect(getScheduleRestGaps([
+      { startTime: "23:00", endTime: "01:00" },
+      { startTime: "00:30", endTime: "02:00" },
+      { startTime: "10:00", endTime: "12:00" },
+      { startTime: "11:00", endTime: "13:00" },
+    ])).toEqual([
+      { start: 120, end: 600, duration: 480 },
+      { start: 780, end: 1380, duration: 600 },
+    ]);
+  });
+
+  it("splits a free interval at standalone event times", () => {
+    expect(getScheduleRestGaps([{ startTime: "10:00", endTime: "12:00" }], ["08:30", "15:00"]))
+      .toEqual([
+        { start: 0, end: 510, duration: 510 },
+        { start: 510, end: 600, duration: 90 },
+        { start: 720, end: 900, duration: 180 },
+        { start: 900, end: 1440, duration: 540 },
+      ]);
+  });
+
+  it("returns one full-day rest interval without scheduled blocks", () => {
+    expect(getScheduleRestGaps([])).toEqual([{ start: 0, end: 1440, duration: 1440 }]);
   });
 });

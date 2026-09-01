@@ -318,6 +318,10 @@
   .schedule-block { position: relative; overflow: hidden; padding: 16px; border: 1px solid color-mix(in srgb, var(--block-color) 22%, var(--border)); border-left: 5px solid var(--block-color); border-radius: 22px; background: linear-gradient(135deg, color-mix(in srgb, var(--block-color) 11%, var(--surface-raised)), var(--surface-raised) 58%); box-shadow: 0 14px 34px color-mix(in srgb, var(--block-color) 8%, transparent); }
   .schedule-block::after { content: ""; position: absolute; width: 130px; height: 130px; right: -54px; top: -72px; border-radius: 50%; background: color-mix(in srgb, var(--block-color) 12%, transparent); pointer-events: none; }
   .schedule-block.is-current { box-shadow: 0 16px 42px color-mix(in srgb, var(--block-color) 19%, transparent); }
+  .schedule-rest-block { display: grid; grid-template-columns: auto 38px minmax(0, 1fr) auto; align-items: center; gap: 12px; min-height: 72px; padding: 13px 16px; border: 1px solid color-mix(in srgb, var(--block-color) 30%, var(--border)); border-left: 5px solid var(--block-color); border-radius: 20px; background: linear-gradient(135deg, color-mix(in srgb, var(--block-color) 13%, var(--surface-raised)), var(--surface-raised) 68%); box-shadow: 0 10px 26px color-mix(in srgb, var(--block-color) 8%, transparent); }
+  .schedule-rest-block .schedule-time { min-width: 118px; }
+  .schedule-rest-icon { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 12px; color: var(--block-color); background: color-mix(in srgb, var(--block-color) 18%, var(--surface-raised)); }
+  .schedule-rest-duration { color: var(--block-color); font-size: 12px; white-space: nowrap; }
   .schedule-block-head { position: relative; z-index: 1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; }
   .schedule-time { min-width: 118px; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 11px; border: 1px solid color-mix(in srgb, var(--block-color) 26%, transparent); border-radius: 13px; color: var(--block-color); background: color-mix(in srgb, var(--block-color) 11%, var(--surface-raised)); font-size: 11px; font-weight: 900; }
   .schedule-time span { opacity: .5; }
@@ -1049,6 +1053,11 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .growth-folder-body { padding: 9px; }
   .schedule-timeline, .schedule-tasks { padding: 14px; }
   .schedule-block { padding: 12px; border-radius: 18px; }
+  .schedule-rest-block { grid-template-columns: 1fr auto; padding: 12px; border-radius: 18px; }
+  .schedule-rest-block .schedule-time { min-width: 0; width: max-content; }
+  .schedule-rest-icon { display: none; }
+  .schedule-rest-block .schedule-copy { grid-column: 1; }
+  .schedule-rest-duration { grid-column: 2; grid-row: 1 / span 2; }
   .schedule-block-head { grid-template-columns: 1fr auto; }
   .schedule-time, .schedule-time-edit { grid-column: 1 / -1; justify-self: start; min-width: 0; }
   .schedule-block-head { gap: 9px; }

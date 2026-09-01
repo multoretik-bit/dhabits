@@ -11,6 +11,7 @@ import {
   Clock,
   LayoutGrid,
   ListTodo,
+  Moon,
   Pencil,
   Plus,
   RotateCcw,
@@ -23,7 +24,7 @@ import { nanoid } from "nanoid";
 import { useApp, type HabitBlock, type Task, getCurrentBlock } from "@/contexts/AppContext";
 import { formatDateToDateString, isSameDay } from "@/lib/dateUtils";
 import { getBlockIllustration } from "@/lib/blockIllustrations";
-import { applyDayScheduleOverride, isHabitScheduledForDay } from "@/lib/schedule";
+import { applyDayScheduleOverride, getScheduleRestGaps, isHabitScheduledForDay } from "@/lib/schedule";
 import { getMonthEventOccurrenceForDate, timeFallsWithinBlock, type MonthEventOccurrence } from "@/lib/monthEvents";
 import Calendar from "@/components/Calendar";
 import MonthCalendar from "@/components/MonthCalendar";
@@ -35,6 +36,7 @@ import EmojiPicker from "@/components/EmojiPicker";
 import AdvancedColorPicker from "@/components/AdvancedColorPicker";
 import { FormCheckbox, FormInput } from "@/components/FormInputs";
 import { EmptyState, PageHeader, PageShell, SectionHeading, SegmentedControl } from "@/components/AppUI";
+import { LIFE_ASPECTS } from "@/lib/lifeAspects";
 
 const DAYS_OF_WEEK = [
   { id: 1, label: "Пн" }, { id: 2, label: "Вт" }, { id: 3, label: "Ср" },
@@ -65,6 +67,21 @@ function getBlockColor(block?: HabitBlock | null) {
   if (block.colorIndex !== undefined) return ["#00a7c7", "#315cff", "#8b5cf6", "#16a36f", "#dda400", "#d94a4a", "#d44fb3", "#ef7137"][block.colorIndex] ?? "#315cff";
   return "#315cff";
 }
+
+function formatMinutes(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const restMinutes = minutes % 60;
+  if (!hours) return `${restMinutes} мин`;
+  if (!restMinutes) return `${hours} ч`;
+  return `${hours} ч ${restMinutes} мин`;
+}
+
+function minutesToTime(minutes: number) {
+  if (minutes === 1440) return "24:00";
+  return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+}
+
+const REST_COLOR = LIFE_ASPECTS.find((aspect) => aspect.id === "6")?.color ?? "#ffb2b6";
 
 function ScheduleMonthEvent({ occurrence, compact = false }: { occurrence: MonthEventOccurrence; compact?: boolean }) {
   const { event, isOccurrenceStart } = occurrence;
@@ -153,10 +170,18 @@ export default function Home() {
     [blockIdByMonthEventId, dayMonthEvents]
   );
 
+  const restGaps = useMemo(
+    () => getScheduleRestGaps(todayBlocks, standaloneMonthEvents.flatMap((occurrence) => occurrence.event.time ? [occurrence.event.time] : [])),
+    [standaloneMonthEvents, todayBlocks]
+  );
+
+  const totalRestMinutes = useMemo(() => restGaps.reduce((sum, gap) => sum + gap.duration, 0), [restGaps]);
+
   const scheduleTimelineItems = useMemo(() => [
     ...todayBlocks.map((block) => ({ type: "block" as const, block, sortTime: block.startTime ? timeToMinutes(block.startTime) : 1440 })),
     ...standaloneMonthEvents.map((occurrence) => ({ type: "event" as const, occurrence, sortTime: occurrence.event.time ? timeToMinutes(occurrence.event.time) : -1 })),
-  ].sort((a, b) => a.sortTime - b.sortTime), [standaloneMonthEvents, todayBlocks]);
+    ...restGaps.map((gap) => ({ type: "rest" as const, gap, sortTime: gap.start })),
+  ].sort((a, b) => a.sortTime - b.sortTime || (a.type === "rest" ? 1 : -1)), [restGaps, standaloneMonthEvents, todayBlocks]);
 
   const moveScheduleBlock = (blockId: string, direction: -1 | 1) => {
     const order = todayBlocks.map((block) => block.id);
@@ -313,7 +338,7 @@ export default function Home() {
               <SectionHeading
                 icon={Clock}
                 title="Расписание дня"
-                meta={todayBlocks.length + dayMonthEvents.length}
+                meta={`Отдых ${formatMinutes(totalRestMinutes)}`}
                 action={selectedIsToday ? (
                   <div className="schedule-edit-controls">
                     {dayOverride && (
@@ -338,6 +363,17 @@ export default function Home() {
               )}
               {scheduleTimelineItems.length ? scheduleTimelineItems.map((item) => {
                 if (item.type === "event") return <ScheduleMonthEvent key={`event-${item.occurrence.event.id}`} occurrence={item.occurrence} />;
+                if (item.type === "rest") return (
+                  <article key={`rest-${item.gap.start}-${item.gap.end}`} className="schedule-rest-block" style={{ "--block-color": REST_COLOR } as React.CSSProperties}>
+                    <div className="schedule-time"><strong>{minutesToTime(item.gap.start)}</strong><span>—</span><strong>{minutesToTime(item.gap.end)}</strong></div>
+                    <span className="schedule-rest-icon"><Moon className="size-4" /></span>
+                    <div className="schedule-copy">
+                      <strong>Отдых</strong>
+                      <span>Свободное время · {formatMinutes(item.gap.duration)}</span>
+                    </div>
+                    <strong className="schedule-rest-duration">{formatMinutes(item.gap.duration)}</strong>
+                  </article>
+                );
                 const block = item.block;
                 const index = todayBlocks.findIndex((candidate) => candidate.id === block.id);
                 const blockHabits = habits.filter((habit) => habit.blockId === block.id && isHabitScheduledForDay(habit, dayOfWeek));
