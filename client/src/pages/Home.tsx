@@ -431,7 +431,21 @@ export default function Home() {
                 </div>
               )}
             </section>
-            <PomodoroTracker selectedDate={selectedDate} />
+            <aside className="schedule-sidebar">
+              <PomodoroTracker selectedDate={selectedDate} />
+              <section className="app-surface schedule-day-items">
+                <SectionHeading
+                  icon={ListTodo}
+                  title="Привычки и задачи дня"
+                  meta={`${dailyHabits.filter((habit) => Boolean(habit.completedDates?.[dateStr])).length + todayTasks.filter((task) => Boolean(task.completedDates?.[dateStr])).length}/${dailyHabits.length + todayTasks.length}`}
+                />
+                <div className="schedule-day-items-list">
+                  {dailyHabits.map((habit) => <HabitRow key={habit.id} habit={habit} dateStr={dateStr} hideUnitTracker isCondensed />)}
+                  {todayTasks.map((task) => <TaskRow key={task.id} task={task} dateStr={dateStr} isCondensed showTime />)}
+                  {!dailyHabits.length && !todayTasks.length && <EmptyState compact title="На этот день ничего нет" description="Добавьте привычку или задачу — она появится здесь." />}
+                </div>
+              </section>
+            </aside>
           </motion.div>
         ) : (
           <motion.div key="month" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>

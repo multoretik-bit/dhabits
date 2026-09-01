@@ -310,6 +310,18 @@
   .balance-pill { border-color: rgba(224, 163, 30, .17); background: linear-gradient(135deg, color-mix(in srgb, #fff5c9 55%, var(--surface-raised)), var(--surface-raised)); }
   .dark .balance-pill { background: linear-gradient(135deg, rgba(91, 69, 18, .28), var(--surface-raised)); }
   .schedule-layout { display: grid; grid-template-columns: minmax(0, 1.42fr) minmax(360px, .58fr); gap: 18px; align-items: start; }
+  .schedule-sidebar { position: sticky; top: 90px; display: grid; gap: 18px; }
+  .schedule-sidebar > .pomodoro-panel { position: static; max-height: none; }
+  .schedule-day-items { display: grid; gap: 10px; padding: 16px; }
+  .schedule-day-items > .section-heading { margin-bottom: 1px; }
+  .schedule-day-items-list { display: grid; gap: 7px; }
+  .schedule-day-items-list .habit-row, .schedule-day-items-list .task-row { margin: 0; background: var(--surface-soft); box-shadow: none; }
+  .schedule-day-items-list .habit-row.is-condensed .habit-row-main, .schedule-day-items-list .task-row-wrap.is-condensed .task-row { min-height: 48px; padding: 7px 8px; border-radius: 13px; }
+  .schedule-day-items-list .habit-row.is-condensed .habit-complete-action { gap: 7px; }
+  .schedule-day-items-list .habit-row.is-condensed .habit-status, .schedule-day-items-list .habit-row.is-condensed .reward-badge { display: none; }
+  .schedule-day-items-list .habit-row.is-condensed .item-emoji, .schedule-day-items-list .task-row-wrap.is-condensed .item-emoji { width: 30px; height: 30px; border-radius: 9px; }
+  .schedule-day-items-list .item-title { font-size: 10px; }
+  .schedule-day-items-list .task-row-wrap { margin: 0; }
   .schedule-timeline, .schedule-tasks { padding: 20px; }
   .schedule-timeline { display: grid; gap: 14px; }
   .schedule-timeline > .section-heading { margin-bottom: 0; }
@@ -986,6 +998,7 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .page-heading { align-items: flex-start; flex-direction: column; gap: 16px; }
   .page-actions { width: 100%; }
   .focus-layout, .schedule-layout { grid-template-columns: 1fr; }
+  .schedule-sidebar { position: static; gap: 12px; }
   .schedule-tasks { position: static; }
   .focus-summary { display: grid; grid-template-columns: 1fr 1fr; }
   .quick-card { grid-column: 1 / -1; }

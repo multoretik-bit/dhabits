@@ -11,7 +11,7 @@ export function StreakFlames({ streak }: { streak: number }) {
   return <span className="habit-streak" title={`Серия: ${streak} дней`}>🔥 {streak}</span>;
 }
 
-export default function HabitRow({ habit, dateStr, hideUnitTracker }: { habit: Habit; dateStr: string; hideUnitTracker?: boolean }) {
+export default function HabitRow({ habit, dateStr, hideUnitTracker, isCondensed = false }: { habit: Habit; dateStr: string; hideUnitTracker?: boolean; isCondensed?: boolean }) {
   const { completeHabit, moveHabitUp, moveHabitDown } = useApp();
   const completed = Boolean(habit.completedDates?.[dateStr]);
   const [expanded, setExpanded] = useState(false);
@@ -30,7 +30,7 @@ export default function HabitRow({ habit, dateStr, hideUnitTracker }: { habit: H
     <motion.article
       layout
       transition={spring.soft}
-      className={`habit-row ${completed ? "is-completed" : ""}`}
+      className={`habit-row ${completed ? "is-completed" : ""} ${isCondensed ? "is-condensed" : ""}`}
       style={{ borderLeftColor: completed ? `${habit.color}66` : habit.color }}
     >
       <CompletionBurst show={celebrate} color={habit.color} />
@@ -52,7 +52,7 @@ export default function HabitRow({ habit, dateStr, hideUnitTracker }: { habit: H
             <StreakFlames streak={habit.streak} />
           </span>
         </button>
-        {!completed && (
+        {!completed && !isCondensed && (
           <span className="reorder-controls">
             <button onClick={() => moveHabitUp(habit.id)} aria-label="Переместить привычку выше"><ArrowUp className="size-3" /></button>
             <button onClick={() => moveHabitDown(habit.id)} aria-label="Переместить привычку ниже"><ArrowDown className="size-3" /></button>
