@@ -62,6 +62,23 @@ describe("getTimerActivityAspectId", () => {
     ]);
   });
 
+  it("counts Bible reading only in its own study part", () => {
+    const sessions = [
+      { date: "2026-09-03", title: "Чтения Библии", color: "#ffd814", durationSeconds: 35 * 60 },
+      { date: "2026-09-03", title: "Чтение книги", color: "#ffd814", durationSeconds: 20 * 60 },
+    ];
+    const parts = [
+      { id: "reading", name: "Чтение", targetMinutes: 30, rewardPerMinute: 0.1 },
+      { id: "bible-reading", name: "Чтение Библии", targetMinutes: 45, rewardPerMinute: 0.3 },
+    ];
+
+    expect(getTimerMinutesForAspectPartsOnDate(sessions, "10", "2026-09-03", parts)).toEqual([
+      { ...parts[0], actualMinutes: 20 },
+      { ...parts[1], actualMinutes: 35 },
+    ]);
+    expect(getActivityRewardPerMinute("Чтения Библии", "#ffd814", [{ id: "10", dailyParts: parts }])).toBe(0.3);
+  });
+
   it("counts only the configured sport part", () => {
     const sessions = [
       { date: "2026-08-25", title: "Хождение пешком", color: "#2815ff", durationSeconds: 35 * 60 },

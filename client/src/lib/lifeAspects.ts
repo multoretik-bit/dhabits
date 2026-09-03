@@ -58,12 +58,37 @@ function normalizeActivityTitle(title: string) {
 
 const ACTIVITY_PART_STEMS = ["спорт", "хожден", "силов", "англий", "истори", "чтен"];
 
-function activityTitleMatchesPart(title: string, partName: string) {
+function getActivityPartMatchScore(title: string, partName: string) {
   const normalizedTitle = normalizeActivityTitle(title);
   const normalizedPartName = normalizeActivityTitle(partName);
-  if (!normalizedPartName) return false;
-  if (normalizedTitle.includes(normalizedPartName) || normalizedPartName.includes(normalizedTitle)) return true;
-  return ACTIVITY_PART_STEMS.some((stem) => normalizedTitle.includes(stem) && normalizedPartName.includes(stem));
+  if (!normalizedPartName) return 0;
+  if (normalizedTitle === normalizedPartName) return 10_000 + normalizedPartName.length;
+
+  const titleWords = normalizedTitle.split(/[^a-zа-я0-9]+/i).filter(Boolean);
+  const partWords = normalizedPartName.split(/[^a-zа-я0-9]+/i).filter(Boolean);
+  const wordsMatch = (left: string, right: string) => {
+    if (left === right) return true;
+    if (Math.min(left.length, right.length) >= 5 && left.slice(0, 5) === right.slice(0, 5)) return true;
+    return ACTIVITY_PART_STEMS.some((stem) => left.includes(stem) && right.includes(stem));
+  };
+  const matchingWords = partWords.filter((word) => titleWords.some((titleWord) => wordsMatch(word, titleWord))).length;
+  if (partWords.length > 0 && matchingWords === partWords.length) {
+    return 2_000 + matchingWords * 100 + normalizedPartName.length;
+  }
+  if (normalizedTitle.includes(normalizedPartName) || normalizedPartName.includes(normalizedTitle)) {
+    return 1_000 + normalizedPartName.length;
+  }
+  if (ACTIVITY_PART_STEMS.some((stem) => normalizedTitle.includes(stem) && normalizedPartName.includes(stem))) {
+    return 100 + normalizedPartName.length;
+  }
+  return 0;
+}
+
+function findMatchingActivityPart<T extends LifeAspectDailyPart>(title: string, parts: T[]) {
+  return parts.reduce<{ part?: T; score: number }>((best, part) => {
+    const score = getActivityPartMatchScore(title, part.name);
+    return score > best.score ? { part, score } : best;
+  }, { score: 0 }).part;
 }
 
 export function getTimerActivityAspectId(title: string, color?: string) {
@@ -107,7 +132,7 @@ export function getActivityRewardPerMinute(
   const aspectId = getTimerActivityAspectId(title, color);
   if (!aspectId) return undefined;
   const system = systems.find((item) => item.id === aspectId);
-  const part = system?.dailyParts?.find((item) => activityTitleMatchesPart(title, item.name));
+  const part = system?.dailyParts ? findMatchingActivityPart(title, system.dailyParts) : undefined;
   return part?.rewardPerMinute ?? system?.rewardPerMinute;
 }
 
@@ -129,7 +154,7 @@ export function getTimerMinutesForAspectPartsOnDate(
 
   sessions.forEach((session) => {
     if (session.date !== date || getTimerActivityAspectId(session.title, session.color) !== aspectId) return;
-    const matchedPart = parts.find((part) => activityTitleMatchesPart(session.title, part.name));
+    const matchedPart = findMatchingActivityPart(session.title, parts);
     if (!matchedPart) return;
     totals.set(matchedPart.id, (totals.get(matchedPart.id) || 0) + Math.max(0, session.durationSeconds || 0));
   });
