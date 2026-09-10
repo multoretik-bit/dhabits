@@ -40,7 +40,7 @@ import { useApp, type HealthWorkoutExercise } from "@/contexts/AppContext";
 import { colorBelongsToLifeAspect, getTimerActivityAspectId, getTimerMinutesForAspectInYear, getTimerMinutesForAspectOnDate, getTimerMinutesForAspectPartsOnDate, LIFE_ASPECT_GROUPS, LIFE_ASPECTS, type LifeAspectDailyPart } from "@/lib/lifeAspects";
 import { getGoalProgressForDate, getGoalProgressUnit } from "@/lib/goalProgress";
 import { formatCalendarDays, formatUsefulTime, getUsefulTimeHistory, getUsefulTimeStats } from "@/lib/usefulTime";
-import { getBurnedCaloriesForDate, getDailyCalorieDeficit, getNutritionTotals, MAINTENANCE_CALORIES } from "@/lib/nutrition";
+import { getBurnedCaloriesForDate, getDailyCalorieDeficit, getNutritionTotals, isCalorieBurnSource, MAINTENANCE_CALORIES } from "@/lib/nutrition";
 
 function getDefaultDeadline() {
   const date = new Date();
@@ -159,7 +159,11 @@ export default function DevelopmentPage() {
   );
   const todayUsefulSeconds = usefulTimeHistory[0]?.totalSeconds || 0;
   const todayEatenCalories = getNutritionTotals(characterState.dailyWellness?.[todayString]?.foods || []).calories;
-  const todayBurnedCalories = getBurnedCaloriesForDate(habits, todayString, todayString);
+  const todayHabitBurnedCalories = getBurnedCaloriesForDate(habits, todayString, todayString);
+  const todayGoalBurnedCalories = goals
+    .filter((goal) => goal.aspectId === "2" && isCalorieBurnSource(`${goal.name} ${goal.description || ""}`, getGoalProgressUnit(goal)))
+    .reduce((sum, goal) => sum + getGoalProgressForDate(goal, activitySessions, todayString), 0);
+  const todayBurnedCalories = todayHabitBurnedCalories + todayGoalBurnedCalories;
   const todayCalorieDeficit = getDailyCalorieDeficit(todayEatenCalories, todayBurnedCalories);
 
   const yearlyAspectMinutes = useMemo(() => {
@@ -583,7 +587,7 @@ export default function DevelopmentPage() {
           </div>
           <div className="health-deficit-breakdown">
             <span><small>Съедено</small><strong>{todayEatenCalories.toLocaleString("ru-RU")} ккал</strong></span>
-            <span><small>Сожжено привычкой</small><strong>+{todayBurnedCalories.toLocaleString("ru-RU")} ккал</strong></span>
+            <span><small>Сожжено целью / привычкой</small><strong>+{todayBurnedCalories.toLocaleString("ru-RU")} ккал</strong></span>
             <p>{MAINTENANCE_CALORIES} − {todayEatenCalories.toLocaleString("ru-RU")} + {todayBurnedCalories.toLocaleString("ru-RU")}</p>
           </div>
         </section>

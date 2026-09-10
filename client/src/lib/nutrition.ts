@@ -14,6 +14,12 @@ interface CalorieBurnHabit {
   unitsByDate?: Record<string, number>;
 }
 
+export function isCalorieBurnSource(nameValue?: string, unitValue?: string) {
+  const name = (nameValue || "").toLocaleLowerCase("ru-RU");
+  const unit = (unitValue || "").toLocaleLowerCase("ru-RU");
+  return name.includes("сж") && (name.includes("кал") || unit.includes("ккал") || unit.includes("кал"));
+}
+
 export interface NutritionValues {
   calories: number;
   protein: number;
@@ -40,10 +46,7 @@ export function getExceededNutritionTargets(totals: NutritionValues) {
 
 export function getBurnedCaloriesForDate(habits: CalorieBurnHabit[], date: string, today: string) {
   return habits.reduce((total, habit) => {
-    const name = (habit.name || "").toLocaleLowerCase("ru-RU");
-    const unit = (habit.progressUnit || "").toLocaleLowerCase("ru-RU");
-    const isCalorieBurn = name.includes("сж") && (name.includes("кал") || unit.includes("ккал") || unit.includes("кал"));
-    if (!isCalorieBurn) return total;
+    if (!isCalorieBurnSource(habit.name, habit.progressUnit)) return total;
     const datedValue = habit.unitsByDate?.[date];
     const value = datedValue === undefined && date === today ? habit.units : datedValue;
     return total + Math.max(0, Number(value) || 0);

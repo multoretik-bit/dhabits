@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getBurnedCaloriesForDate, getDailyCalorieDeficit, getExceededNutritionTargets, getNutritionTotals } from "./nutrition";
+import { getBurnedCaloriesForDate, getDailyCalorieDeficit, getExceededNutritionTargets, getNutritionTotals, isCalorieBurnSource } from "./nutrition";
 
 describe("nutrition diary", () => {
   it("sums calories and macros for a day", () => {
@@ -27,5 +27,10 @@ describe("nutrition diary", () => {
     ], "2026-09-10", "2026-09-10");
     expect(burned).toBe(60);
     expect(getDailyCalorieDeficit(1800, burned)).toBe(360);
+  });
+
+  it("recognizes a calorie-burning goal", () => {
+    expect(isCalorieBurnSource("Сжечь 10 кг жира", "ккал")).toBe(true);
+    expect(isCalorieBurnSource("Держать питание", "ккал")).toBe(false);
   });
 });
