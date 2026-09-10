@@ -1525,6 +1525,67 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
 .health-workout-row-actions button:disabled { opacity: .35; }
 .health-workout-editor-actions { display: flex; justify-content: space-between; gap: 10px; padding: 0 12px 12px; }
 .health-workout-editor-actions > .app-button { background: var(--aspect-color); color: #fff; }
+.health-calories-card .study-tool-icon { background: color-mix(in srgb, #ff9f1c 14%, var(--secondary)); color: #e48300; }
+.nutrition-tool { display: grid; grid-template-columns: minmax(250px, .72fr) minmax(0, 1.28fr); overflow: hidden; border: 1px solid color-mix(in srgb, var(--aspect-color) 26%, var(--border)); border-radius: 22px; background: color-mix(in srgb, var(--aspect-color) 3%, var(--surface-soft)); box-shadow: var(--shadow-sm); }
+.nutrition-calendar { padding: 15px; border-right: 1px solid var(--border); background: color-mix(in srgb, var(--aspect-color) 5%, var(--card)); }
+.nutrition-calendar-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 15px; }
+.nutrition-calendar-head > div:first-child { display: flex; min-width: 0; align-items: center; gap: 9px; }
+.nutrition-calendar-head > div:first-child > span { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; border-radius: 11px; background: color-mix(in srgb, var(--aspect-color) 14%, var(--secondary)); color: var(--aspect-color); }
+.nutrition-calendar-head > div:first-child > div { display: flex; min-width: 0; flex-direction: column; }
+.nutrition-calendar-head strong { font-size: 12px; font-weight: 900; text-transform: capitalize; }
+.nutrition-calendar-head small { color: var(--muted-foreground); font-size: 8px; }
+.nutrition-calendar-head > div:last-child { display: flex; gap: 4px; }
+.nutrition-calendar-head button, .nutrition-entry-form-head button, .nutrition-food-list article > button { display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid var(--border); border-radius: 9px; color: var(--muted-foreground); background: var(--surface-soft); transition: .16s ease; }
+.nutrition-calendar-head button:hover, .nutrition-entry-form-head button:hover, .nutrition-food-list article > button:hover { border-color: color-mix(in srgb, var(--aspect-color) 45%, var(--border)); color: var(--aspect-color); }
+.nutrition-weekdays, .nutrition-month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.nutrition-weekdays { margin-bottom: 5px; }
+.nutrition-weekdays span { color: var(--muted-foreground); font-size: 7px; font-weight: 850; text-align: center; text-transform: uppercase; }
+.nutrition-month-grid > button { position: relative; min-height: 43px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border: 1px solid transparent; border-radius: 10px; color: var(--foreground); background: color-mix(in srgb, var(--surface-soft) 75%, transparent); transition: .16s ease; }
+.nutrition-month-grid > button:hover { border-color: color-mix(in srgb, var(--aspect-color) 35%, var(--border)); background: var(--surface-raised); }
+.nutrition-month-grid > button strong { font-size: 10px; font-weight: 850; }
+.nutrition-month-grid > button small { max-width: 100%; overflow: hidden; color: #e48300; font-size: 6px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+.nutrition-month-grid > button.is-today::after { content: ""; position: absolute; width: 4px; height: 4px; right: 5px; top: 5px; border-radius: 50%; background: var(--aspect-color); }
+.nutrition-month-grid > button.has-food { background: color-mix(in srgb, #ff9f1c 9%, var(--surface-soft)); }
+.nutrition-month-grid > button.is-selected { border-color: var(--aspect-color); color: #fff; background: var(--aspect-color); box-shadow: 0 7px 16px color-mix(in srgb, var(--aspect-color) 25%, transparent); }
+.nutrition-month-grid > button.is-selected small { color: rgba(255,255,255,.78); }
+.nutrition-month-grid > button.is-selected::after { background: #fff; }
+.nutrition-day { display: grid; align-content: start; gap: 12px; min-width: 0; padding: 15px; }
+.nutrition-day-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.nutrition-day-head > div { display: flex; min-width: 0; flex-direction: column; }
+.nutrition-day-head span { color: var(--muted-foreground); font-size: 8px; font-weight: 800; text-transform: uppercase; }
+.nutrition-day-head strong { font-size: 13px; font-weight: 900; text-transform: capitalize; }
+.nutrition-day-head .app-button { min-height: 36px; padding: 8px 11px; background: var(--aspect-color); color: #fff; box-shadow: none; }
+.nutrition-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.nutrition-metrics article { display: grid; gap: 6px; min-width: 0; padding: 10px; border: 1px solid var(--border); border-radius: 13px; background: var(--card); }
+.nutrition-metrics article > div { display: flex; align-items: baseline; justify-content: space-between; gap: 7px; }
+.nutrition-metrics article > div > span { color: var(--muted-foreground); font-size: 8px; font-weight: 800; }
+.nutrition-metrics article > div > strong { color: var(--foreground); font-size: 12px; font-weight: 900; white-space: nowrap; }
+.nutrition-metrics article > div > strong small { color: var(--muted-foreground); font-size: 7px; font-weight: 700; }
+.nutrition-metrics article > i { height: 5px; overflow: hidden; border-radius: 99px; background: var(--secondary); }
+.nutrition-metrics article > i > span { display: block; width: var(--nutrition-progress); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--aspect-color), #ff9f1c); transition: width .3s ease; }
+.nutrition-metrics article > small { color: var(--muted-foreground); font-size: 7px; }
+.nutrition-limit-note { display: flex; align-items: center; gap: 7px; padding: 8px 10px; border: 1px solid color-mix(in srgb, #ff9f1c 24%, var(--border)); border-radius: 11px; color: #c87500; background: color-mix(in srgb, #ff9f1c 7%, var(--surface-soft)); font-size: 8px; font-weight: 750; line-height: 1.4; }
+.nutrition-limit-note svg { flex: 0 0 auto; }
+.nutrition-entry-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding: 12px; border: 1px solid color-mix(in srgb, var(--aspect-color) 28%, var(--border)); border-radius: 16px; background: var(--card); }
+.nutrition-entry-form-head { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; }
+.nutrition-entry-form-head strong { font-size: 11px; font-weight: 900; }
+.nutrition-entry-form label { display: grid; gap: 5px; min-width: 0; }
+.nutrition-entry-form label > span { color: var(--muted-foreground); font-size: 8px; font-weight: 750; }
+.nutrition-entry-form input { width: 100%; min-width: 0; height: 36px; padding: 8px 9px; border: 1px solid var(--border); border-radius: 10px; color: var(--foreground); background: var(--surface-soft); font-size: 10px; outline: none; }
+.nutrition-entry-form input:focus { border-color: var(--aspect-color); box-shadow: 0 0 0 3px color-mix(in srgb, var(--aspect-color) 10%, transparent); }
+.nutrition-entry-form .is-wide { grid-column: 1 / -1; }
+.nutrition-entry-form button.is-wide { justify-self: end; min-height: 36px; background: var(--aspect-color); color: #fff; box-shadow: none; }
+.nutrition-food-list { display: grid; gap: 7px; }
+.nutrition-food-list article { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 13px; background: var(--card); }
+.nutrition-food-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 10px; color: #e48300; background: color-mix(in srgb, #ff9f1c 12%, var(--secondary)); }
+.nutrition-food-list article > div { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.nutrition-food-list article > div strong { overflow: hidden; font-size: 10px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+.nutrition-food-list article > div span { color: var(--muted-foreground); font-size: 8px; }
+.nutrition-food-list article > button.is-danger:hover { border-color: color-mix(in srgb, var(--destructive) 45%, var(--border)); color: var(--destructive); }
+.nutrition-empty { min-height: 78px; display: flex; align-items: center; justify-content: center; gap: 9px; border: 1px dashed var(--border); border-radius: 14px; color: var(--muted-foreground); background: color-mix(in srgb, var(--surface-soft) 65%, transparent); text-align: left; }
+.nutrition-empty > span { display: flex; flex-direction: column; }
+.nutrition-empty strong { color: var(--foreground); font-size: 10px; }
+.nutrition-empty small { font-size: 8px; }
 .development-manage { padding: 7px 10px; border-radius: 10px; color: var(--aspect-color); font-size: 10px; font-weight: 800; }
 .development-manage:hover { background: color-mix(in srgb, var(--aspect-color) 9%, transparent); }
 .aspect-block-list { display: grid; gap: 8px; padding: 14px; }
@@ -1617,6 +1678,10 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .health-workout-exercise.is-editing > .health-workout-row-actions { grid-column: 2; justify-content: flex-end; }
   .health-workout-editor-actions { flex-direction: column; }
   .health-workout-editor-actions > button { width: 100%; }
+  .nutrition-tool { grid-template-columns: 1fr; }
+  .nutrition-calendar { border-right: 0; border-bottom: 1px solid var(--border); }
+  .nutrition-entry-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nutrition-entry-form button.is-wide { width: 100%; justify-self: stretch; }
   .aspect-block-item { grid-template-columns: 64px minmax(0, 1fr); }
   .aspect-block-item > svg { display: none; }
 }

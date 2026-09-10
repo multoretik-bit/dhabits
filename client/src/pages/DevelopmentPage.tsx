@@ -32,6 +32,7 @@ import {
 import { Link } from "wouter";
 import { nanoid } from "nanoid";
 import { PageHeader, PageShell } from "@/components/AppUI";
+import HealthCaloriesTracker from "@/components/HealthCaloriesTracker";
 import AdvancedColorPicker from "@/components/AdvancedColorPicker";
 import EmojiPicker from "@/components/EmojiPicker";
 import { useApp, type HealthWorkoutExercise } from "@/contexts/AppContext";
@@ -120,6 +121,7 @@ export default function DevelopmentPage() {
   const [goalProgressType, setGoalProgressType] = useState<"manual" | "activity_minutes">("manual");
   const [goalActivityName, setGoalActivityName] = useState("");
   const [isHealthWorkoutOpen, setIsHealthWorkoutOpen] = useState(false);
+  const [isHealthCaloriesOpen, setIsHealthCaloriesOpen] = useState(false);
   const [isEditingHealthWorkout, setIsEditingHealthWorkout] = useState(false);
   const [healthWorkoutDraft, setHealthWorkoutDraft] = useState<HealthWorkoutExercise[]>([]);
   const [isUsefulHistoryOpen, setIsUsefulHistoryOpen] = useState(false);
@@ -386,6 +388,7 @@ export default function DevelopmentPage() {
     closeVisionForm();
     closeGoalForm();
     setIsHealthWorkoutOpen(false);
+    setIsHealthCaloriesOpen(false);
     setIsEditingHealthWorkout(false);
     setHealthWorkoutDraft([]);
     setSelectedAspectId(null);
@@ -748,6 +751,18 @@ export default function DevelopmentPage() {
                     ))}
                   </div>
                   {isEditingHealthWorkout && <div className="health-workout-editor-actions"><button type="button" onClick={() => setHealthWorkoutDraft((items) => [...items, { id: nanoid(), name: "Новое упражнение", amount: "10 раз" }])}><Plus className="size-4" /> Добавить упражнение</button><button type="button" className="app-button" onClick={saveHealthWorkout} disabled={!healthWorkoutDraft.some((exercise) => exercise.name.trim() && exercise.amount.trim())}><Check className="size-4" /> Сохранить программу</button></div>}
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <button type="button" className="study-tool-card health-tool-card health-calories-card" onClick={() => setIsHealthCaloriesOpen((open) => !open)} aria-expanded={isHealthCaloriesOpen}>
+              <span className="study-tool-icon"><Gauge className="size-7" /></span>
+              <span className="study-tool-copy"><small>Дневник питания</small><strong>Калории</strong><span>Календарь еды, калорий, белков, жиров и углеводов.</span></span>
+              <span className="study-tool-open">{isHealthCaloriesOpen ? "Скрыть дневник" : "Открыть дневник"} <ChevronRight className="size-4" /></span>
+            </button>
+            <AnimatePresence>
+              {isHealthCaloriesOpen && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+                  <HealthCaloriesTracker />
                 </motion.div>
               )}
             </AnimatePresence>

@@ -297,9 +297,12 @@ export interface DailyEnergyRecord {
 export interface DailyFoodEntry {
   id: string;
   title: string;
-  grams: number;
-  caloriesPer100g: number;
+  grams?: number;
+  caloriesPer100g?: number;
   calories: number;
+  protein?: number;
+  fat?: number;
+  carbs?: number;
   createdAt: string;
 }
 
