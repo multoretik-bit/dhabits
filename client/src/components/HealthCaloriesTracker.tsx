@@ -158,7 +158,11 @@ export default function HealthCaloriesTracker() {
             const target = NUTRITION_TARGETS[metric.key];
             const percent = Math.min(100, (current / target) * 100);
             return (
-              <article key={metric.key} style={{ "--nutrition-progress": `${percent}%` } as React.CSSProperties}>
+              <article
+                key={metric.key}
+                className={metric.key === "calories" ? "nutrition-calories-main" : "nutrition-macro-card"}
+                style={{ "--nutrition-progress": `${percent}%` } as React.CSSProperties}
+              >
                 <div><span>{metric.label}</span><strong>{formatAmount(current)} <small>/ {target} {metric.unit}</small></strong></div>
                 <i><span /></i>
                 <small>Осталось {formatAmount(Math.max(0, target - current))} {metric.unit}</small>
