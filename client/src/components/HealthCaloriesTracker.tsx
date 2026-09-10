@@ -104,14 +104,14 @@ export default function HealthCaloriesTracker() {
     };
     const nextFoods = editingId ? foods.map((item) => item.id === editingId ? entry : item) : [...foods, entry];
     const exceeded = getExceededNutritionTargets(getNutritionTotals(nextFoods));
-    if (exceeded.length) {
-      const labels: Record<keyof NutritionValues, string> = { calories: "калории", protein: "белки", fat: "жиры", carbs: "углеводы" };
-      toast.error(`Нельзя сохранить: превышены ${exceeded.map((item) => `${labels[item.key]} на ${formatAmount(item.exceededBy)}`).join(", ")}`);
-      return;
-    }
     saveFoods(nextFoods);
     resetForm();
-    toast.success(editingId ? "Запись обновлена" : "Еда добавлена в дневник");
+    if (exceeded.length) {
+      const labels: Record<keyof NutritionValues, string> = { calories: "калории", protein: "белки", fat: "жиры", carbs: "углеводы" };
+      toast.warning(`${editingId ? "Запись обновлена" : "Еда добавлена"}. Превышение: ${exceeded.map((item) => `${labels[item.key]} на ${formatAmount(item.exceededBy)}`).join(", ")}`);
+    } else {
+      toast.success(editingId ? "Запись обновлена" : "Еда добавлена в дневник");
+    }
   };
 
   const selectCalendarDate = (date: Date) => {
@@ -156,6 +156,7 @@ export default function HealthCaloriesTracker() {
           {METRICS.map((metric) => {
             const current = totals[metric.key];
             const target = NUTRITION_TARGETS[metric.key];
+            const exceededBy = Math.max(0, current - target);
             const percent = Math.min(100, (current / target) * 100);
             return (
               <article
@@ -165,13 +166,17 @@ export default function HealthCaloriesTracker() {
               >
                 <div><span>{metric.label}</span><strong>{formatAmount(current)} <small>/ {target} {metric.unit}</small></strong></div>
                 <i><span /></i>
-                <small>Осталось {formatAmount(Math.max(0, target - current))} {metric.unit}</small>
+                <small className={exceededBy > 0 ? "is-exceeded" : undefined}>
+                  {exceededBy > 0
+                    ? `Превышение на ${formatAmount(exceededBy)} ${metric.unit}`
+                    : `Осталось ${formatAmount(target - current)} ${metric.unit}`}
+                </small>
               </article>
             );
           })}
         </div>
 
-        <div className="nutrition-limit-note"><Gauge className="size-4" /><span>Дневные пределы защищены: запись, превышающая любую норму, не сохранится.</span></div>
+        <div className="nutrition-limit-note"><Gauge className="size-4" /><span>Нормы служат ориентиром: при превышении еда сохранится, а разница будет отмечена выше.</span></div>
 
         {isFormOpen && (
           <form className="nutrition-entry-form" onSubmit={saveEntry}>

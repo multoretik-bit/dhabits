@@ -1564,6 +1564,7 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
 .nutrition-metrics article > i { height: 5px; overflow: hidden; border-radius: 99px; background: var(--secondary); }
 .nutrition-metrics article > i > span { display: block; width: var(--nutrition-progress); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--aspect-color), #ff9f1c); transition: width .3s ease; }
 .nutrition-metrics article > small { color: var(--muted-foreground); font-size: 7px; }
+.nutrition-metrics article > small.is-exceeded { color: #ef4444; font-weight: 850; }
 .nutrition-metrics .nutrition-calories-main { grid-column: 1 / -1; gap: 10px; min-height: 112px; padding: 16px; border-color: color-mix(in srgb, #ff9f1c 35%, var(--border)); background: linear-gradient(135deg, color-mix(in srgb, #ff9f1c 12%, var(--card)), var(--card) 68%); }
 .nutrition-metrics .nutrition-calories-main > div > span { color: #d27a00; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
 .nutrition-metrics .nutrition-calories-main > div > strong { font-size: 26px; line-height: 1; }
