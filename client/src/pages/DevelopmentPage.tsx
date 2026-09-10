@@ -16,6 +16,7 @@ import {
   Coins,
   Dumbbell,
   ExternalLink,
+  Flame,
   Gauge,
   Globe2,
   Headphones,
@@ -39,6 +40,7 @@ import { useApp, type HealthWorkoutExercise } from "@/contexts/AppContext";
 import { colorBelongsToLifeAspect, getTimerActivityAspectId, getTimerMinutesForAspectInYear, getTimerMinutesForAspectOnDate, getTimerMinutesForAspectPartsOnDate, LIFE_ASPECT_GROUPS, LIFE_ASPECTS, type LifeAspectDailyPart } from "@/lib/lifeAspects";
 import { getGoalProgressForDate, getGoalProgressUnit } from "@/lib/goalProgress";
 import { formatCalendarDays, formatUsefulTime, getUsefulTimeHistory, getUsefulTimeStats } from "@/lib/usefulTime";
+import { getBurnedCaloriesForDate, getDailyCalorieDeficit, getNutritionTotals, MAINTENANCE_CALORIES } from "@/lib/nutrition";
 
 function getDefaultDeadline() {
   const date = new Date();
@@ -91,6 +93,7 @@ export default function DevelopmentPage() {
     habits,
     tasks,
     goals,
+    characterState,
     goalFolders,
     addGoal,
     updateGoal,
@@ -155,6 +158,9 @@ export default function DevelopmentPage() {
     [activitySessions, todayString],
   );
   const todayUsefulSeconds = usefulTimeHistory[0]?.totalSeconds || 0;
+  const todayEatenCalories = getNutritionTotals(characterState.dailyWellness?.[todayString]?.foods || []).calories;
+  const todayBurnedCalories = getBurnedCaloriesForDate(habits, todayString, todayString);
+  const todayCalorieDeficit = getDailyCalorieDeficit(todayEatenCalories, todayBurnedCalories);
 
   const yearlyAspectMinutes = useMemo(() => {
     if (!selectedAspect) return 0;
@@ -566,6 +572,22 @@ export default function DevelopmentPage() {
         </div>
         <Compass className="development-detail-icon" />
       </div>
+
+      {selectedAspect.id === "2" && (
+        <section className="health-deficit-card">
+          <span className="health-deficit-icon"><Flame className="size-6" /></span>
+          <div className="health-deficit-main">
+            <span>{todayCalorieDeficit >= 0 ? "Ваш дефицит за сегодня" : "Профицит за сегодня"}</span>
+            <strong>{Math.abs(todayCalorieDeficit).toLocaleString("ru-RU")} <small>ккал</small></strong>
+            <p>Норма потребления — {MAINTENANCE_CALORIES.toLocaleString("ru-RU")} ккал</p>
+          </div>
+          <div className="health-deficit-breakdown">
+            <span><small>Съедено</small><strong>{todayEatenCalories.toLocaleString("ru-RU")} ккал</strong></span>
+            <span><small>Сожжено привычкой</small><strong>+{todayBurnedCalories.toLocaleString("ru-RU")} ккал</strong></span>
+            <p>{MAINTENANCE_CALORIES} − {todayEatenCalories.toLocaleString("ru-RU")} + {todayBurnedCalories.toLocaleString("ru-RU")}</p>
+          </div>
+        </section>
+      )}
 
       <AnimatePresence>
         {editingDailyTarget && (

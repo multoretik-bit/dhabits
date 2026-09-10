@@ -5,6 +5,15 @@ export const NUTRITION_TARGETS = {
   carbs: 190,
 } as const;
 
+export const MAINTENANCE_CALORIES = 2100;
+
+interface CalorieBurnHabit {
+  name?: string;
+  progressUnit?: string;
+  units?: number;
+  unitsByDate?: Record<string, number>;
+}
+
 export interface NutritionValues {
   calories: number;
   protein: number;
@@ -27,4 +36,20 @@ export function getExceededNutritionTargets(totals: NutritionValues) {
   return (Object.keys(NUTRITION_TARGETS) as Array<keyof NutritionValues>)
     .filter((key) => totals[key] > NUTRITION_TARGETS[key])
     .map((key) => ({ key, exceededBy: Math.round((totals[key] - NUTRITION_TARGETS[key]) * 10) / 10 }));
+}
+
+export function getBurnedCaloriesForDate(habits: CalorieBurnHabit[], date: string, today: string) {
+  return habits.reduce((total, habit) => {
+    const name = (habit.name || "").toLocaleLowerCase("ru-RU");
+    const unit = (habit.progressUnit || "").toLocaleLowerCase("ru-RU");
+    const isCalorieBurn = name.includes("сж") && (name.includes("кал") || unit.includes("ккал") || unit.includes("кал"));
+    if (!isCalorieBurn) return total;
+    const datedValue = habit.unitsByDate?.[date];
+    const value = datedValue === undefined && date === today ? habit.units : datedValue;
+    return total + Math.max(0, Number(value) || 0);
+  }, 0);
+}
+
+export function getDailyCalorieDeficit(eatenCalories: number, burnedCalories: number) {
+  return MAINTENANCE_CALORIES - Math.max(0, eatenCalories) + Math.max(0, burnedCalories);
 }

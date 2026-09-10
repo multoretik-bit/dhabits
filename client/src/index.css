@@ -1349,6 +1349,18 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
 .development-year-total > strong { color: var(--foreground); font-size: 15px; font-weight: 900; }
 .development-year-total > span { font-size: 10px; font-weight: 700; }
 .development-detail-icon { position: absolute; right: 32px; width: 76px; height: 76px; color: var(--aspect-color); opacity: .17; }
+.health-deficit-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 17px 19px; border: 1px solid color-mix(in srgb, #22c55e 30%, var(--border)); border-radius: 20px; background: linear-gradient(135deg, color-mix(in srgb, #22c55e 10%, var(--card)), var(--card) 65%); box-shadow: var(--shadow-sm); }
+.health-deficit-icon { display: grid; width: 46px; height: 46px; place-items: center; border-radius: 15px; color: #fff; background: #22c55e; box-shadow: 0 9px 20px color-mix(in srgb, #22c55e 28%, transparent); }
+.health-deficit-main { display: flex; min-width: 0; flex-direction: column; }
+.health-deficit-main > span { color: var(--muted-foreground); font-size: 9px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+.health-deficit-main > strong { color: var(--foreground); font-size: 25px; font-weight: 950; line-height: 1.1; }
+.health-deficit-main > strong small { color: #22c55e; font-size: 11px; }
+.health-deficit-main > p { margin-top: 3px; color: var(--muted-foreground); font-size: 9px; }
+.health-deficit-breakdown { display: grid; grid-template-columns: repeat(2, auto); gap: 7px 18px; padding-left: 18px; border-left: 1px solid var(--border); }
+.health-deficit-breakdown > span { display: flex; flex-direction: column; }
+.health-deficit-breakdown small { color: var(--muted-foreground); font-size: 8px; }
+.health-deficit-breakdown strong { font-size: 11px; font-weight: 900; }
+.health-deficit-breakdown > p { grid-column: 1 / -1; color: var(--muted-foreground); font-size: 8px; text-align: right; }
 .development-daily-target { position: relative; z-index: 2; margin-left: auto; }
 .development-daily-target > button { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 1px 8px; min-width: 130px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--aspect-color) 28%, var(--border)); border-radius: 14px; background: color-mix(in srgb, var(--aspect-color) 8%, var(--surface-soft)); text-align: left; }
 .development-daily-target > button > span { grid-column: 1; color: var(--muted-foreground); font-size: 8px; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
@@ -1628,6 +1640,9 @@ html:not(.dark) :is(.app-route-add, .growth-management) [class*="border-slate-8"
   .development-detail-icon { right: 16px; width: 55px; height: 55px; }
   .development-detail-hero p { max-width: 240px; font-size: 11px; }
   .development-detail-hero .development-year-total { max-width: none; }
+  .health-deficit-card { grid-template-columns: auto minmax(0, 1fr); }
+  .health-deficit-breakdown { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 11px 0 0; border-top: 1px solid var(--border); border-left: 0; }
+  .health-deficit-breakdown > p { text-align: left; }
   .vision-form { grid-template-columns: 1fr; }
   .aspect-goal-list { grid-template-columns: 1fr; }
   .development-section-head { align-items: flex-start; padding: 15px; }

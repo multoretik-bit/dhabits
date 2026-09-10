@@ -49,6 +49,7 @@ export interface Habit {
   lastCompletedDate?: string;
   initialStreak?: number;
   units: number;
+  unitsByDate?: Record<string, number>;
   coinsPerUnit?: number;
   progressUnit?: string;
   unitsTracking: boolean;
@@ -1466,9 +1467,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const habit = habits.find((h) => h.id === habitId);
     if (habit && amount > 0) {
       const newUnits = habit.units + amount;
+      const today = getTodayDateString();
+      const newUnitsByDate = { ...(habit.unitsByDate || {}), [today]: (habit.unitsByDate?.[today] || 0) + amount };
       const coinsEarned = (habit.coinsPerUnit || 0) * amount;
       
-      const newHabits = habits.map((h) => (h.id === habitId ? { ...h, units: newUnits, unitsTracking: true } : h));
+      const newHabits = habits.map((h) => (h.id === habitId ? { ...h, units: newUnits, unitsByDate: newUnitsByDate, unitsTracking: true } : h));
       const newCoins = Math.round((coins + coinsEarned) * 100) / 100;
       
       setHabits(newHabits);
@@ -1478,7 +1481,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetUnitsForHabit = (habitId: string) => {
-    updateHabit(habitId, { units: 0 });
+    const habit = habits.find((item) => item.id === habitId);
+    if (!habit) return;
+    const today = getTodayDateString();
+    updateHabit(habitId, { units: 0, unitsByDate: { ...(habit.unitsByDate || {}), [today]: 0 } });
   };
 
   const addProgressToHabit = addUnitsToHabit;

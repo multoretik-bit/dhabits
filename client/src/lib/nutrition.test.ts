@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getExceededNutritionTargets, getNutritionTotals } from "./nutrition";
+import { getBurnedCaloriesForDate, getDailyCalorieDeficit, getExceededNutritionTargets, getNutritionTotals } from "./nutrition";
 
 describe("nutrition diary", () => {
   it("sums calories and macros for a day", () => {
@@ -18,5 +18,14 @@ describe("nutrition diary", () => {
       { key: "calories", exceededBy: 50 },
       { key: "fat", exceededBy: 3.5 },
     ]);
+  });
+
+  it("calculates deficit from food and burned-calorie habits", () => {
+    const burned = getBurnedCaloriesForDate([
+      { name: "Сжигание калорий", progressUnit: "ккал", units: 120, unitsByDate: { "2026-09-10": 60 } },
+      { name: "Чтение", progressUnit: "мин", units: 30 },
+    ], "2026-09-10", "2026-09-10");
+    expect(burned).toBe(60);
+    expect(getDailyCalorieDeficit(1800, burned)).toBe(360);
   });
 });
