@@ -716,18 +716,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         try {
           const remoteData = await syncLoad(session.user.id) as any;
           const localLastUpdated = savedData.lastUpdated || 0;
-          const hasLocalAspectContent = Boolean(
-            savedData.identityValues?.length ||
-            savedData.identityValueFolders?.length ||
-            savedData.identitySystemFolders?.length ||
-            savedData.identitySystemIdeas?.length
-          );
+          const hasLocalData = Boolean(localLastUpdated && new Date(localLastUpdated).getTime() > 0);
 
           if (remoteData) {
             const remoteLastUpdated = remoteData.lastUpdated || 0;
             const remoteIsNewer = Boolean(remoteLastUpdated && new Date(remoteLastUpdated) > new Date(localLastUpdated));
             
-            if (!hasLocalAspectContent || !localLastUpdated || remoteIsNewer) {
+            if (!hasLocalData || remoteIsNewer) {
               console.log("Sync: Applying remote data (newer or local empty)");
               isRemoteUpdateRef.current = true;
               setCoins(remoteData.coins || 0);
@@ -768,26 +763,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               }
               setTimeout(() => { isRemoteUpdateRef.current = false; }, 200);
             } else if (!remoteLastUpdated || new Date(localLastUpdated) > new Date(remoteLastUpdated)) {
-              console.log("Sync: Local development data is newer, uploading aspects to cloud");
+              console.log("Sync: Local data is newer, uploading the complete state to cloud");
               await syncSave(session.user.id, {
-                ...remoteData,
-                identityValues: savedData.identityValues || [],
-                identityValueFolders: savedData.identityValueFolders || [],
-                identitySystems: savedData.identitySystems || DEFAULT_IDENTITY_SYSTEMS,
-                identitySystemFolders: savedData.identitySystemFolders || [],
-                identitySystemIdeas: savedData.identitySystemIdeas || [],
+                ...savedData,
                 lastUpdated: savedData.lastUpdated,
                 clientId: clientIdRef.current,
               });
             }
-          } else if (hasLocalAspectContent) {
-            console.log("Sync: No cloud row found, uploading local development data");
+          } else if (hasLocalData) {
+            console.log("Sync: No cloud row found, uploading complete local data");
             await syncSave(session.user.id, {
-              identityValues: savedData.identityValues || [],
-              identityValueFolders: savedData.identityValueFolders || [],
-              identitySystems: savedData.identitySystems || DEFAULT_IDENTITY_SYSTEMS,
-              identitySystemFolders: savedData.identitySystemFolders || [],
-              identitySystemIdeas: savedData.identitySystemIdeas || [],
+              ...savedData,
               lastUpdated: savedData.lastUpdated,
               clientId: clientIdRef.current,
             });
@@ -1418,9 +1404,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateCharacterState = (updates: Partial<CharacterState>) => {
-    const newCharacterState = { ...characterState, ...updates };
+    const storedCharacterState = (storage.getData().characterState || {}) as CharacterState;
+    const newCharacterState = { ...characterState, ...storedCharacterState, ...updates };
     setCharacterState(newCharacterState);
-    saveAllData(coins, habits, blocks, habitFolders, goals, goalFolders, shopItems, shopFolders, newCharacterState, tasks, taskFolders, customColors);
+    void pushImmediateSync({ characterState: newCharacterState });
   };
 
   const updateWorldCity = (worldCity: WorldCityState, coinCost = 0): boolean => {
